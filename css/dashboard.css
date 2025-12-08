@@ -1,0 +1,87 @@
+/* ===== RESET ===== */
+body {
+    margin: 0;
+    background: #f5f0e6;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* ===== WRAPPER ===== */
+.dashboard-wrapper {
+    margin-left: -12px;
+    margin-right: -12px;
+}
+
+
+/* ===== SIDEBAR ===== */
+.sidebar-3d {
+    width: 250px;
+    min-height: 100vh;
+    background: #3e2a19;
+    padding: 20px 15px;
+    box-shadow: 4px 0 12px rgba(0,0,0,0.3);
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.sidebar-header {
+    text-align: center;
+    color: #f3e4cb;
+    margin-bottom: 30px;
+}
+
+.sidebar-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ===== BOTONES 3D ===== */
+.btn-3d {
+    background: #c7a97a;
+    color: #4b3621;
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    text-decoration: none;
+    border-bottom: 4px solid #9b7b54;
+    box-shadow: 0 4px 0 #8b6b47;
+    transition: 0.12s;
+}
+
+.btn-3d:hover {
+    background: #d8be92;
+}
+
+.btn-3d:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #8b6b47;
+    border-bottom: 2px solid #9b7b54;
+}
+
+.btn-main {
+    background: #eed9b6;
+    border-bottom: 4px solid #c4a076;
+    box-shadow: 0 4px 0 #a58563;
+}
+
+/* ===== CONTENIDO ===== */
+.dashboard-content {
+    margin-left: 250px;
+    padding: 30px;
+}
+
+.banner {
+    width: 100%;
+    max-width: 1100px;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+/* ===== TRAMITES ===== */
+.tramites {
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
