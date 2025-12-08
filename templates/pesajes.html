@@ -122,10 +122,17 @@
 <div class="box">
     <h3>Pesajes Registrados</h3>
     <h4>Total: {{ pesajes|length }}</h4> <!-- Hace el conteo de los pesajes en la tabla -->
+    <label><b>Filtrar por animal:</b></label>
+<select id="filtroAnimal">
+    <option value="">Todos</option>
+    {% for a in animales %}
+        <option value="{{ a[0] }}">{{ a[1] }}</option>
+    {% endfor %}
+</select>
 
     <table>
         <tr>
-            <th>ID</th>
+            <th>No.</th>
             <th>Peso (kg)</th>
             <th>Fecha</th>
             <th>Animal</th>
@@ -133,8 +140,8 @@
         </tr>
 
         {% for p in pesajes %}
-        <tr>
-            <td>{{ p[0] }}</td>
+        <tr data-animal="{{ p[3] }}">
+            <td>{{ loop.index }}</td>
             <td>{{ p[1] }}</td>
             <td>{{ p[2] }}</td>
             <td>{{ p[4] or '—' }} ({{ p[3] or '—' }})</td>
@@ -181,6 +188,14 @@
             <label>Fecha</label>
             <input type="date" name="fecha" id="f_fecha" required>
 
+            <label>Predio</label>
+            <select id="f_predio" required>
+                <option value="">Seleccione predio...</option>
+            </select>
+
+            <label>Dirección del Predio</label>
+            <input type="text" id="f_direccion" readonly placeholder="Se mostrará automáticamente">
+
             <label>Animal</label>
             <select name="fk_animal" id="f_animal" required>
                 <option value="">Seleccione…</option>
@@ -213,11 +228,46 @@
 <script>
 let actual=null;
 
+// Cargar predios al abrir el formulario
+function cargarPredios() {
+    fetch("/obtener_predios")
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById("f_predio");
+            select.innerHTML = '<option value="">Seleccione predio...</option>';
+            
+            if (data.predios && data.predios.length > 0) {
+                data.predios.forEach(predio => {
+                    const option = document.createElement("option");
+                    option.value = predio.id;
+                    option.textContent = predio.nombre;
+                    option.setAttribute("data-direccion", predio.direccion || "");
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => console.error("Error al cargar predios:", error));
+}
+
+// Mostrar dirección cuando se selecciona un predio
+document.addEventListener("DOMContentLoaded", function() {
+    const predioSelect = document.getElementById("f_predio");
+    const direccionInput = document.getElementById("f_direccion");
+    
+    if (predioSelect) {
+        predioSelect.addEventListener("change", function() {
+            const option = this.options[this.selectedIndex];
+            direccionInput.value = option.getAttribute("data-direccion") || "";
+        });
+    }
+});
+
 function abrirForm(){
     document.querySelector("form").reset();
     f_pk.value="";
     accion.value="registrar";
     titulo.innerText="Registrar Pesaje";
+    cargarPredios();
     modalForm.style.display="flex";
 }
 
@@ -229,6 +279,7 @@ function editarPesaje(o){
     f_animal.value=o.fk_animal;
     accion.value="modificar";
     titulo.innerText="Modificar Pesaje";
+    cargarPredios();
     modalForm.style.display="flex";
 }
 
@@ -250,6 +301,23 @@ function cerrar(){
     modalForm.style.display="none";
     modalVer.style.display="none";
 }
+</script>
+
+<script>
+document.getElementById("filtroAnimal").addEventListener("change", function () {
+    const animalSeleccionado = this.value;
+    const filas = document.querySelectorAll("table tr[data-animal]");
+
+    filas.forEach(fila => {
+        const animalFila = fila.getAttribute("data-animal");
+
+        if (animalSeleccionado === "" || animalFila === animalSeleccionado) {
+            fila.style.display = "";
+        } else {
+            fila.style.display = "none";
+        }
+    });
+});
 </script>
 
 </div>

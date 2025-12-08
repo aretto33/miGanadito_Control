@@ -75,13 +75,13 @@ input,select{
     <h3>Predios Registrados</h3>
     <table>
         <tr>
-            <th>ID</th><th>Dirección</th><th>Estado</th>
+            <th>No. </th><th>Dirección</th><th>Estado</th>
             <th>Municipio</th><th>Productor</th><th>Rancho</th>
             <th>Acciones</th>
         </tr>
         {% for p in predios %}
         <tr>
-            <td>{{ p[0] }}</td>
+            <td>{{ loop.index}}</td>
             <td>{{ p[1] }}</td>
             <td>{{ p[4] }}</td>
             <td>{{ p[5] }}</td>
@@ -99,7 +99,7 @@ input,select{
     <button class="btn btn-small"
         onclick='editarPredio({{
             {"id":p[0],"direccion":p[1],
-             "fk_estado":p[2],"fk_municipio":p[3]}
+             "fk_estado":p[2],"fk_municipio":p[3], "rancho": p[8]}
             | tojson
         }})'>Modificar</button>
 
@@ -154,6 +154,9 @@ input,select{
                 </select>
             {% endif %}
 
+            <label>Nombre del Rancho (opcional)</label>
+            <input type="text" name="nom_rancho" id="f_rancho" placeholder="Ej: Rancho El Buen Pastor">
+
             <button class="btn" name="accion" value="registrar" id="btnAccion">
                 Guardar
             </button>
@@ -185,6 +188,8 @@ function abrirForm(){
     document.getElementById("f_pk").value="";
     document.getElementById("formTitle").innerText="Registrar Predio";
     document.getElementById("btnAccion").value="registrar";
+    // limpiar campo rancho
+    const fRan = document.getElementById("f_rancho"); if(fRan) fRan.value='';
     document.getElementById("modalForm").style.display="flex";
 }
 
@@ -195,6 +200,8 @@ function editarPredio(o){
     document.getElementById("f_estado").value=o.fk_estado;
     filtrar(o.fk_estado);
     setTimeout(()=>f_municipio.value=o.fk_municipio,50);
+    // rellenar rancho si viene
+    try{ if(o.rancho!==undefined && document.getElementById('f_rancho')) document.getElementById('f_rancho').value=o.rancho; }catch(e){}
     document.getElementById("formTitle").innerText="Modificar Predio";
     document.getElementById("btnAccion").value="modificar";
     document.getElementById("modalForm").style.display="flex";

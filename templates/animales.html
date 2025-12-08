@@ -102,6 +102,19 @@ td {
         border-radius: 12px;
     }
 
+
+/* ===== ESTATUS ===== */
+.estatus-badge {
+    padding:6px 14px;
+    border-radius:14px;
+    font-size:13px;
+    font-weight:600;
+    color:white;
+}
+.estatus-badge.normal{ background:#4CAF50; }
+.estatus-badge.leve{ background:#FFC107; color:#3b2f1d; }
+.estatus-badge.grave{ background:#E53935; }
+
 </style>
 <img src="{{ url_for('static', filename='img/3.png') }}" class="banner">
 <h2>Gestión de Animales</h2>
@@ -119,22 +132,31 @@ td {
     <table>
         <thead>
             <tr>
-                <th>ID</th><th>Nombre</th><th>Fecha</th><th>Cruze</th>
-                <th>Productor</th><th>Raza</th><th>Sexo</th><th>Peso</th>
-                <th>Perfil</th><th>Lateral</th><th>Acciones</th>
+                <th>No. </th><th>Nombre</th><th>Fecha</th><th>Cruze</th>
+                <th>Productor</th><th>Predio</th><th>Raza</th><th>Sexo</th><th>Peso</th>
+                <th>Perfil</th><th>Lateral</th>
+                <th>Estatus</th><th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for a in animales %}
             <tr>
-                <td>{{ a[0] }}</td>
+                <td>{{ loop.index}}</td>
                 <td>{{ a[1] }}</td>
                 <td>{{ a[2] }}</td>
                 <td>{{ a[3] }}</td>
                 <td>{{ a[4] }}</td>
+                <td>{{ a[8] if a|length > 8 else '—' }}</td>
                 <td>{{ a[5] }}</td>
                 <td>{{ a[6] }}</td>
                 <td>{{ a[7] }}</td>
+
+                <td>
+                <span class="estatus-badge {{ a[9]|lower }}">
+                    {{ a[9] }}
+                </span>
+            </td>
+
 
                 <td>
                     <img class="animal-img"
@@ -151,7 +173,7 @@ td {
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "raza": a[5], "sexo": a[6], "peso": a[7]
+                            "productor": a[4], "raza": a[5], "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else null
                         } | tojson }})'>
                         Ver
                     </button>
@@ -159,10 +181,21 @@ td {
                     <button type="button" class="btn btn-small"
                         onclick='abrirFormEditar({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "raza": a[5], "sexo": a[6]
+                            "productor": a[4], "fk_productor": a[11] if a|length > 11 else null, 
+                            "raza": a[5], "fk_raza": a[10] if a|length > 10 else null, 
+                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[9] if a|length > 9 else null
                         } | tojson }})'>
                         Modificar
                     </button>
+
+                    <form method="POST" style="display:inline">
+                        <input type="hidden" name="pk" value="{{ a[0] }}">
+                        <button type="submit" class="btn btn-small" style="background:#a63c3c"
+                                name="accion" value="eliminar"
+                                onclick="return confirm('¿Estás seguro de que deseas eliminar este animal?')">
+                            Eliminar
+                        </button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
@@ -204,6 +237,14 @@ td {
             {% endif %}
 
             <!-- RAZA -->
+            <label for="f_fk_predio">Predio (ubicación)</label>
+            <select name="fk_predio" id="f_fk_predio">
+                <option value="">Seleccione...</option>
+                {% for pr in predios %}
+                    <option value="{{ pr[0] }}">{{ pr[0] }} - {{ pr[1] }}</option>
+                {% endfor %}
+            </select>
+
             <label for="f_raza">Raza:</label>
             <select name="fk_raza" id="f_raza" required>
                 <option value="">Seleccione...</option>
@@ -239,6 +280,7 @@ td {
         <p><strong>Fecha Nac.:</strong> <span id="v_fecha"></span></p>
         <p><strong>Cruze:</strong> <span id="v_cruze"></span></p>
         <p><strong>Productor:</strong> <span id="v_productor"></span></p>
+        <p><strong>Predio:</strong> <span id="v_predio"></span></p>
         <p><strong>Raza:</strong> <span id="v_raza"></span></p>
         <p><strong>Sexo:</strong> <span id="v_sexo"></span></p>
         <p><strong>Peso actual (kg):</strong> <span id="v_peso"></span></p>
@@ -295,6 +337,12 @@ function abrirFormEditar(obj) {
         razaEl.value = obj.fk_raza;
     }
 
+    // ✅ PREDIO (por ID)
+    const predioEl = document.getElementById('f_fk_predio');
+    if (predioEl && obj.fk_predio) {
+        predioEl.value = obj.fk_predio;
+    }
+
     document.getElementById('f_accion').value = 'modificar';
     document.getElementById('form-titulo').innerText = 'Modificar Animal';
 
@@ -308,6 +356,7 @@ function verAnimal(obj) {
     document.getElementById('v_fecha').textContent = obj.fecha || '';
     document.getElementById('v_cruze').textContent = obj.cruze || '';
     document.getElementById('v_productor').textContent = obj.productor || '';
+    document.getElementById('v_predio').textContent = obj.predio || 'N/A';
     document.getElementById('v_raza').textContent = obj.raza || '';
     document.getElementById('v_sexo').textContent = obj.sexo || '';
     document.getElementById('v_peso').textContent = obj.peso || '';
@@ -345,9 +394,12 @@ document.addEventListener('keydown', function(e){
 
 /* ================= mejora: impedir doble submit (opcional) ================= */
 document.getElementById('form-animal').addEventListener('submit', function(e){
-    // deshabilitar botón para evitar doble click
+    // deshabilitar botón para evitar doble click, pero hacerlo tras el envío
+    // para que el valor `name="accion"` del botón se incluya en el POST.
     const btn = document.getElementById('f_accion');
-    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+    if (btn) {
+        setTimeout(function(){ btn.disabled = true; btn.textContent = 'Enviando...'; }, 10);
+    }
     // el form continúa su envío normal (POST) al backend
 });
 </script>

@@ -80,10 +80,13 @@ table td:first-child {
     }
 </style>
 <img src="{{ url_for('static', filename='img/5.png') }}" class="banner">
-<h2>Gestión Precios para la venta </h2>
-
-<!-- BOTÓN NUEVA VENTA -->
-<button class="btn" onclick="nuevaVenta()">+ Nueva Venta</button>
+{% if session.get('rol') == 'Productor' %}
+    <h2>Gestión Precios para la venta </h2>
+    <!-- BOTÓN NUEVA VENTA (Solo para Productor) -->
+    <button class="btn" onclick="nuevaVenta()">+ Nueva Venta</button>
+{% else %}
+    <h2>Ventas Disponibles - Catálogo de Productores</h2>
+{% endif %}
 <br><br>
 
 <!-- ===== TABLA ===== -->
@@ -93,9 +96,13 @@ table td:first-child {
     <table border="1" width="100%" cellpadding="6">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>ID Animal</th>
-                <th>Clave</th>
+                <th>No. </th>
+                <th>Animal</th>
+                <th>Pesaje (kg)</th>
+                <th>Raza</th>
+                <th>Productor</th>
+                <th>Rancho</th>
+                <th>Dirección</th>
                 <th>Precio</th>
                 <th>Fecha</th>
                 <th>Acciones</th>
@@ -104,17 +111,22 @@ table td:first-child {
         <tbody>
         {% for v in ventas %}
             <tr>
-                <td>{{ v[0] }}</td>
-                <td>{{ v[1] }}</td>
-                <td>{{ v[3] }}</td>
+                <td>{{ loop.index }}</td>
+                <td>{{ v[6] if v|length > 6 else 'N/A' }}</td>
+                <td>{{ v[7] if v|length > 7 else 'N/A' }}</td>
+                <td>{{ v[8] if v|length > 8 else 'N/A' }}</td>
+                <td>{{ v[9] if v|length > 9 else 'N/A' }}</td>
+                <td>{{ v[10] if v|length > 10 else 'N/A' }}</td>
+                <td>{{ v[11] if v|length > 11 else 'N/A' }}</td>
                 <td>${{ v[4] }}</td>
                 <td>{{ v[5] }}</td>
                 <td>
                     <button class="btn btn-small btn-ver"
-                        onclick="verVenta('{{ v[0] }}','{{ v[1] }}','{{ v[3] }}','{{ v[4] }}','{{ v[5] }}')">
+                        onclick="verVenta('{{ v[0] }}','{{ v[6] }}','{{ v[7] }}','{{ v[8] }}','{{ v[9] }}','{{ v[10] }}','{{ v[11] }}','{{ v[4] }}','{{ v[5] }}')">
                         Ver
                     </button>
 
+                    {% if session.get('rol') == 'Productor' %}
                     <button class="btn btn-small"
                         onclick="cargarFormulario('{{ v[0] }}','{{ v[1] }}','{{ v[3] }}','{{ v[4] }}','{{ v[5] }}')">
                         Modificar
@@ -127,6 +139,7 @@ table td:first-child {
                             Eliminar
                         </button>
                     </form>
+                    {% endif %}
                 </td>
             </tr>
         {% endfor %}
@@ -135,6 +148,7 @@ table td:first-child {
 </div>
 
 <!-- ===== CARD REGISTRAR / MODIFICAR ===== -->
+{% if session.get('rol') == 'Productor' %}
 <div id="cardForm" class="card-modal">
     <div class="card-contenido">
         <h3 id="tituloForm">Registrar Venta</h3>
@@ -168,6 +182,7 @@ table td:first-child {
         </form>
     </div>
 </div>
+{% endif %}
 
 <!-- ===== CARD VER ===== -->
 <div id="cardVer" class="card-modal">
@@ -175,9 +190,13 @@ table td:first-child {
         <h3>Detalle de la Venta</h3>
 
         <p><strong>ID Venta:</strong> <span id="v_id"></span></p>
-        <p><strong>ID Animal:</strong> <span id="v_animal"></span></p>
-        <p><strong>Clave:</strong> <span id="v_clave"></span></p>
-        <p><strong>Precio:</strong> $<span id="v_precio"></span></p>
+        <p><strong>Animal:</strong> <span id="v_animal"></span></p>
+        <p><strong>Pesaje (kg):</strong> <span id="v_pesaje"></span></p>
+        <p><strong>Raza:</strong> <span id="v_raza"></span></p>
+        <p><strong>Productor:</strong> <span id="v_productor"></span></p>
+        <p><strong>Rancho:</strong> <span id="v_rancho"></span></p>
+        <p><strong>Dirección:</strong> <span id="v_direccion"></span></p>
+        <p><strong>Precio Final:</strong> $<span id="v_precio"></span></p>
         <p><strong>Fecha:</strong> <span id="v_fecha"></span></p>
 
         <button class="btn" onclick="cerrarVer()">Cerrar</button>
@@ -204,19 +223,23 @@ function nuevaVenta() {
 function cargarFormulario(id, animal, clave, precio, fecha) {
     pk.value = id;
     fkAnimal.value = animal;
-    clave.value = clave;
+    document.getElementById("clave").value = clave;
     precioInput.value = precio;
-    fecha_venta.value = fecha;
+    document.getElementById("fecha_venta").value = fecha;
 
     document.getElementById("tituloForm").innerText = "Modificar Venta";
     cardForm.style.display = "flex";
 }
 
 // VER
-function verVenta(id, animal, clave, precio, fecha) {
+function verVenta(id, animal, pesaje, raza, productor, rancho, direccion, precio, fecha) {
     v_id.textContent = id;
-    v_animal.textContent = animal;
-    v_clave.textContent = clave;
+    v_animal.textContent = animal || 'N/A';
+    v_pesaje.textContent = pesaje || 'N/A';
+    v_raza.textContent = raza || 'N/A';
+    v_productor.textContent = productor || 'N/A';
+    v_rancho.textContent = rancho || 'N/A';
+    v_direccion.textContent = direccion || 'N/A';
     v_precio.textContent = precio;
     v_fecha.textContent = fecha;
     cardVer.style.display = "flex";
@@ -227,21 +250,47 @@ function cerrarVer() { cardVer.style.display = "none"; }
 
 // CALCULO PRECIO
 fkAnimal.addEventListener("change", () => {
-    if (!fkAnimal.value) return precioInput.value = "";
+    console.log("Animal seleccionado:", fkAnimal.value);
+    if (!fkAnimal.value) {
+        precioInput.value = "";
+        return;
+    }
+    
     fetch("/calcular_precio", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ animal_id: fkAnimal.value })
     })
-    .then(r => r.json())
-    .then(d => precioInput.value = d.precio);
+    .then(r => {
+        console.log("Respuesta status:", r.status);
+        if (!r.ok) throw new Error(`Error HTTP: ${r.status}`);
+        return r.json();
+    })
+    .then(d => {
+        console.log("Datos recibidos:", d);
+        // Usar d.precio aunque sea 0, pero verificar que exista la propiedad
+        if (d.hasOwnProperty('precio') && d.precio !== null && d.precio !== undefined) {
+            precioInput.value = d.precio;
+            console.log("Precio asignado:", d.precio);
+        } else {
+            console.error("Precio no válido en la respuesta:", d);
+            precioInput.value = "0";
+        }
+    })
+    .catch(error => {
+        console.error("Error en fetch:", error);
+        precioInput.value = "0";
+        alert("Error al calcular el precio: " + error.message);
+    });
 });
 
 // VALIDAR
 form.addEventListener("submit", e => {
-    if (!precioInput.value) {
+    const precioValue = parseFloat(precioInput.value);
+    // Permitir que se registre aunque el precio sea 0, siempre que el campo tenga un valor
+    if (precioInput.value === "" || precioInput.value === null || isNaN(precioValue)) {
         e.preventDefault();
-        alert("Seleccione un animal para calcular el precio");
+        alert("Por favor, selecciona un animal para calcular el precio.");
     }
 });
 </script>

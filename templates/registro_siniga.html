@@ -175,7 +175,7 @@ tr:hover { background: rgba(0,0,0,0.04); }
 
     <table>
         <tr>
-            <th>ID</th>
+            <th>No. </th>
             <th>ID Animal</th>
             <th>Nombre</th>
             <th>Arete</th>
@@ -184,7 +184,7 @@ tr:hover { background: rgba(0,0,0,0.04); }
 
         {% for r in registros %}
         <tr>
-            <td>{{ r[0] }}</td>
+            <td>{{ loop.index }}</td>
             <td>{{ r[1] }}</td>
             <td>{{ r[3] }}</td>
             <td>{{ r[2] }}</td>

@@ -67,6 +67,18 @@ input,select{
     display:block;
     border-radius:12px;
 }
+
+/* ===== ESTATUS ===== */
+.estatus-badge {
+    padding:6px 14px;
+    border-radius:14px;
+    font-size:13px;
+    font-weight:600;
+    color:white;
+}
+.estatus-badge.normal{ background:#4CAF50; }
+.estatus-badge.leve{ background:#FFC107; color:#3b2f1d; }
+.estatus-badge.grave{ background:#E53935; }
 </style>
 
 <img src="{{ url_for('static', filename='img/4.png') }}" class="banner">
@@ -75,50 +87,70 @@ input,select{
 
 <button class="btn" onclick="abrirForm()">➕ Registrar Seguimiento</button>
 
-<!-- ===== TABLA ===== -->
 <div class="table-box">
     <h3>Registros</h3>
+
+    <label><b>Filtrar por animal:</b></label>
+    <select id="filtroAnimal">
+        <option value="">Todos</option>
+        {% for a in animales %}
+            <option value="{{ a[0] }}">{{ a[1] }}</option>
+        {% endfor %}
+    </select>
+
     <table>
+        <thead>
         <tr>
-            <th>ID</th>
+            <th>No.</th>
             <th>Animal</th>
             <th>Tratamiento</th>
+            <th>Estatus</th>
+            <th>Medicamento</th>
             <th>Fecha Actual</th>
             <th>Próxima Fecha</th>
             <th>Acciones</th>
         </tr>
-
+        </thead>
+        <tbody>
         {% for s in seguimientos %}
-        <tr>
-            <td>{{ s[0] }}</td>
-            <td>{{ s[1] }}</td>
+        <tr data-animal="{{ s[1] }}">
+            <td>{{ loop.index }}</td>
             <td>{{ s[2] }}</td>
-            <td>{{ s[3] }}</td>
-            <td>{{ s[4] or '—' }}</td>
+            <td>{{ s[4] }}</td>
+
+            <td>
+                <span class="estatus-badge {{ s[5]|lower }}">
+                    {{ s[5] }}
+                </span>
+            </td>
+
+            <td>{{ s[6] or "-" }}</td>
+            <td>{{ s[7] or "-" }}</td>
+            <td>{{ s[8] or "-" }}</td>
+
             <td>
                 <button class="btn btn-small"
                     onclick='editar({{
-                        {"id":s[0],"animal":s[1],
-                         "tratamiento":s[2],
-                         "fechaA":s[3],
-                         "fechaP":s[4]}
-                         | tojson
-                    }})'>
-                    Modificar
-                </button>
+                        {
+                            "id": s[0],
+                            "animal": s[1],
+                            "fk_tratamiento": s[3],
+                            "medicamento": s[6],
+                            "fechaA": s[7],
+                            "fechaP": s[8]
+                        } | tojson
+                    }})'>Modificar</button>
 
-                <button class="btn btn-small"
-                    style="background:#b53e3e"
-                    onclick="eliminar({{ s[0] }})">
-                    Eliminar
-                </button>
+                <button class="btn btn-small btn-ver"
+                    onclick="eliminar('{{ s[0] }}')">Eliminar</button>
             </td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
 </div>
 
-<!-- ===== MODAL FORM ===== -->
+<!-- ===== MODAL ===== -->
 <div id="modalForm" class="modal-overlay">
     <div class="modal-card">
         <button class="close-btn" onclick="cerrar()">✕</button>
@@ -135,8 +167,16 @@ input,select{
                 {% endfor %}
             </select>
 
-            <label>Tipo de Tratamiento</label>
-            <input type="text" name="tipo_tratamiento" id="f_trat" required>
+            <label>Tratamiento</label>
+            <select name="fk_tratamiento" id="f_trat" required>
+                <option value="">Seleccione…</option>
+                {% for t in tratamientos %}
+                <option value="{{ t[0] }}">{{ t[1] }} ({{ t[2] }})</option>
+                {% endfor %}
+            </select>
+
+            <label>Medicamento</label>
+            <input type="text" name="medicamento" id="f_medicamento">
 
             <label>Fecha Actual</label>
             <input type="date" name="fecha_actual" id="f_fechaA" required>
@@ -152,7 +192,16 @@ input,select{
 </div>
 
 <script>
-let actual=null;
+const modalForm = document.getElementById("modalForm");
+const segForm = document.getElementById("segForm");
+const f_pk = document.getElementById("f_pk");
+const f_animal = document.getElementById("f_animal");
+const f_trat = document.getElementById("f_trat");
+const f_medicamento = document.getElementById("f_medicamento");
+const f_fechaA = document.getElementById("f_fechaA");
+const f_fechaP = document.getElementById("f_fechaP");
+const formTitle = document.getElementById("formTitle");
+const btnAccion = document.getElementById("btnAccion");
 
 function abrirForm(){
     segForm.reset();
@@ -163,12 +212,12 @@ function abrirForm(){
 }
 
 function editar(o){
-    actual=o;
-    f_pk.value=o.id;
-    f_animal.value=o.animal;
-    f_trat.value=o.tratamiento;
-    f_fechaA.value=o.fechaA;
-    f_fechaP.value=o.fechaP;
+    f_pk.value = o.id;
+    f_animal.value = o.animal;
+    f_trat.value = o.fk_tratamiento;
+    f_medicamento.value = o.medicamento || "";
+    f_fechaA.value = o.fechaA || "";
+    f_fechaP.value = o.fechaP || "";
 
     formTitle.innerText="Modificar Seguimiento";
     btnAccion.value="modificar";
@@ -181,20 +230,23 @@ function cerrar(){
 
 function eliminar(id){
     if(!confirm("¿Eliminar este seguimiento?")) return;
-
     const f=document.createElement("form");
     f.method="POST";
-    f.style.display="none";
-    f.innerHTML=`
-        <input name="accion" value="eliminar">
-        <input name="pk" value="${id}">
-    `;
+    f.innerHTML=`<input name="accion" value="eliminar">
+                 <input name="pk" value="${id}">`;
     document.body.appendChild(f);
     f.submit();
 }
 
 document.addEventListener("keydown",e=>{
     if(e.key==="Escape") cerrar();
+});
+
+document.getElementById("filtroAnimal").addEventListener("change", function(){
+    const v = this.value;
+    document.querySelectorAll("tbody tr").forEach(tr=>{
+        tr.style.display = (!v || tr.dataset.animal===v) ? "" : "none";
+    });
 });
 </script>
 

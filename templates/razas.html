@@ -173,6 +173,7 @@ tr:hover {
         <input type="text" name="color" id="color" required>
 
         <button class="btn" name="accion" value="registrar">Registrar</button>
+        <button type="button" class="btn" style="background:#999; margin-left:10px;" onclick="limpiarFormulario()">Limpiar</button>
     </form>
 </div>
 
@@ -181,7 +182,7 @@ tr:hover {
 
     <table border="1" width="100%" cellpadding="6">
         <tr style="background:#d8c2a8;">
-            <th>ID</th>
+            <th>No. </th>
             <th>Nombre</th>
             <th>Origen</th>
             <th>Color</th>
@@ -190,7 +191,7 @@ tr:hover {
 
         {% for r in razas %}
         <tr>
-            <td>{{ r[0] }}</td>
+            <td>{{ loop.index }}</td>
             <td>{{ r[1] }}</td>
             <td>{{ r[2] }}</td>
             <td>{{ r[3] }}</td>
@@ -214,22 +215,42 @@ function cargarFormulario(id, nombre, origen, color) {
     document.getElementById('origen').value = origen;
     document.getElementById('color').value = color;
 
-
-
     let form = document.getElementById('razaForm');
+    
+    // Eliminar botón modificar anterior si existe
     let existing = document.getElementById('btnModificar');
-
-    if (!existing) {
-        let btn = document.createElement('button');
-        btn.innerText = 'Modificar';
-        btn.className = 'btn';
-        btn.name = 'accion';
-        btn.value = 'modificar';
-        btn.id = 'btnModificar';
-        form.appendChild(btn);
+    if (existing) {
+        existing.remove();
     }
+    
+    // Ocultar botón Registrar
+    let btnRegistrar = Array.from(form.querySelectorAll('button')).find(btn => btn.value === 'registrar');
+    if (btnRegistrar) btnRegistrar.style.display = 'none';
+
+    // Crear y agregar botón Modificar
+    let btn = document.createElement('button');
+    btn.innerText = 'Modificar';
+    btn.className = 'btn';
+    btn.name = 'accion';
+    btn.value = 'modificar';
+    btn.id = 'btnModificar';
+    btn.type = 'submit';
+    form.appendChild(btn);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function limpiarFormulario() {
+    document.getElementById('razaForm').reset();
+    document.getElementById('pk').value = '';
+    
+    let btnModificar = document.getElementById('btnModificar');
+    if (btnModificar) {
+        btnModificar.remove();
+    }
+    
+    let btnRegistrar = Array.from(document.getElementById('razaForm').querySelectorAll('button')).find(btn => btn.value === 'registrar');
+    if (btnRegistrar) btnRegistrar.style.display = 'block';
 }
 
 function showFloatingDetails(raza) {
