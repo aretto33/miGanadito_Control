@@ -10,10 +10,16 @@ import io
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import Image
+import os
 
 
 app = Flask(__name__)
 app.secret_key = "SECRET_KEY_GANACONTROL_2025"
+
+
+@app.route('/static/img/<path:filename>')
+def legacy_static_img(filename):
+    return send_from_directory(app.static_folder, filename)
 
 # -------------------- CONEXIÓN A LA BD --------------------
 #<def conectar_bd():
@@ -175,24 +181,45 @@ def dashboard():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
+    # =========================
+    # VARIABLES SEGURAS
+    # =========================
     productor_nombre = None
     aretes = []
     predios = []
+    estados_animales = []
+    total_animales = 0
+    total_predios = 0
+    view = None
 
     fk_productor = session.get("fk_productor")
+    rol = session.get("rol")
 
+    # =========================
+    # DEFINIR VIEW SEGÚN ROL
+    # =========================
+    if rol == "Veterinario":
+        view = "veterinario"
+    elif rol == "Comprador":
+        view = "comprador"
+    else:
+        view = "productor"
+
+    conn, cursor = conectar_bd()
+
+    # =========================
+    # PRODUCTOR
+    # =========================
     if fk_productor:
-        conn, cursor = conectar_bd()
-
-        # NOMBRE DEL PRODUCTOR
-        cursor.execute("SELECT nombre FROM Productores WHERE pk_productor=%s", (fk_productor,))
+        cursor.execute(
+            "SELECT nombre FROM Productores WHERE pk_productor=%s",
+            (fk_productor,)
+        )
         row = cursor.fetchone()
         if row:
             productor_nombre = row[0]
 
-        # ===========================
-        #   LISTA DE ARETES
-        # ===========================
+        # ARETES
         cursor.execute("""
             SELECT r.arete, a.nombre
             FROM Registro_SINIGA r
@@ -202,9 +229,7 @@ def dashboard():
         """, (fk_productor,))
         aretes = cursor.fetchall()
 
-        # ===========================
-        #   LISTA DE PREDIOS
-        # ===========================
+        # PREDIOS
         cursor.execute("""
             SELECT pk_predio, nom_rancho
             FROM Predios
@@ -213,19 +238,42 @@ def dashboard():
         """, (fk_productor,))
         predios = cursor.fetchall()
 
-        conn.close()
+        # CONTADORES
+        cursor.execute(
+            "SELECT COUNT(*) FROM Animales WHERE fk_productor=%s",
+            (fk_productor,)
+        )
+        total_animales = cursor.fetchone()[0]
+
+        cursor.execute(
+            "SELECT COUNT(*) FROM Predios WHERE fk_productor=%s",
+            (fk_productor,)
+        )
+        total_predios = cursor.fetchone()[0]
+
+        # ESTATUS ANIMALES
+        cursor.execute("""
+            SELECT nombre, estatus_actual
+            FROM Animales
+            WHERE fk_productor = %s
+            ORDER BY nombre
+        """, (fk_productor,))
+        estados_animales = cursor.fetchall()
+
+    conn.close()
 
     return render_template(
         "dashboard.html",
         usuario=session["usuario"],
-        rol=session["rol"],
+        rol=rol,
+        view=view,
         productor=productor_nombre,
         aretes=aretes,
-        predios=predios
+        predios=predios,
+        total_animales=total_animales,
+        total_predios=total_predios,
+        estados_animales=estados_animales
     )
-
-
-
 
 @app.route("/dashboard_vet")
 def dashboard_vet():
@@ -279,7 +327,6 @@ def logout():
 # ------------------ Ventana Animales ------------------
 @app.route("/animales", methods=["GET", "POST"])
 def animales():
-    # Requiere sesión
     if "usuario" not in session:
         flash("Debes iniciar sesión", "warning")
         return redirect(url_for("login"))
@@ -289,73 +336,65 @@ def animales():
 
     try:
         conn, cursor = conectar_bd()
-        if not conn:
-            flash("Error al conectar con la base de datos", "danger")
-            return redirect(url_for("inicio"))
 
+        # ================= POST =================
         if request.method == "POST":
             accion = request.form.get("accion")
 
-            # Obtener imágenes si las mandaron
             foto_perfil = request.files.get("foto_perfil")
             foto_lateral = request.files.get("foto_lateral")
 
             perfil_bytes = foto_perfil.read() if foto_perfil and foto_perfil.filename else None
             lateral_bytes = foto_lateral.read() if foto_lateral and foto_lateral.filename else None
 
-            # Determinar fk_productor según el rol del usuario (si es productor usar el suyo)
-            if session.get("rol") == "Productor":
-                fk_prod_session = session.get("fk_productor")
-            else:
-                fk_prod_session = None
+            fk_prod_session = session.get("fk_productor") if session.get("rol") == "Productor" else None
 
-            # --- REGISTRAR ---
+            # -------- REGISTRAR --------
             if accion == "registrar":
-                nombre = request.form.get("nombre")
-                fecha = request.form.get("fecha")
-                cruze = request.form.get("cruze") or "Sin conocer"
-                sexo = request.form.get("sexo") or None
-                peso_actual = request.form.get("peso_actual") or None
-
-                # Si el usuario es productor, forzamos el fk_productor desde la sesión
-                if fk_prod_session:
-                    fk_productor = fk_prod_session
-                else:
-                    fk_productor = request.form.get("fk_productor") or None
-
-                fk_raza = request.form.get("fk_raza") or None
-
-                cursor.execute(
-                    """INSERT INTO Animales (nombre, fecha_nacimiento, cruze, sexo, peso_actual, fk_productor, fk_raza, foto_perfil, foto_lateral)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                    (nombre, fecha, cruze, sexo, peso_actual, fk_productor, fk_raza, perfil_bytes, lateral_bytes)
-                )
+                cursor.execute("""
+                    INSERT INTO Animales
+                    (nombre, fecha_nacimiento, cruze, sexo, peso_actual,
+                     fk_productor, fk_raza, fk_predio, foto_perfil, foto_lateral)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    request.form.get("nombre"),
+                    request.form.get("fecha"),
+                    request.form.get("cruze") or "Sin conocer",
+                    request.form.get("sexo"),
+                    request.form.get("peso_actual"),
+                    fk_prod_session or request.form.get("fk_productor"),
+                    request.form.get("fk_raza"),
+                    request.form.get("fk_predio"),
+                    perfil_bytes,
+                    lateral_bytes
+                ))
                 conn.commit()
 
-            # --- MODIFICAR ---
+            # -------- MODIFICAR --------
             elif accion == "modificar":
                 pk = request.form.get("pk")
-                nombre = request.form.get("nombre")
-                fecha = request.form.get("fecha")
-                cruze = request.form.get("cruze")
-                sexo = request.form.get("sexo")
-                peso_actual = request.form.get("peso_actual") or None
-
-                # Solo permitir cambiar fk_productor si el usuario no es productor
-                if fk_prod_session:
-                    fk_productor = fk_prod_session
-                else:
-                    fk_productor = request.form.get("fk_productor") or None
-
-                fk_raza = request.form.get("fk_raza") or None
-
-                cursor.execute(
-                    """UPDATE Animales
-                       SET nombre=%s, fecha_nacimiento=%s, cruze=%s, sexo=%s, peso_actual=%s,
-                           fk_productor=%s, fk_raza=%s
-                       WHERE pk_animal=%s""",
-                    (nombre, fecha, cruze, sexo, peso_actual, fk_productor, fk_raza, pk)
-                )
+                cursor.execute("""
+                    UPDATE Animales SET
+                        nombre=%s,
+                        fecha_nacimiento=%s,
+                        cruze=%s,
+                        sexo=%s,
+                        peso_actual=%s,
+                        fk_productor=%s,
+                        fk_raza=%s,
+                        fk_predio=%s
+                    WHERE pk_animal=%s
+                """, (
+                    request.form.get("nombre"),
+                    request.form.get("fecha"),
+                    request.form.get("cruze"),
+                    request.form.get("sexo"),
+                    request.form.get("peso_actual"),
+                    fk_prod_session or request.form.get("fk_productor"),
+                    request.form.get("fk_raza"),
+                    request.form.get("fk_predio"),
+                    pk
+                ))
 
                 if perfil_bytes:
                     cursor.execute("UPDATE Animales SET foto_perfil=%s WHERE pk_animal=%s", (perfil_bytes, pk))
@@ -364,69 +403,143 @@ def animales():
 
                 conn.commit()
 
-            # --- ELIMINAR ---
+            # -------- ELIMINAR --------
             elif accion == "eliminar":
                 pk = request.form.get("pk")
+                cursor.execute("DELETE FROM Pesajes WHERE fk_animal=%s", (pk,))
+                cursor.execute("DELETE FROM Ventas WHERE fk_animal=%s", (pk,))
+                cursor.execute("DELETE FROM Seguimiento_vet WHERE fk_animal=%s", (pk,))
+                cursor.execute("DELETE FROM Registro_SINIGA WHERE fk_animal=%s", (pk,))
                 cursor.execute("DELETE FROM Animales WHERE pk_animal=%s", (pk,))
                 conn.commit()
+                flash("Animal eliminado correctamente", "success")
 
-        # --- CONSULTAR LISTA ---
-        # Si el usuario es 'Productor' mostrar solo sus animales
+        # ================= GET =================
         if session.get("rol") == "Productor":
-            fk = session.get("fk_productor")
-            cursor.execute(
-                """SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
-                          p.nombre AS productor, r.nombre AS raza, a.sexo, a.peso_actual
-                   FROM Animales a
-                   LEFT JOIN Productores p ON a.fk_productor = p.pk_productor
-                   LEFT JOIN Razas r ON a.fk_raza = r.pk_raza
-                   WHERE a.fk_productor = %s
-                   ORDER BY a.pk_animal DESC""",
-                (fk,)
-            )
+            cursor.execute("""
+                SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
+                       p.nombre, r.nombre, a.sexo, a.peso_actual,
+                       pr.nom_rancho,
+                       a.estatus_actual,
+                       a.fk_predio, r.pk_raza, a.fk_productor
+                FROM Animales a
+                LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
+                LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
+                LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
+                WHERE a.fk_productor=%s
+                ORDER BY a.pk_animal DESC
+            """, (session.get("fk_productor"),))
         else:
-            cursor.execute(
-                """SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
-                          p.nombre AS productor, r.nombre AS raza, a.sexo, a.peso_actual
-                   FROM Animales a
-                   LEFT JOIN Productores p ON a.fk_productor = p.pk_productor
-                   LEFT JOIN Razas r ON a.fk_raza = r.pk_raza
-                   ORDER BY a.pk_animal DESC"""
-            )
+            cursor.execute("""
+                SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
+                       p.nombre, r.nombre, a.sexo, a.peso_actual,
+                       pr.nom_rancho,
+                       a.estatus_actual,
+                       a.fk_predio, r.pk_raza, a.fk_productor
+                FROM Animales a
+                LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
+                LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
+                LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
+                ORDER BY a.pk_animal DESC
+            """)
 
         animales = cursor.fetchall()
 
-        # Datos para selects (si el usuario es productor, puedes ocultar la lista completa si deseas)
         cursor.execute("SELECT pk_productor, nombre FROM Productores")
         productores = cursor.fetchall()
 
         cursor.execute("SELECT pk_raza, nombre FROM Razas")
         razas = cursor.fetchall()
 
+        cursor.execute("SELECT pk_predio, nom_rancho FROM Predios ORDER BY nom_rancho")
+        predios = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT pk_tratamiento, nombre, impacto
+            FROM tratamientos
+            ORDER BY nombre
+        """)
+        tratamientos = cursor.fetchall()
+
     except Exception as e:
-        flash(f"Error en módulo Animales: {e}", "danger")
-        animales = []
-        productores = []
-        razas = []
+        flash(f"Error en Animales: {e}", "danger")
+        animales, productores, razas, predios, tratamientos = [], [], [], [], []
 
     finally:
         if conn:
             conn.close()
 
-    return render_template("animales.html", animales=animales, productores=productores, razas=razas)
+    return render_template(
+        "animales.html",
+        animales=animales,
+        productores=productores,
+        razas=razas,
+        predios=predios,
+        tratamientos=tratamientos
+    )
 
 # ------------------ Mostrar imágenes ------------------
 @app.route("/imagen_animal/<int:id>/<string:tipo>")
 def imagen_animal(id, tipo):
+    # Validar que el tipo sea una columna esperada para evitar inyección SQL
+    allowed = ("foto_perfil", "foto_lateral")
+    if tipo not in allowed:
+        return "", 400
+
     conn, cursor = conectar_bd()
     cursor.execute(f"SELECT {tipo} FROM Animales WHERE pk_animal=%s", (id,))
-    imagen = cursor.fetchone()[0]
+    row = cursor.fetchone()
     conn.close()
 
-    if imagen is None:
+    if not row or row[0] is None:
         return "", 404
 
-    return Response(imagen, mimetype="image/jpeg")
+    imagen = row[0]
+
+    # Si la BD contiene una ruta/nombre de archivo (texto), servir desde static
+    if isinstance(imagen, str):
+        # permitir rutas relativas como 'uploads/ej.jpg' o solo 'ej.jpg'
+        archivo = imagen
+        # comprobar en carpeta static
+        static_path = app.static_folder or os.path.join(app.root_path, 'static')
+        posibles = [os.path.join(static_path, archivo), os.path.join(static_path, os.path.basename(archivo))]
+        for p in posibles:
+            if os.path.isfile(p):
+                # servir archivo estático
+                rel = os.path.relpath(p, static_path).replace('\\', '/')
+                return send_from_directory(static_path, rel)
+
+        # si no existe el archivo, devolver 404
+        return "", 404
+
+    # mariadb puede devolver memoryview, convertir a bytes
+    try:
+        if isinstance(imagen, memoryview):
+            imagen = imagen.tobytes()
+    except NameError:
+        pass
+
+    # Intentar detectar el tipo MIME real de la imagen
+    mimetype = "application/octet-stream"
+    try:
+        buf = io.BytesIO(imagen)
+        img = Image.open(buf)
+        fmt = (img.format or '').lower()
+        if fmt in ('jpeg', 'jpg'):
+            mimetype = 'image/jpeg'
+        elif fmt == 'png':
+            mimetype = 'image/png'
+        elif fmt == 'gif':
+            mimetype = 'image/gif'
+        else:
+            mimetype = f"image/{fmt}" if fmt else mimetype
+    except Exception:
+        import imghdr
+        kind = imghdr.what(None, h=imagen)
+        if kind:
+            mimetype = f"image/{kind}"
+
+    return Response(imagen, mimetype=mimetype)
 
 
 #------------------- PREDIOS -------------------
@@ -457,6 +570,7 @@ def predios():
             direccion = request.form.get("direccion")
             fk_estado = request.form.get("fk_estado")
             fk_municipio = request.form.get("fk_municipio")
+            nom_rancho = request.form.get("nom_rancho")
             # Determinar fk_productor: si el usuario es Productor usar la sesión
             if session.get('rol') == 'Productor' and session.get('fk_productor'):
                 fk_prod = session.get('fk_productor')
@@ -464,10 +578,10 @@ def predios():
                 fk_prod = request.form.get("fk_productor")  # 👈 nuevo
 
             sql = """
-                INSERT INTO Predios (direccion, fk_estado, fk_municipio, fk_productor)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO Predios (direccion, fk_estado, fk_municipio, fk_productor, nom_rancho)
+                VALUES (%s, %s, %s, %s, %s)
             """
-            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod))
+            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho))
             conn.commit()
 
         elif accion == "modificar":
@@ -475,6 +589,7 @@ def predios():
             direccion = request.form.get("direccion")
             fk_estado = request.form.get("fk_estado")
             fk_municipio = request.form.get("fk_municipio")
+            nom_rancho = request.form.get("nom_rancho")
             # Determinar fk_productor: si el usuario es Productor usar la sesión
             if session.get('rol') == 'Productor' and session.get('fk_productor'):
                 fk_prod = session.get('fk_productor')
@@ -483,10 +598,10 @@ def predios():
 
             sql = """
                 UPDATE Predios
-                SET direccion=%s, fk_estado=%s, fk_municipio=%s, fk_productor=%s
+                SET direccion=%s, fk_estado=%s, fk_municipio=%s, fk_productor=%s, nom_rancho=%s
                 WHERE pk_predio=%s
             """
-            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, pk))
+            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho, pk))
             conn.commit()
 
         elif accion == "eliminar":
@@ -635,17 +750,33 @@ def pesajes():
         # ===================== GET =====================
 
         # ---- LISTAR PESAJES ----
-        cursor.execute("""
-            SELECT 
-                p.pk_pesaje,
-                p.pesaje,
-                p.fecha,
-                a.pk_animal,
-                a.nombre
-            FROM Pesajes p
-            LEFT JOIN Animales a ON p.fk_animal = a.pk_animal
-            ORDER BY p.pk_pesaje DESC
-        """)
+        if session.get("rol") == "Productor":
+            # Solo mostrar pesajes de animales del productor actual
+            cursor.execute("""
+                SELECT 
+                    p.pk_pesaje,
+                    p.pesaje,
+                    p.fecha,
+                    a.pk_animal,
+                    a.nombre
+                FROM Pesajes p
+                LEFT JOIN Animales a ON p.fk_animal = a.pk_animal
+                WHERE a.fk_productor = %s
+                ORDER BY p.pk_pesaje DESC
+            """, (session.get("fk_productor"),))
+        else:
+            # Comprador ve todos los pesajes
+            cursor.execute("""
+                SELECT 
+                    p.pk_pesaje,
+                    p.pesaje,
+                    p.fecha,
+                    a.pk_animal,
+                    a.nombre
+                FROM Pesajes p
+                LEFT JOIN Animales a ON p.fk_animal = a.pk_animal
+                ORDER BY p.pk_pesaje DESC
+            """)
         pesajes = cursor.fetchall()
 
         # ---- ANIMALES PARA EL SELECT (FILTRADOS POR PRODUCTOR) ----
@@ -677,6 +808,35 @@ def pesajes():
         pesajes=pesajes,
         animales=animales
     )
+
+# ---- RUTA PARA OBTENER PREDIOS Y DIRECCIÓN ----
+@app.route("/obtener_predios")
+def obtener_predios():
+    """Devuelve lista de predios del productor actual con sus direcciones"""
+    try:
+        if session.get("rol") != "Productor":
+            return {"predios": []}, 403
+        
+        fk_productor = session.get("fk_productor")
+        conn, cursor = conectar_bd()
+        
+        cursor.execute("""
+            SELECT pk_predio, nom_rancho, direccion
+            FROM Predios
+            WHERE fk_productor=%s
+            ORDER BY nom_rancho
+        """, (fk_productor,))
+        
+        predios = cursor.fetchall()
+        conn.close()
+        
+        # Convertir a lista de diccionarios
+        resultado = [{"id": p[0], "nombre": p[1], "direccion": p[2]} for p in predios]
+        return {"predios": resultado}
+    
+    except Exception as e:
+        print(f"Error en obtener_predios: {e}")
+        return {"predios": [], "error": str(e)}, 500
 
 #_-------------------------------SIINIGA-------------------------------
 
@@ -773,66 +933,114 @@ def registro_siniga():
 
 
 # ---------------- SEGUIMIENTO VETERINARIO ----------------
-
 @app.route("/seguimiento", methods=["GET", "POST"])
 def seguimiento():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
     conn = None
     cursor = None
 
-    if request.method == "POST":
-        accion = request.form.get("accion")
+    try:
+        conn, cursor = conectar_bd()
 
-        try:
-            conn,cursor = conectar_bd()
-            # --- Obtener campos ---
+        # ===== POST =====
+        if request.method == "POST":
+            accion = request.form.get("accion")
             pk = request.form.get("pk")
             fk_animal = request.form.get("fk_animal")
-            tipo_tratamiento = request.form.get("tipo_tratamiento")
+            fk_tratamiento = request.form.get("fk_tratamiento")
+            medicamento = request.form.get("medicamento")
             fecha_actual = request.form.get("fecha_actual")
             prox_fecha = request.form.get("prox_fecha")
 
-            # --- REGISTRAR ---
             if accion == "registrar":
                 cursor.execute("""
-                    INSERT INTO Seguimiento_vet (fk_animal, tipo_tratamiento, fecha_actual, prox_fecha)
-                    VALUES (%s, %s, %s, %s)
-                """, (fk_animal, tipo_tratamiento, fecha_actual, prox_fecha))
+                    INSERT INTO Seguimiento_vet
+                    (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha)
+                    VALUES (%s,%s,%s,%s,%s)
+                """, (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha))
                 conn.commit()
-                flash("Seguimiento registrado correctamente", "success")
+                flash("Seguimiento registrado", "success")
 
-            # --- MODIFICAR ---
             elif accion == "modificar":
                 cursor.execute("""
-                    UPDATE Seguimiento_vet SET 
-                    fk_animal=%s, tipo_tratamiento=%s, fecha_actual=%s, prox_fecha=%s
+                    UPDATE Seguimiento_vet SET
+                        fk_animal=%s,
+                        fk_tratamiento=%s,
+                        medicamento=%s,
+                        fecha_actual=%s,
+                        prox_fecha=%s
                     WHERE pk_segui_vet=%s
-                """, (fk_animal, tipo_tratamiento, fecha_actual, prox_fecha, pk))
+                """, (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha, pk))
                 conn.commit()
-                flash("Seguimiento modificado correctamente", "info")
+                flash("Seguimiento actualizado", "info")
 
-            # --- ELIMINAR ---
             elif accion == "eliminar":
-                cursor.execute("DELETE FROM Seguimiento_vet WHERE pk_segui_vet=%s", (pk,))
+                cursor.execute(
+                    "DELETE FROM Seguimiento_vet WHERE pk_segui_vet=%s",
+                    (pk,)
+                )
                 conn.commit()
                 flash("Seguimiento eliminado", "danger")
 
-        except Exception as e:
-            flash(f"Error: {e}", "danger")
+        # ===== LISTADO SEGUIMIENTOS =====
+        cursor.execute("""
+            SELECT
+                s.pk_segui_vet,
+                s.fk_animal,
+                a.nombre,
+                t.pk_tratamiento,
+                t.nombre,
+                t.impacto,
+                s.medicamento,
+                s.fecha_actual,
+                s.prox_fecha
+            FROM Seguimiento_vet s
+            JOIN Animales a ON a.pk_animal = s.fk_animal
+            JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+            ORDER BY s.pk_segui_vet DESC
+        """)
+        seguimientos = cursor.fetchall()
 
-    # --- CONSULTAR REGISTROS ---
-    conn, cursor =conectar_bd()
-    cursor.execute("""
-        SELECT pk_segui_vet, fk_animal, tipo_tratamiento, fecha_actual, prox_fecha
-        FROM Seguimiento_vet
-        ORDER BY pk_segui_vet DESC
-    """)
-    seguimientos = cursor.fetchall()
+        # ===== ANIMALES =====
+        if session.get("rol") == "Productor":
+            cursor.execute("""
+                SELECT pk_animal, nombre
+                FROM Animales
+                WHERE fk_productor=%s
+            """, (session.get("fk_productor"),))
+        else:
+            cursor.execute("SELECT pk_animal, nombre FROM Animales")
+        animales = cursor.fetchall()
 
-    # --- obtener animales para el select ---
-    cursor.execute("SELECT pk_animal, nombre FROM Animales")
-    animales = cursor.fetchall()
+        # ===== TRATAMIENTOS =====
+        cursor.execute("""
+            SELECT pk_tratamiento, nombre, impacto
+            FROM tratamientos
+            ORDER BY nombre
+        """)
+        tratamientos = cursor.fetchall()
 
-    return render_template("seguimiento.html", seguimientos=seguimientos, animales=animales)
+        return render_template(
+            "seguimiento.html",
+            seguimientos=seguimientos,
+            animales=animales,
+            tratamientos=tratamientos
+        )
+
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        flash(f"Error: {e}", "danger")
+        return redirect(url_for("seguimiento"))
+
+    finally:
+        if cursor: cursor.close()
+        if conn: conn.close()
+
+
+
 #------------------------------------------------------------------------------------------
 
 # ----------------------VENTAS ---------------------------------------------
@@ -907,19 +1115,94 @@ def ventas():
                 flash("Venta eliminada", "danger")
 
         # CONSULTAR REGISTROS
-        cursor.execute("""
-            SELECT v.pk_venta, v.fk_animal, v.fk_pesaje, v.clave, v.precio, v.fecha_venta,
-                   a.nombre AS animal_nombre, p.pesaje
-            FROM Ventas v
-            LEFT JOIN Animales a ON v.fk_animal = a.pk_animal
-            LEFT JOIN Pesajes p ON v.fk_pesaje = p.pk_pesaje
-            ORDER BY v.pk_venta DESC
-        """)
+        # Mostrar detalles completos: animal, pesaje, raza, productor, rancho, dirección, precio
+        try:
+            if session.get("rol") == "Productor":
+                # Solo mostrar ventas de animales del productor actual
+                cursor.execute("""
+                    SELECT DISTINCT v.pk_venta, v.fk_animal, v.fk_pesaje, v.clave, v.precio, v.fecha_venta,
+                           a.nombre AS animal_nombre, 
+                           COALESCE(p.pesaje, (SELECT pesaje FROM Pesajes WHERE fk_animal = a.pk_animal ORDER BY fecha DESC LIMIT 1)) AS pesaje,
+                           r.nombre AS raza,
+                           pr.nombre AS productor, 
+                           (SELECT nom_rancho FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS nom_rancho,
+                           (SELECT direccion FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS direccion
+                    FROM Ventas v
+                    LEFT JOIN Animales a ON v.fk_animal = a.pk_animal
+                    LEFT JOIN Pesajes p ON v.fk_pesaje = p.pk_pesaje
+                    LEFT JOIN Razas r ON a.fk_raza = r.pk_raza
+                    LEFT JOIN Productores pr ON a.fk_productor = pr.pk_productor
+                    WHERE a.fk_productor = %s
+                    ORDER BY v.pk_venta DESC
+                """, (session.get("fk_productor"),))
+            else:
+                # Comprador ve todas las ventas
+                cursor.execute("""
+                    SELECT DISTINCT v.pk_venta, v.fk_animal, v.fk_pesaje, v.clave, v.precio, v.fecha_venta,
+                           a.nombre AS animal_nombre, 
+                           COALESCE(p.pesaje, (SELECT pesaje FROM Pesajes WHERE fk_animal = a.pk_animal ORDER BY fecha DESC LIMIT 1)) AS pesaje,
+                           r.nombre AS raza,
+                           pr.nombre AS productor, 
+                           (SELECT nom_rancho FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS nom_rancho,
+                           (SELECT direccion FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS direccion
+                    FROM Ventas v
+                    LEFT JOIN Animales a ON v.fk_animal = a.pk_animal
+                    LEFT JOIN Pesajes p ON v.fk_pesaje = p.pk_pesaje
+                    LEFT JOIN Razas r ON a.fk_raza = r.pk_raza
+                    LEFT JOIN Productores pr ON a.fk_productor = pr.pk_productor
+                    ORDER BY v.pk_venta DESC
+                """)
+        except Exception as e:
+            # Fallback: obtener pesaje del animal más reciente
+            if session.get("rol") == "Productor":
+                cursor.execute("""
+                    SELECT DISTINCT v.pk_venta, v.fk_animal, v.fk_pesaje, v.clave, v.precio, v.fecha_venta,
+                           a.nombre AS animal_nombre, 
+                           (SELECT pesaje FROM Pesajes WHERE fk_animal = a.pk_animal ORDER BY fecha DESC LIMIT 1) AS pesaje,
+                           r.nombre AS raza,
+                           pr.nombre AS productor, 
+                           (SELECT nom_rancho FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS nom_rancho,
+                           (SELECT direccion FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS direccion
+                    FROM Ventas v
+                    LEFT JOIN Animales a ON v.fk_animal = a.pk_animal
+                    LEFT JOIN Razas r ON a.fk_raza = r.pk_raza
+                    LEFT JOIN Productores pr ON a.fk_productor = pr.pk_productor
+                    WHERE a.fk_productor = %s
+                    ORDER BY v.pk_venta DESC
+                """, (session.get("fk_productor"),))
+            else:
+                cursor.execute("""
+                    SELECT DISTINCT v.pk_venta, v.fk_animal, v.fk_pesaje, v.clave, v.precio, v.fecha_venta,
+                           a.nombre AS animal_nombre, 
+                           (SELECT pesaje FROM Pesajes WHERE fk_animal = a.pk_animal ORDER BY fecha DESC LIMIT 1) AS pesaje,
+                           r.nombre AS raza,
+                           pr.nombre AS productor, 
+                           (SELECT nom_rancho FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS nom_rancho,
+                           (SELECT direccion FROM Predios WHERE fk_productor = pr.pk_productor LIMIT 1) AS direccion
+                    FROM Ventas v
+                    LEFT JOIN Animales a ON v.fk_animal = a.pk_animal
+                    LEFT JOIN Razas r ON a.fk_raza = r.pk_raza
+                    LEFT JOIN Productores pr ON a.fk_productor = pr.pk_productor
+                    ORDER BY v.pk_venta DESC
+                """)
         ventas_list = cursor.fetchall()
 
         # Animales para el select
-        cursor.execute("SELECT pk_animal, nombre FROM Animales")
-        animales = cursor.fetchall()
+        # Para Comprador: todos los animales (de todos los productores)
+        # Para Productor: solo sus animales
+        if session.get("rol") == "Productor":
+            fk = session.get("fk_productor")
+            if fk:
+                cursor.execute("SELECT pk_animal, nombre FROM Animales WHERE fk_productor=%s", (fk,))
+            else:
+                animales = []
+                flash("Error: Productor sin ID asociado", "warning")
+        else:
+            # Comprador ve todos los animales
+            cursor.execute("SELECT pk_animal, nombre FROM Animales")
+        
+        if session.get("rol") != "Productor" or session.get("fk_productor"):
+            animales = cursor.fetchall()
 
         # Pesajes para el select
         cursor.execute("SELECT pk_pesaje, pesaje FROM Pesajes")
@@ -942,18 +1225,47 @@ def ventas():
 # ------------ RUTA PARA CALCULAR PRECIO AUTOMÁTICO ----------------
 @app.route("/calcular_precio", methods=["POST"])
 def calcular_precio():
-    data = request.get_json()
-    animal_id = data["animal_id"]
+    try:
+        data = request.get_json()
+        animal_id = data.get("animal_id")
+        
+        if not animal_id:
+            return {"precio": 0, "status": "error", "message": "Sin animal_id"}, 400
 
-    conn, cursor = conectar_bd()
-    cursor.execute("CALL calcular_precio_animal(%s)", (animal_id,))
-    resultado = cursor.fetchone()  # [Animal, Sexo, Peso, Precio_kg, Total]
+        conn, cursor = conectar_bd()
+        if not conn:
+            return {"precio": 0, "status": "error", "message": "Error de conexión"}, 500
+        
+        total = 0
+        
+        try:
+            # Obtener el peso del animal (desde pesajes o peso_actual)
+            cursor.execute("""
+                SELECT COALESCE(
+                    (SELECT pesaje FROM Pesajes WHERE fk_animal=%s ORDER BY fecha DESC LIMIT 1),
+                    (SELECT peso_actual FROM Animales WHERE pk_animal=%s)
+                ) AS peso
+            """, (animal_id, animal_id))
+            result = cursor.fetchone()
+            peso = float(result[0]) if result and result[0] else 0
+            
+            # Calcular precio: peso * 100
+            precio_kg = 100
+            total = peso * precio_kg if peso > 0 else 0
+            
+            print(f"Animal ID: {animal_id}, Peso: {peso}, Precio: {total}")
+            
+        except Exception as e:
+            print(f"Error en cálculo de precio: {e}")
+            total = 0
 
-    total = resultado[4]  # Total calculado
+        conn.close()
+        return {"precio": float(total), "status": "success"}
+    
+    except Exception as e:
+        print(f"Error en calcular_precio: {e}")
+        return {"precio": 0, "status": "error", "message": str(e)}, 500
 
-    conn.close()
-
-    return {"precio": total}
 
 
 
@@ -989,22 +1301,44 @@ def razas():
                 origen = request.form.get("origen")
                 color = request.form.get("color")
 
-                cursor.execute("""
-                    UPDATE Razas
-                    SET nombre=%s, origen=%s, color=%s
-                    WHERE pk_raza=%s
-                """, (nombre, origen, color, pk))
-                conn.commit()
-                flash("Raza modificada correctamente", "info")
+                try:
+                    cursor.execute("""
+                        UPDATE Razas
+                        SET nombre=%s, origen=%s, color=%s
+                        WHERE pk_raza=%s
+                    """, (nombre, origen, color, pk))
+                    conn.commit()
+                    flash("Raza modificada correctamente", "info")
+                except mariadb.IntegrityError as ie:
+                    conn.rollback()
+                    flash(f"No se pudo modificar la raza por restricción de integridad: {ie}", "danger")
+                except Exception as e:
+                    conn.rollback()
+                    flash(f"Error al modificar raza: {e}", "danger")
 
             # ELIMINAR
             elif accion == "eliminar":
                 pk = request.form.get("pk")
-                cursor.execute("DELETE FROM Razas WHERE pk_raza=%s", (pk,))
-                conn.commit()
-                flash("Raza eliminada", "danger")
+                try:
+                    # Verificar si existen animales vinculados a esta raza
+                    cursor.execute("SELECT COUNT(*) FROM Animales WHERE fk_raza=%s", (pk,))
+                    row = cursor.fetchone()
+                    contador = int(row[0]) if row and row[0] is not None else 0
+                    if contador > 0:
+                        flash(f"No se puede eliminar la raza: existen {contador} animal(es) vinculados. Reasigne o elimine esos animales primero.", "danger")
+                    else:
+                        cursor.execute("DELETE FROM Razas WHERE pk_raza=%s", (pk,))
+                        conn.commit()
+                        flash("Raza eliminada", "danger")
+                except mariadb.IntegrityError as ie:
+                    conn.rollback()
+                    flash(f"No se pudo eliminar la raza por restricción de integridad: {ie}", "danger")
+                except Exception as e:
+                    conn.rollback()
+                    flash(f"Error al eliminar raza: {e}", "danger")
 
         # CONSULTAR REGISTROS
+        # Todos (Productor, Comprador, etc.) ven todas las razas disponibles
         cursor.execute("""
             SELECT pk_raza, nombre, origen, color
             FROM Razas
