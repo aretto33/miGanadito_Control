@@ -152,13 +152,6 @@ td {
                 <td>{{ a[7] }}</td>
 
                 <td>
-                <span class="estatus-badge {{ a[9]|lower }}">
-                    {{ a[9] }}
-                </span>
-            </td>
-
-
-                <td>
                     <img class="animal-img"
                          src="{{ url_for('imagen_animal', id=a[0], tipo='foto_perfil') }}"
                          onerror="this.style.display='none'">
@@ -167,6 +160,11 @@ td {
                     <img class="animal-img"
                          src="{{ url_for('imagen_animal', id=a[0], tipo='foto_lateral') }}"
                          onerror="this.style.display='none'">
+                </td>
+                <td>
+                    <span class="estatus-badge {{ a[9]|lower }}">
+                        {{ a[9] }}
+                    </span>
                 </td>
 
                 <td class="actions-cell">
@@ -181,9 +179,9 @@ td {
                     <button type="button" class="btn btn-small"
                         onclick='abrirFormEditar({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "fk_productor": a[11] if a|length > 11 else null, 
-                            "raza": a[5], "fk_raza": a[10] if a|length > 10 else null, 
-                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[9] if a|length > 9 else null
+                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else null, 
+                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else null, 
+                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[10] if a|length > 10 else null
                         } | tojson }})'>
                         Modificar
                     </button>
