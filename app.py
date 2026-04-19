@@ -15,68 +15,95 @@ import os
 
 app = Flask(__name__)
 app.secret_key = "SECRET_KEY_GANACONTROL_2025"
+ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
 
 
 @app.route('/static/img/<path:filename>')
 def legacy_static_img(filename):
     return send_from_directory(app.static_folder, filename)
 
-# -------------------- CONEXIÓN A LA BD --------------------
-#<def conectar_bd():
- #   try:
- #       conn = mariadb.connect(
- #           host="18.188.180.142",
- #           user="arletteg",
- #           password="123456",
- #           database="Proyecto_Ganaderia"
-#        )
- #       return conn, conn.cursor()
-#    except mariadb.Error as e:
-  #      print("Error de conexión:", e)
- #       return None, None
- 
 def conectar_bd():
     try:
         conn = mariadb.connect(
             host="localhost",
-            user="AdminGanaderia",
-            password="2025",
-            database="Proyecto_Ganaderia"
+            user="arletteg",
+            password="123456",
+            database="Proyecto_Ganaderia2"
         )
         return conn, conn.cursor()
     except mariadb.Error as e:
         print("Error de conexión:", e)
         return None, None
 
-# -------------------- VALIDAR CREDENCIALES --------------------
-def verificar_credenciales(usuario, password, rol):
+def normalizar_rol(rol):
+    if not rol:
+        return None
+    roles = {
+        "productor": "Productor",
+        "veterinario": "Veterinario",
+        "comprador": "Comprador",
+    }
+    return roles.get(rol.strip().lower())
+
+
+def verificar_credenciales(usuario, password, rol_nombre):
     conn, cursor = conectar_bd()
     if not conn:
         return False, "Error de conexión"
 
     try:
-        sql = """
-        SELECT id_usuario, usuario, password, rol, fk_productor
-        FROM usuarios 
-        WHERE usuario=%s AND rol=%s
-        """
-        cursor.execute(sql, (usuario, rol))
-        result = cursor.fetchone()
+        # Esquema legado: Usuarios + Rol
+        try:
+            cursor.execute("""
+                SELECT u.id_usuario, u.usuario, u.password, r.nombre
+                FROM Usuarios u
+                JOIN Rol r ON r.id_rol = u.fk_rol
+                WHERE u.usuario=%s AND r.nombre=%s
+            """, (usuario, rol_nombre))
+            row = cursor.fetchone()
+        except mariadb.Error:
+            row = None
 
-        if result:
-            id_user, db_user, db_pass, db_rol, db_fk = result
-            if db_pass == password:
-                return True, {"id_usuario": id_user, "rol": db_rol, "fk_productor": db_fk}
-            else:
+        if row:
+            id_usuario, db_user, db_pass, db_rol = row
+            if db_pass != password:
                 return False, "Contraseña incorrecta"
-        else:
+
+            fk_productor = None
+            if db_rol == "Productor":
+                try:
+                    cursor.execute(
+                        "SELECT pk_productor FROM Productores WHERE fk_usuario=%s",
+                        (id_usuario,)
+                    )
+                    p = cursor.fetchone()
+                    if p:
+                        fk_productor = p[0]
+                except mariadb.Error:
+                    fk_productor = None
+
+            return True, {"id_usuario": id_usuario, "rol": db_rol, "fk_productor": fk_productor}
+
+        # Esquema nuevo: usuarios con columna rol y fk_productor
+        cursor.execute("""
+            SELECT id_usuario, usuario, password, rol, fk_productor
+            FROM usuarios
+            WHERE usuario=%s AND rol=%s
+        """, (usuario, rol_nombre))
+        row = cursor.fetchone()
+        if not row:
             return False, "Usuario o rol no encontrado"
+
+        id_usuario, db_user, db_pass, db_rol, fk_productor = row
+        if db_pass != password:
+            return False, "Contraseña incorrecta"
+
+        return True, {"id_usuario": id_usuario, "rol": db_rol, "fk_productor": fk_productor}
 
     except Exception as e:
         return False, f"Error: {e}"
     finally:
         conn.close()
-
 
 # -------------------- LOGIN --------------------
 @app.route("/")
@@ -95,17 +122,21 @@ def login():
     if request.method == "POST":
         usuario = request.form["usuario"]
         contra = request.form["password"]
-        rol = request.form["rol"]
+        rol = normalizar_rol(request.form.get("rol"))
+        if rol not in ROLES_VALIDOS:
+            flash("Rol inválido", "danger")
+            return redirect(url_for("login"))
 
         exito, info = verificar_credenciales(usuario, contra, rol)
 
         if exito:
             session["usuario"] = usuario
             session["rol"] = rol
-            # SI ES PRODUCTOR, GUARDAMOS EL FK
-    # guardar fk_productor tomado de la BD (devuelto en info)
-        if isinstance(info, dict) and info.get("fk_productor"):
-            session["fk_productor"] = info.get("fk_productor")
+            session.pop("fk_productor", None)
+
+            # Si el usuario es productor, guardar su fk_productor en sesión.
+            if isinstance(info, dict) and info.get("fk_productor"):
+                session["fk_productor"] = info.get("fk_productor")
 
             flash(f"Bienvenido {usuario} ({rol})", "success")
             return redirect(url_for("dashboard"))
@@ -120,13 +151,13 @@ def login():
 #--------------- REGISTRAR -----------------
 @app.route("/register", methods=["GET", "POST"])
 def register():
-
     if request.method == "POST":
         usuario = request.form["usuario"]
         contra = request.form["password"]
-        rol = request.form["rol"]
-
-        prod_id = None  # Por defecto no tiene productor asignado
+        rol_nombre = normalizar_rol(request.form.get("rol"))
+        if rol_nombre not in ROLES_VALIDOS:
+            flash("Rol inválido", "danger")
+            return redirect(url_for("register"))
 
         conn, cursor = conectar_bd()
         if not conn:
@@ -134,46 +165,77 @@ def register():
             return redirect(url_for("register"))
 
         try:
-            # Si el rol es Veterinario o Comprador, asignar fk_productor por defecto = 10
-            if rol in ("Veterinario", "Comprador"):
-                prod_id = 10
+            try:
+                # Esquema legado
+                cursor.execute("SELECT id_rol FROM Rol WHERE nombre=%s", (rol_nombre,))
+                row = cursor.fetchone()
+                if not row:
+                    raise mariadb.Error("Rol no encontrado en tabla Rol")
+                fk_rol = row[0]
 
-            # SI ES PRODUCTOR, PRIMERO INSERTAR EN TABLA PRODUCTORES
-            if rol == "Productor":
-                nombre = request.form["prod_nombre"]
-                ap_pat = request.form["prod_apellido_pat"]
-                ap_mat = request.form["prod_apellido_mat"]
-
-                sql_prod = """
-                INSERT INTO Productores (nombre, apellido_pat, apellido_mat, UPP)
-                VALUES (%s, %s, %s,'No inscrito')
-                """
-                cursor.execute(sql_prod, (nombre, ap_pat, ap_mat))
+                cursor.execute("""
+                    INSERT INTO Usuarios (usuario, password, fk_rol)
+                    VALUES (%s, %s, %s)
+                """, (usuario, contra, fk_rol))
                 conn.commit()
+                id_usuario = cursor.lastrowid
 
-                prod_id = cursor.lastrowid
+                if rol_nombre == "Productor":
+                    cursor.execute("""
+                        INSERT INTO Productores (fk_usuario, nombre, apellido_pat, apellido_mat, RFC)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (
+                        id_usuario,
+                        request.form.get("prod_nombre"),
+                        request.form.get("prod_apellido_pat"),
+                        request.form.get("prod_apellido_mat"),
+                        request.form.get("prod_rfc")
+                    ))
+                    conn.commit()
 
-            # INSERTAR USUARIO
-            sql = """
-            INSERT INTO usuarios (usuario, password, rol, fk_productor)
-            VALUES (%s, %s, %s, %s)
-            """
-            cursor.execute(sql, (usuario, contra, rol, prod_id))
-            conn.commit()
+                elif rol_nombre == "Veterinario":
+                    cursor.execute("""
+                        INSERT INTO Veterinario (fk_usuario, nombre, apellidos, cedula, direccion_consultorio, telefono)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                    """, (
+                        id_usuario,
+                        request.form.get("vet_nombre"),
+                        request.form.get("vet_apellidos"),
+                        request.form.get("vet_cedula"),
+                        request.form.get("vet_direccion") or "Consultas a domicilio",
+                        request.form.get("vet_telefono")
+                    ))
+                    conn.commit()
+            except mariadb.Error:
+                # Esquema nuevo
+                prod_id = None
+                if rol_nombre == "Productor":
+                    cursor.execute("""
+                        INSERT INTO Productores (nombre, apellido_pat, apellido_mat, UPP)
+                        VALUES (%s, %s, %s, 'No inscrito')
+                    """, (
+                        request.form.get("prod_nombre"),
+                        request.form.get("prod_apellido_pat"),
+                        request.form.get("prod_apellido_mat"),
+                    ))
+                    conn.commit()
+                    prod_id = cursor.lastrowid
+
+                cursor.execute("""
+                    INSERT INTO usuarios (usuario, password, rol, fk_productor)
+                    VALUES (%s, %s, %s, %s)
+                """, (usuario, contra, rol_nombre, prod_id))
+                conn.commit()
 
             flash("Usuario registrado correctamente", "success")
             return redirect(url_for("login"))
-        
-        
 
         except mariadb.Error as e:
             flash(f"No se pudo registrar: {e}", "danger")
-
         finally:
             conn.close()
 
     return render_template("register.html")
-
 
 #----------------- Dashboard -----------------
 @app.route("/dashboard")
@@ -253,7 +315,7 @@ def dashboard():
 
         # ESTATUS ANIMALES
         cursor.execute("""
-            SELECT nombre, estatus_actual
+            SELECT nombre, 'Sin estatus' AS estatus_actual
             FROM Animales
             WHERE fk_productor = %s
             ORDER BY nombre
@@ -420,7 +482,7 @@ def animales():
                 SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
-                       a.estatus_actual,
+                       'Sin estatus' AS estatus_actual,
                        a.fk_predio, r.pk_raza, a.fk_productor
                 FROM Animales a
                 LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
@@ -434,7 +496,7 @@ def animales():
                 SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
-                       a.estatus_actual,
+                       'Sin estatus' AS estatus_actual,
                        a.fk_predio, r.pk_raza, a.fk_productor
                 FROM Animales a
                 LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
@@ -662,12 +724,11 @@ def mi_productor():
         nombre = request.form.get("nombre")
         apellido_pat = request.form.get("apellido_pat")
         apellido_mat = request.form.get("apellido_mat")
-        upp = request.form.get("UPP")
         rfc = request.form.get("RFC")
 
         sql = """
             UPDATE Productores
-            SET nombre=%s, apellido_pat=%s, apellido_mat=%s, UPP=%s, RFC=%s
+            SET nombre=%s, apellido_pat=%s, apellido_mat=%s, RFC=%s
             WHERE pk_productor=%s
         """
 
@@ -683,7 +744,7 @@ def mi_productor():
 
     # --- OBTENER DATOS DEL PRODUCTOR LOGUEADO ---
     cursor.execute("""
-        SELECT pk_productor, nombre, apellido_pat, apellido_mat, UPP, RFC
+        SELECT pk_productor, nombre, apellido_pat, apellido_mat, RFC
         FROM Productores
         WHERE pk_productor=%s
     """, (fk_productor,))
