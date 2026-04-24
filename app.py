@@ -56,6 +56,7 @@ def verificar_credenciales(usuario, password, rol_nombre):
             """, (usuario, rol_nombre))
             row = cursor.fetchone()
         except mariadb.Error:
+            conn.rollback()
             row = None
 
         if row:
@@ -74,6 +75,7 @@ def verificar_credenciales(usuario, password, rol_nombre):
                     if p:
                         fk_productor = p[0]
                 except mariadb.Error:
+                    conn.rollback()
                     fk_productor = None
 
             return True, {"id_usuario": id_usuario, "rol": db_rol, "fk_productor": fk_productor}
@@ -211,6 +213,7 @@ def register():
                     ))
                     conn.commit()
             except mariadb.Error:
+                conn.rollback()
                 # Esquema nuevo
                 prod_id = None
                 if rol_nombre == "Productor":
