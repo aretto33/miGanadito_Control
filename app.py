@@ -16,14 +16,15 @@ from ganacontrol.db_compat import db as mariadb
 from ganacontrol.db import get_connection
 
 
-app = Flask(__name__, static_folder="public", static_url_path="/static")
+app = Flask(__name__, static_folder="public", static_url_path="")
 app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
 
 
-@app.route('/static/img/<path:filename>')
-def legacy_static_img(filename):
-    return send_from_directory(app.static_folder, filename)
+@app.route('/static/<path:filename>')
+def legacy_static(filename):
+    # Compatibilidad con rutas antiguas /static/... ahora que Vercel sirve public/ desde la raiz.
+    return redirect(url_for('static', filename=filename), code=307)
 
 def conectar_bd(dictionary=False):
     return get_connection(dictionary=dictionary)
@@ -106,37 +107,47 @@ def inicio():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    conn, cursor = conectar_bd()
+    conn = None
+    productores = []
 
-    # OBTENER PRODUCTORES PARA EL SELECT
-    cursor.execute("SELECT pk_productor, nombre FROM Productores")
-    productores = cursor.fetchall()
+    try:
+        conn, cursor = conectar_bd()
+        if conn:
+            try:
+                cursor.execute("SELECT pk_productor, nombre FROM Productores")
+                productores = cursor.fetchall()
+            except Exception:
+                productores = []
 
-    if request.method == "POST":
-        usuario = request.form["usuario"]
-        contra = request.form["password"]
-        rol = normalizar_rol(request.form.get("rol"))
-        if rol not in ROLES_VALIDOS:
-            flash("Rol inválido", "danger")
-            return redirect(url_for("login"))
+        if request.method == "POST":
+            usuario = request.form["usuario"]
+            contra = request.form["password"]
+            rol = normalizar_rol(request.form.get("rol"))
+            if rol not in ROLES_VALIDOS:
+                flash("Rol inválido", "danger")
+                return redirect(url_for("login"))
 
-        exito, info = verificar_credenciales(usuario, contra, rol)
+            exito, info = verificar_credenciales(usuario, contra, rol)
 
-        if exito:
-            session["usuario"] = usuario
-            session["rol"] = rol
-            session.pop("fk_productor", None)
+            if exito:
+                session["usuario"] = usuario
+                session["rol"] = rol
+                session.pop("fk_productor", None)
 
-            # Si el usuario es productor, guardar su fk_productor en sesión.
-            if isinstance(info, dict) and info.get("fk_productor"):
-                session["fk_productor"] = info.get("fk_productor")
+                if isinstance(info, dict) and info.get("fk_productor"):
+                    session["fk_productor"] = info.get("fk_productor")
 
-            flash(f"Bienvenido {usuario} ({rol})", "success")
-            return redirect(url_for("dashboard"))
-        else:
+                flash(f"Bienvenido {usuario} ({rol})", "success")
+                return redirect(url_for("dashboard"))
+
             flash(info, "danger")
 
-    conn.close()
+    except Exception as e:
+        print("Error en login:", e)
+        flash("No se pudo procesar el inicio de sesión. Revisa la base de datos y vuelve a intentar.", "danger")
+    finally:
+        if conn:
+            conn.close()
 
     return render_template("login.html", productores=productores)
 
@@ -260,62 +271,63 @@ def dashboard():
     else:
         view = "productor"
 
-    conn, cursor = conectar_bd()
+    conn = None
+    try:
+        conn, cursor = conectar_bd()
+        if not conn:
+            raise RuntimeError("No se pudo establecer la conexión con la base de datos.")
 
-    # =========================
-    # PRODUCTOR
-    # =========================
-    if fk_productor:
-        cursor.execute(
-            "SELECT nombre FROM Productores WHERE pk_productor=%s",
-            (fk_productor,)
-        )
-        row = cursor.fetchone()
-        if row:
-            productor_nombre = row[0]
+        if fk_productor:
+            cursor.execute(
+                "SELECT nombre FROM Productores WHERE pk_productor=%s",
+                (fk_productor,)
+            )
+            row = cursor.fetchone()
+            if row:
+                productor_nombre = row[0]
 
-        # ARETES
-        cursor.execute("""
-            SELECT r.arete, a.nombre
-            FROM Registro_SINIGA r
-            INNER JOIN Animales a ON r.fk_animal = a.pk_animal
-            WHERE a.fk_productor = %s
-            ORDER BY r.arete
-        """, (fk_productor,))
-        aretes = cursor.fetchall()
+            cursor.execute("""
+                SELECT r.arete, a.nombre
+                FROM Registro_SINIGA r
+                INNER JOIN Animales a ON r.fk_animal = a.pk_animal
+                WHERE a.fk_productor = %s
+                ORDER BY r.arete
+            """, (fk_productor,))
+            aretes = cursor.fetchall()
 
-        # PREDIOS
-        cursor.execute("""
-            SELECT pk_predio, nom_rancho
-            FROM Predios
-            WHERE fk_productor = %s
-            ORDER BY nom_rancho
-        """, (fk_productor,))
-        predios = cursor.fetchall()
+            cursor.execute("""
+                SELECT pk_predio, nom_rancho
+                FROM Predios
+                WHERE fk_productor = %s
+                ORDER BY nom_rancho
+            """, (fk_productor,))
+            predios = cursor.fetchall()
 
-        # CONTADORES
-        cursor.execute(
-            "SELECT COUNT(*) FROM Animales WHERE fk_productor=%s",
-            (fk_productor,)
-        )
-        total_animales = cursor.fetchone()[0]
+            cursor.execute(
+                "SELECT COUNT(*) FROM Animales WHERE fk_productor=%s",
+                (fk_productor,)
+            )
+            total_animales = cursor.fetchone()[0]
 
-        cursor.execute(
-            "SELECT COUNT(*) FROM Predios WHERE fk_productor=%s",
-            (fk_productor,)
-        )
-        total_predios = cursor.fetchone()[0]
+            cursor.execute(
+                "SELECT COUNT(*) FROM Predios WHERE fk_productor=%s",
+                (fk_productor,)
+            )
+            total_predios = cursor.fetchone()[0]
 
-        # ESTATUS ANIMALES
-        cursor.execute("""
-            SELECT nombre, 'Sin estatus' AS estatus_actual
-            FROM Animales
-            WHERE fk_productor = %s
-            ORDER BY nombre
-        """, (fk_productor,))
-        estados_animales = cursor.fetchall()
-
-    conn.close()
+            cursor.execute("""
+                SELECT nombre, 'Sin estatus' AS estatus_actual
+                FROM Animales
+                WHERE fk_productor = %s
+                ORDER BY nombre
+            """, (fk_productor,))
+            estados_animales = cursor.fetchall()
+    except Exception as e:
+        print("Error en dashboard:", e)
+        flash("Se cargó el panel, pero faltan datos o tablas por configurar en la base.", "warning")
+    finally:
+        if conn:
+            conn.close()
 
     return render_template(
         "dashboard.html",
