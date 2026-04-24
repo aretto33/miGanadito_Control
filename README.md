@@ -2,7 +2,7 @@
 
 <img width="1920" height="350" alt="image" src="https://github.com/aretto33/miGanadito_Control/blob/main/static/banner.png?raw=true" />
 
-Sistema web de gestion ganadera construido con Flask, plantillas Jinja y MariaDB.
+Sistema web de gestion ganadera construido con Flask y plantillas Jinja. El proyecto mantiene compatibilidad local con MySQL/MariaDB y esta preparado para deploy en Vercel con Supabase Postgres.
 
 ## Estructura actual
 
@@ -34,56 +34,72 @@ miGanadito_Control/
 pip install -r requirements.txt
 ```
 
-3. Copia `.env.example` a `.env` y ajusta tus credenciales de MariaDB.
+3. Copia `.env.example` a `.env` y ajusta las variables segun tu entorno local.
 4. Ejecuta la aplicacion:
 
 ```bash
 python app.py
 ```
 
-## Deploy sugerido
+## Deploy en Vercel con Supabase
 
-Para despliegue en servidores tipo Render, Railway o VPS:
+Esta aplicacion queda preparada para desplegarse en Vercel como app Flask y conectarse a Supabase Postgres usando `DATABASE_URL`.
 
-```bash
-gunicorn wsgi:application
-```
-
-## Deploy en Railway con MySQL
-
-Esta aplicacion ya puede leer automaticamente las variables que Railway crea para su servicio MySQL:
-
-- `MYSQLHOST`
-- `MYSQLPORT`
-- `MYSQLUSER`
-- `MYSQLPASSWORD`
-- `MYSQLDATABASE`
-
-### Pasos recomendados
-
-1. Sube este repositorio a GitHub.
-2. En Railway crea un proyecto nuevo.
-3. Agrega un servicio `MySQL` desde `+ New`.
-4. Agrega tu repositorio como servicio web en el mismo proyecto.
-5. Railway detectara el `Dockerfile` y construira la app automaticamente.
-6. En el servicio web agrega al menos estas variables:
+### Variables necesarias en Vercel
 
 ```text
 SECRET_KEY=pon_aqui_un_valor_seguro
 FLASK_DEBUG=false
+DATABASE_URL=postgres://...
 ```
 
-7. Si Railway no enlaza automaticamente el puerto, usa como Start Command:
+Usa en Supabase la cadena de conexion del pooler para trafico serverless.
 
-```bash
-gunicorn --bind 0.0.0.0:$PORT wsgi:application
+### Variables que NO necesitas en Vercel para este deploy
+
+Estas no hacen la conexion a Postgres y pueden confundirte si las agregas pensando que sustituyen `DATABASE_URL`:
+
+```text
+SUPABASE_URL
+SUPABASE_KEY
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
 ```
 
-### Base de datos
+`SUPABASE_URL` y `SUPABASE_KEY` sirven para la API de Supabase, no para que Flask se conecte a la base.
 
-- La app tomara las credenciales desde las variables `MYSQL...` del servicio MySQL.
-- Importa tu esquema y datos usando `backup2.sql`.
-- Haz respaldos periodicos, porque la base en Railway no sustituye una estrategia formal de backup.
+### Pasos recomendados
+
+1. Sube este repositorio a GitHub.
+2. Crea un proyecto en Supabase.
+3. Copia la cadena `DATABASE_URL` desde `Connect`.
+4. En Vercel importa este repositorio.
+5. Agrega las variables de entorno del bloque anterior.
+6. Haz `Redeploy` para que Vercel tome las variables nuevas.
+7. Despliega. Vercel usara [vercel.json](vercel.json) y detectara `app.py`.
+
+### Checklist rapido antes de hacer deploy
+
+- `DATABASE_URL` tiene tu password real, no `[YOUR-PASSWORD]`.
+- `FLASK_DEBUG` esta en `false`.
+- `SECRET_KEY` ya no usa el valor de ejemplo.
+- El esquema SQL ya existe en Supabase.
+- El repo ya tiene subidos [vercel.json](vercel.json), [requirements.txt](requirements.txt) y [public/](/Users/arletteguzmandelacruz/miGanadito_Control/public).
+
+### Archivos de soporte
+
+- [vercel.json](vercel.json): configuracion de runtime y rewrites.
+- [.vercelignore](.vercelignore): excluye archivos pesados o locales.
+- [public/](/Users/arletteguzmandelacruz/miGanadito_Control/public): archivos estaticos para Vercel.
+
+### Importante sobre la base de datos
+
+- `backup2.sql` es un dump de MariaDB y no se puede importar directo en Supabase sin conversion.
+- La ruta del PDF del animal ya no depende de un procedimiento almacenado de MariaDB.
+- Si quieres mover tus datos reales a Supabase, lo recomendable es convertir el esquema a PostgreSQL primero.
 
 ## Siguiente refactor recomendado
 

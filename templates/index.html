@@ -1,110 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
 
-<style>
-/* Marco 'raro' para imágenes */
-.fancy-frame {
-  position: relative;
-  display: inline-block;
-  border-radius: 14px;
-  padding: 12px;
-  background: linear-gradient(135deg, #fff 0%, #f7efe5 100%);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.12), inset 0 3px 10px rgba(255,255,255,0.6);
-  transition: transform .25s, box-shadow .25s;
-  overflow: hidden;
-}
-.fancy-frame img {
-  display: block;
-  border-radius: 8px;
-  width: 100%;
-  height: auto;
-  transform: rotate(-2deg);
-  transition: transform .25s;
-}
-.fancy-frame:before,
-.fancy-frame:after {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  border-radius: 14px;
-}
-.fancy-frame:before {
-  inset: -8px;
-  background: linear-gradient(90deg, rgba(215,179,147,0.10), rgba(215,179,147,0));
-  transform: rotate(-3deg);
-  z-index: -1;
-}
-.fancy-frame:after {
-  width: 48px;
-  height: 48px;
-  right: 8px;
-  bottom: 8px;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 50%);
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.06);
-}
-.fancy-frame:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.18);
-}
-.fancy-frame:hover img { transform: rotate(0deg) scale(1.02); }
-@media (max-width:767.98px) {
-  .fancy-frame { padding: 8px; }
-  .fancy-frame:before { inset: -6px; }
-}
-</style>
+<section class="hero-section">
+    <div class="hero-copy">
+        <span class="hero-kicker">Gestión ganadera para microproductores</span>
+        <h1 class="hero-title">Controla tu ganado con una plataforma cercana, clara y práctica.</h1>
+        <p class="hero-text">
+            MiGanadito Control ayuda a registrar animales, organizar predios, dar seguimiento y
+            mantener trazabilidad con una experiencia sencilla para productores tabasqueños.
+        </p>
 
-<div class="text-center">
-    <img src="{{ url_for('static', filename='img/banner.png') }}" 
-         class="img-fluid mb-4"
-         style="max-height:200px">
-</div>
-
-<h1 class="fw-bold text-center titulo-cafe">Bienvenido a MIGANADITO_CONTROL
-</h1>
-<p class="fs-5 text-secondary text-center">Sistema integral de gestión ganadera</p>
-
-<!-- CONTENEDOR PRINCIPAL -->
-<div class="d-flex justify-content-center align-items-center mt-4" style="gap: 30px; flex-wrap: wrap;">
-
-    <!-- Imagenes apiladas -->
-    <div style="max-width:400px; text-align:center;">
-        <div class="fancy-frame mb-3">
-            <img src="{{ url_for('static', filename='img/principal.png') }}" 
-                 alt="Principal">
+        <div class="hero-actions">
+            <a href="{{ url_for('login') }}" class="btn-cafe btn-cafe-primary">Entrar al sistema</a>
+            <a href="{{ url_for('register') }}" class="btn-cafe btn-cafe-soft">Crear cuenta</a>
         </div>
-        <div class="fancy-frame">
-            <img src="{{ url_for('static', filename='img/vaca2.png') }}" 
-                 alt="Vaca">
+
+        <div class="hero-meta">
+            <div class="hero-meta-card">
+                <strong>SIINIGA</strong>
+                <span>Documentos y registros importantes en un solo lugar.</span>
+            </div>
+            <div class="hero-meta-card">
+                <strong>Trazabilidad</strong>
+                <span>Seguimiento de nacimientos, ventas y control animal.</span>
+            </div>
         </div>
     </div>
 
-    <!-- Descripción -->
-    <div style="max-width:400px; text-align: justify;">
-        <p>
-            MIGANADITO_CONTROL es una herramienta diseñada para optimizar la administración ganadera de los micro-productores Tabasqueños.
-            Permite registrar animales, gestionar los nacimientos, ventas y trazabilidad en una base 
-            de datos centralizada, ofreciendo un control completo y eficiente para micro-productores ofreciendo la función de generar PDF para los trámites importantes en SIINIGA.
+    <div class="hero-visual">
+        <div class="fancy-frame fancy-frame-large">
+            <img src="{{ url_for('static', filename='img/principal.png') }}" alt="Panel principal">
+        </div>
+        <div class="hero-floating-card">
+            <img src="{{ url_for('static', filename='img/vaca2.png') }}" alt="Ganado">
+            <p>Diseñado para una administración más humana y ordenada del rancho.</p>
+        </div>
+    </div>
+</section>
 
-        </p>
-        <br>
+<section class="home-section">
+    <div class="home-section-copy">
+        <h2 class="section-title">Una herramienta pensada para el campo</h2>
         <p>
-            Tabasco sólo aporta un 1.8% de producción Ganadera a nivel nacional, sin embargo la ganadería es un medio principal económico de muchas familias tabasqueñas. La tecnología y ganaderia en Tabasco en muy poco implementada o casi n o se desarrollan software de ingenieros tabasqueños para este sector, por lo que hemos decidido empezar este proyecto DEMO.
-            Para su elaboración hemos indagado y de mano con micro-ganaderos, encontrar una solución a la trazabilidad ganadera tabasqueña.
+            La ganadería en Tabasco sostiene a muchas familias, pero la digitalización todavía tiene mucho espacio para crecer.
+            Este proyecto busca acercar herramientas útiles, visuales y fáciles de usar para mejorar el control diario del productor.
         </p>
-        <br>
-        <a href= "{{ url_for('album_razas') }}" class="btn-cafe">Identifica el tipo de raza</a>
-        <a href= "{{ url_for('tabla_precio') }}" class="btn-cafe">Tablas de Precios</a>
+        <p>
+            Desde el registro de animales hasta la consulta de razas y tablas de precios, la plataforma concentra funciones
+            clave para que el manejo de la información sea más rápido y confiable.
+        </p>
+        <div class="hero-actions hero-actions-inline">
+            <a href="{{ url_for('album_razas') }}" class="btn-cafe btn-cafe-soft">Identifica el tipo de raza</a>
+            <a href="{{ url_for('tabla_precio') }}" class="btn-cafe btn-cafe-primary">Ver tablas de precios</a>
+        </div>
     </div>
 
+    <div class="home-highlight-card">
+        <img src="{{ url_for('static', filename='img/banner.png') }}" alt="MiGanadito Control" class="home-banner">
+        <div class="home-highlight-content">
+            <h3>Hecho para una operación real</h3>
+            <ul class="feature-list">
+                <li>Registro de animales y pesajes.</li>
+                <li>Control de predios y productores.</li>
+                <li>Seguimiento veterinario y ventas.</li>
+                <li>Apoyo visual con razas y consulta de precios.</li>
+            </ul>
+        </div>
+    </div>
+</section>
 
-
-</div>
-
-<!-- VACA ABAJO -->
-<div class="text-center mt-4">
-    <img src="{{ url_for('static', filename='img/vaca1.gif') }}" 
-         class="img-fluid"
-         style="max-width:180px;">
+<div class="home-mascot">
+    <img src="{{ url_for('static', filename='img/vaca1.gif') }}" alt="Mascota animada">
 </div>
 
 {% endblock %}

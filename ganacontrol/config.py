@@ -9,7 +9,10 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "SECRET_KEY_GANACONTROL_2025")
 
-    # Compatibilidad con variables locales y variables automaticas de Railway MySQL.
+    # Vercel + Supabase: usar la cadena completa del pooler de transacciones.
+    DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL")
+
+    # Compatibilidad con modo local MySQL/MariaDB y variables automaticas de Railway.
     DB_HOST = os.getenv("DB_HOST") or os.getenv("MYSQLHOST", "localhost")
     DB_PORT = int(os.getenv("DB_PORT") or os.getenv("MYSQLPORT", "3306"))
     DB_USER = os.getenv("DB_USER") or os.getenv("MYSQLUSER", "arletteg")

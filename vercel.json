@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "functions": {
+    "app.py": {
+      "runtime": "python3.12",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/app.py"
+    }
+  ]
+}
+

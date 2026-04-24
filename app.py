@@ -3,7 +3,6 @@ from flask import (
     session, flash, Response, send_from_directory,
     send_file, make_response, Blueprint
 )
-import mariadb
 from fpdf import FPDF
 from datetime import datetime
 import io
@@ -13,10 +12,11 @@ from PIL import Image
 import os
 
 from ganacontrol.config import Config
+from ganacontrol.db_compat import db as mariadb
 from ganacontrol.db import get_connection
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="public", static_url_path="/static")
 app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
 
@@ -1570,9 +1570,34 @@ def pdf_animal():
         if not conn:
             return "Error al conectar a la base de datos", 500
 
-        # LLAMADA CORRECTA A PROCEDIMIENTO (MariaDB)
-        cursor.callproc("Datos_animal", (arete, int(predio)))
-
+        cursor.execute(
+            """
+            SELECT
+                r.arete,
+                a.nombre,
+                a.sexo,
+                a.cruze,
+                a.peso_actual,
+                pr.nombre AS productor,
+                p.UPP,
+                pr.RFC,
+                p.nom_rancho,
+                p.direccion,
+                e.Nombre AS estado,
+                m.Nombre AS municipio,
+                a.foto_perfil,
+                a.foto_lateral
+            FROM Registro_SINIGA r
+            JOIN Animales a ON r.fk_animal = a.pk_animal
+            LEFT JOIN Predios p ON p.pk_predio = %s
+            LEFT JOIN Productores pr ON pr.pk_productor = a.fk_productor
+            LEFT JOIN Estados e ON e.pk_estado = p.fk_estado
+            LEFT JOIN Municipios m ON m.pk_municipio = p.fk_municipio
+            WHERE r.arete = %s AND p.pk_predio = %s
+            LIMIT 1
+            """,
+            (int(predio), arete, int(predio))
+        )
         animal = cursor.fetchone()
 
         if not animal:
