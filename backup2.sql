@@ -314,17 +314,10 @@ CREATE TABLE `Productores` (
 --
 
 LOCK TABLES `Productores` WRITE;
-/*!40000 ALTER TABLE `Productores` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Productores` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Table structure for table `Razas`
---
 
 DROP TABLE IF EXISTS `Razas`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Razas` (
   `pk_raza` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(100) NOT NULL,
@@ -333,20 +326,11 @@ CREATE TABLE `Razas` (
   PRIMARY KEY (`pk_raza`),
   UNIQUE KEY `nombre` (`nombre`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Razas`
---
 
 LOCK TABLES `Razas` WRITE;
-/*!40000 ALTER TABLE `Razas` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Razas` ENABLE KEYS */;
+
 UNLOCK TABLES;
 
---
--- Table structure for table `Registro_SINIGA`
---
 
 DROP TABLE IF EXISTS `Registro_SINIGA`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -359,20 +343,10 @@ CREATE TABLE `Registro_SINIGA` (
   UNIQUE KEY `fk_animal` (`fk_animal`),
   CONSTRAINT `Registro_SINIGA_ibfk_1` FOREIGN KEY (`fk_animal`) REFERENCES `Animales` (`pk_animal`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Registro_SINIGA`
---
 
 LOCK TABLES `Registro_SINIGA` WRITE;
-/*!40000 ALTER TABLE `Registro_SINIGA` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Registro_SINIGA` ENABLE KEYS */;
-UNLOCK TABLES;
 
---
--- Table structure for table `Rol`
---
+UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `Rol`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -382,15 +356,9 @@ CREATE TABLE `Rol` (
   `nombre` varchar(50) NOT NULL,
   PRIMARY KEY (`id_rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Rol`
---
 
 LOCK TABLES `Rol` WRITE;
-/*!40000 ALTER TABLE `Rol` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Rol` ENABLE KEYS */;
+
 UNLOCK TABLES;
 
 --
@@ -410,20 +378,11 @@ CREATE TABLE `Seguimiento_vet` (
   KEY `fk_animal` (`fk_animal`),
   CONSTRAINT `Seguimiento_vet_ibfk_1` FOREIGN KEY (`fk_animal`) REFERENCES `Animales` (`pk_animal`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Seguimiento_vet`
---
 
 LOCK TABLES `Seguimiento_vet` WRITE;
-/*!40000 ALTER TABLE `Seguimiento_vet` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Seguimiento_vet` ENABLE KEYS */;
+
 UNLOCK TABLES;
 
---
--- Table structure for table `Servicios`
---
 
 DROP TABLE IF EXISTS `Servicios`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -440,24 +399,14 @@ CREATE TABLE `Servicios` (
   CONSTRAINT `Servicios_ibfk_1` FOREIGN KEY (`fk_veterinario`) REFERENCES `Veterinario` (`id_veterinario`),
   CONSTRAINT `Servicios_ibfk_2` FOREIGN KEY (`fk_productor`) REFERENCES `Productores` (`pk_productor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Servicios`
---
 
 LOCK TABLES `Servicios` WRITE;
-/*!40000 ALTER TABLE `Servicios` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Servicios` ENABLE KEYS */;
+
 UNLOCK TABLES;
 
---
--- Table structure for table `Usuarios`
---
 
 DROP TABLE IF EXISTS `Usuarios`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
+
 CREATE TABLE `Usuarios` (
   `id_usuario` int(11) NOT NULL AUTO_INCREMENT,
   `usuario` varchar(50) NOT NULL,
@@ -468,24 +417,14 @@ CREATE TABLE `Usuarios` (
   KEY `fk_rol` (`fk_rol`),
   CONSTRAINT `Usuarios_ibfk_1` FOREIGN KEY (`fk_rol`) REFERENCES `Rol` (`id_rol`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Usuarios`
---
 
 LOCK TABLES `Usuarios` WRITE;
-/*!40000 ALTER TABLE `Usuarios` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Usuarios` ENABLE KEYS */;
+
 UNLOCK TABLES;
 
---
--- Table structure for table `Veterinario`
---
 
 DROP TABLE IF EXISTS `Veterinario`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
+
 CREATE TABLE `Veterinario` (
   `id_veterinario` int(11) NOT NULL AUTO_INCREMENT,
   `fk_usuario` int(11) NOT NULL,
@@ -498,24 +437,7 @@ CREATE TABLE `Veterinario` (
   KEY `fk_usuario` (`fk_usuario`),
   CONSTRAINT `Veterinario_ibfk_1` FOREIGN KEY (`fk_usuario`) REFERENCES `Usuarios` (`id_usuario`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Veterinario`
---
 
 LOCK TABLES `Veterinario` WRITE;
-/*!40000 ALTER TABLE `Veterinario` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Veterinario` ENABLE KEYS */;
+
 UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2026-04-05  0:46:52
