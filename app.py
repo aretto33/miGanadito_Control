@@ -12,9 +12,12 @@ from reportlab.pdfgen import canvas
 from PIL import Image
 import os
 
+from ganacontrol.config import Config
+from ganacontrol.db import get_connection
+
 
 app = Flask(__name__)
-app.secret_key = "SECRET_KEY_GANACONTROL_2025"
+app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
 
 
@@ -22,18 +25,8 @@ ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
 def legacy_static_img(filename):
     return send_from_directory(app.static_folder, filename)
 
-def conectar_bd():
-    try:
-        conn = mariadb.connect(
-            host="localhost",
-            user="arletteg",
-            password="123456",
-            database="Proyecto_Ganaderia2"
-        )
-        return conn, conn.cursor()
-    except mariadb.Error as e:
-        print("Error de conexión:", e)
-        return None, None
+def conectar_bd(dictionary=False):
+    return get_connection(dictionary=dictionary)
 
 def normalizar_rol(rol):
     if not rol:
@@ -1573,13 +1566,9 @@ def pdf_animal():
     cursor = None
 
     try:
-        conn = mariadb.connect(
-            host="localhost",
-            user="AdminGanaderia",
-            password="2025",
-            database="Proyecto_Ganaderia"
-        )
-        cursor = conn.cursor(dictionary=True)
+        conn, cursor = conectar_bd(dictionary=True)
+        if not conn:
+            return "Error al conectar a la base de datos", 500
 
         # LLAMADA CORRECTA A PROCEDIMIENTO (MariaDB)
         cursor.callproc("Datos_animal", (arete, int(predio)))
@@ -1657,10 +1646,6 @@ def generar_pdf_animal(animal):
 
 
 app.register_blueprint(bp)
-# -------------------- PROGRAMA PRINCIPAL --------------------
-if __name__ == "__main__":
-    app.run(debug=True)
-    
 
 @app.route('/login_as')
 def login_as():
@@ -1672,3 +1657,8 @@ def login_as():
     session['fk_productor'] = None
     flash('Sesión creada como Veterinario de prueba (test_vet)', 'info')
     return redirect(url_for('dashboard_vet'))
+
+
+# -------------------- PROGRAMA PRINCIPAL --------------------
+if __name__ == "__main__":
+    app.run(debug=app.config["FLASK_DEBUG"])
