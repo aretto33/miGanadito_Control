@@ -31,12 +31,7 @@ input {
     padding: 12px;
     width: 100%;
     border-radius: 6px;
-    cursor: pointer;
     border: none;
-    margin-top: 10px;
-}
-.btn-guardar:hover {
-    background: #6b452e;
 }
 </style>
 
@@ -46,25 +41,28 @@ input {
          style="max-height:200px">
 </div>
 
-<p class="text-center mt-3 mb-3">Modificar mis datos </p>
+<p class="text-center mt-3 mb-3">Modificar mis datos</p>
 
 <div class="form-box">
     <form method="POST">
 
-        <label>Nombre</label>
-        <input type="text" name="nombre" value="{{ productor[1] }}" required>
+```
+    <label>Nombre</label>
+    <input type="text" name="nombre" value="{{ productor[1] }}" required>
 
-        <label>Apellido Paterno</label>
-        <input type="text" name="apellido_pat" value="{{ productor[2] }}">
+    <label>Apellido Paterno</label>
+    <input type="text" name="apellido_pat" value="{{ productor[2] }}">
 
-        <label>Apellido Materno</label>
-        <input type="text" name="apellido_mat" value="{{ productor[3] }}">
+    <label>Apellido Materno</label>
+    <input type="text" name="apellido_mat" value="{{ productor[3] }}">
 
-        <label>RFC</label>
-        <input type="text" name="RFC" value="{{ productor[4] }}">
+    <label>RFC</label>
+    <input type="text" name="RFC" value="{{ productor[4] }}">
 
-        <button class="btn-guardar">Guardar Cambios</button>
-    </form>
+    <button class="btn-guardar">Guardar Cambios</button>
+</form>
+```
+
 </div>
 
 {% endblock %}

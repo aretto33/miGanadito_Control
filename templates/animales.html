@@ -34,109 +34,6 @@ input, select, textarea {
     font-size: 0.8rem;
 }
 
-/* ===== SIDEBAR ===== */
-.sidebar-3d {
-    width: 250px;
-    min-height: 200vh;
-    background: #543d28ff;
-    padding: 20px 15px;
-    box-shadow: 4px 0 12px rgba(0,0,0,0.3);
-
-    position: absolute; /* cambiado */
-    top: 90px;
-    left: 0;
-    transition: top 0.3s ease; /* suavizado */
-    z-index: 2000;
-}
-
-
-.sidebar-3d.active {
-    left: -250px; /*  se esconde */
-}
-
-.sidebar-header {
-    text-align: center;
-    color: #f3e4cb;
-    margin-bottom: 30px;
-}
-
-.sidebar-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* ===== BOTONES 3D ===== */
-.btn-3d {
-    background: #c7a97a;
-    color: #4b3621;
-    padding: 12px 15px;
-    border-radius: 10px;
-    font-weight: bold;
-    text-decoration: none;
-    border-bottom: 4px solid #9b7b54;
-    box-shadow: 0 4px 0 #8b6b47;
-    transition: 0.12s;
-}
-
-.btn-3d:hover {
-    background: #d8be92;
-}
-
-.btn-3d:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #8b6b47;
-    border-bottom: 2px solid #9b7b54;
-}
-
-.btn-main {
-    background: #eed9b6;
-    border-bottom: 4px solid #c4a076;
-    box-shadow: 0 4px 0 #a58563;
-}
-
-.sidebar-menu .btn-3d img.icon-3d {
-    height: 24px;
-    width: auto;
-    margin-right: 8px;
-}
-
-.sidebar-header img.icon-3d {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
-}
-
-/* ===== BOTÓN CERRAR / ABRIR ===== */
-.btn-closeDetails {
-    background-color: #7f5539;
-    color: #f7efe5;
-    position: absolute;
-    top: 10%;
-    right: -22px;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%; /* redondo */
-    cursor: pointer;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-}
-
-/* ===== CONTENIDO ===== */
-.dashboard-content {
-    margin-left: 250px;
-    padding: 30px;
-    transition: margin-left 0.3s ease;
-}
-
-.sidebar-3d.active ~ .dashboard-content {
-    margin-left: 0;
-}
-
 
 /* botón ver azul */
 .btn-ver {
@@ -238,7 +135,7 @@ td {
             <tr>
                 <th>No. </th><th>Nombre</th><th>Fecha</th><th>Cruze</th>
                 <th>Productor</th><th>Predio</th><th>Raza</th><th>Sexo</th><th>Peso</th>
-                <th>Perfil</th><th>Lateral</th>
+                <th>Perfil</th><th>Lateral</th><th>Arete</th>
                 <th>Estatus</th><th>Acciones</th>
             </tr>
         </thead>
@@ -266,10 +163,17 @@ td {
                          onerror="this.style.display='none'">
                 </td>
                 <td>
+                    <img class="animal-img"
+                         src="{{ url_for('imagen_animal', id=a[0], tipo='foto_arete') }}"
+                         onerror="this.style.display='none'">
+                </td>
+                <td>
                     <span class="estatus-badge {{ a[9]|lower }}">
                         {{ a[9] }}
                     </span>
                 </td>
+                    
+                
 
                 <td class="actions-cell">
                     <button type="button" class="btn btn-small btn-ver"
@@ -360,6 +264,9 @@ td {
 
             <label for="f_foto_lateral">Foto lateral:</label>
             <input type="file" name="foto_lateral" id="f_foto_lateral" accept="image/*">
+
+            <label for="f_foto_arete">Foto arete:</label>
+            <input type="file" name="foto_arete" id="f_foto_arete" accept="image/*">
 
             <label for="f_sexo">Sexo:</label>
             <select name="sexo" id="f_sexo" required>

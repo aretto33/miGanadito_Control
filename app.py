@@ -413,9 +413,11 @@ def animales():
 
             foto_perfil = request.files.get("foto_perfil")
             foto_lateral = request.files.get("foto_lateral")
+            foto_arete = request.files.get("foto_arete")
 
             perfil_bytes = foto_perfil.read() if foto_perfil and foto_perfil.filename else None
             lateral_bytes = foto_lateral.read() if foto_lateral and foto_lateral.filename else None
+            arete_bytes = foto_arete.read() if foto_arete and foto_arete.filename else None
 
             fk_prod_session = session.get("fk_productor") if session.get("rol") == "Productor" else None
 
@@ -424,8 +426,8 @@ def animales():
                 cursor.execute("""
                     INSERT INTO Animales
                     (nombre, fecha_nacimiento, cruze, sexo, peso_actual,
-                     fk_productor, fk_raza, fk_predio, foto_perfil, foto_lateral)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                     fk_productor, fk_raza, fk_predio, foto_perfil, foto_lateral, foto_arete)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     request.form.get("nombre"),
                     request.form.get("fecha"),
@@ -436,7 +438,8 @@ def animales():
                     request.form.get("fk_raza"),
                     request.form.get("fk_predio"),
                     perfil_bytes,
-                    lateral_bytes
+                    lateral_bytes,
+                    arete_bytes
                 ))
                 conn.commit()
 
@@ -470,6 +473,8 @@ def animales():
                     cursor.execute("UPDATE Animales SET foto_perfil=%s WHERE pk_animal=%s", (perfil_bytes, pk))
                 if lateral_bytes:
                     cursor.execute("UPDATE Animales SET foto_lateral=%s WHERE pk_animal=%s", (lateral_bytes, pk))
+                if arete_bytes:
+                    cursor.execute("UPDATE Animales SET foto_arete=%s WHERE pk_animal=%s", (arete_bytes, pk))
 
                 conn.commit()
 
@@ -552,7 +557,7 @@ def animales():
 @app.route("/imagen_animal/<int:id>/<string:tipo>")
 def imagen_animal(id, tipo):
     # Validar que el tipo sea una columna esperada para evitar inyección SQL
-    allowed = ("foto_perfil", "foto_lateral")
+    allowed = ("foto_perfil", "foto_lateral", "foto_arete")
     if tipo not in allowed:
         return "", 400
 
