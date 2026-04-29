@@ -51,6 +51,9 @@ def resolve_asset_path(filename):
 
 @app.route('/assets/<path:filename>')
 def asset_file(filename):
+    if filename.startswith("css/"):
+        return redirect(url_for('static', filename=filename), code=307)
+
     asset_path = resolve_asset_path(filename)
     if not asset_path:
         abort(404)
@@ -81,6 +84,8 @@ def inject_asset_helpers():
 @app.route('/static/<path:filename>')
 def legacy_static(filename):
     # Compatibilidad con rutas antiguas /static/... ahora que Vercel sirve public/ desde la raiz.
+    if filename.startswith("css/"):
+        return redirect(url_for('static', filename=filename), code=307)
     return redirect(url_for('static', filename=filename), code=307)
 
 def conectar_bd(dictionary=False):
