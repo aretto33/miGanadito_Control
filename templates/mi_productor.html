@@ -28,11 +28,22 @@ input {
 .btn-guardar {
     background: #8b5e3c;
     color: white;
-    padding: 12px;
+    padding: 10px;
     width: 100%;
-    border-radius: 6px;
+    border-radius: 2px;
     border: none;
 }
+
+.fierro-box {
+    text-align: left; 
+}
+
+.fierro-img {
+    display: block;
+    max-width: 100%;
+}
+
+
 </style>
 
 <div class="text-center">
@@ -44,9 +55,9 @@ input {
 <p class="text-center mt-3 mb-3">Modificar mis datos</p>
 
 <div class="form-box">
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
 
-```
+
     <label>Nombre</label>
     <input type="text" name="nombre" value="{{ productor[1] }}" required>
 
@@ -59,10 +70,21 @@ input {
     <label>RFC</label>
     <input type="text" name="RFC" value="{{ productor[4] }}">
 
+<div class="fierro-box">
+    <label>Foto del fierro</label>
+
+    <img src="{{ url_for('imagen_fierro', id=productor[0]) }}"
+         class="fierro-img"
+         onerror="this.style.display='none'">
+
+    <input type="file" name="foto_fierro" accept="image/*">
+</div>
+    
+
     <button class="btn-guardar">Guardar Cambios</button>
 </form>
-```
 
+    
 </div>
 
 {% endblock %}

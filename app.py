@@ -739,23 +739,37 @@ def mi_productor():
         apellido_mat = request.form.get("apellido_mat")
         rfc = request.form.get("RFC")
 
-        sql = """
-            UPDATE Productores
-            SET nombre=%s, apellido_pat=%s, apellido_mat=%s, RFC=%s
-            WHERE pk_productor=%s
-        """
+        # 📸 nueva imagen (fierro)
+        foto_fierro = request.files.get("foto_fierro")
+
+        if foto_fierro and foto_fierro.filename != "":
+            foto_binaria = foto_fierro.read()
+
+            sql = """
+                UPDATE Productores
+                SET nombre=%s, apellido_pat=%s, apellido_mat=%s, RFC=%s, foto_fierro=%s
+                WHERE pk_productor=%s
+            """
+            valores = (nombre, apellido_pat, apellido_mat, rfc, foto_binaria, fk_productor)
+
+        else:
+            sql = """
+                UPDATE Productores
+                SET nombre=%s, apellido_pat=%s, apellido_mat=%s, RFC=%s
+                WHERE pk_productor=%s
+            """
+            valores = (nombre, apellido_pat, apellido_mat, rfc, fk_productor)
 
         try:
-            cursor.execute(sql, (nombre, apellido_pat, apellido_mat, upp, rfc, fk_productor))
+            cursor.execute(sql, valores)
             conn.commit()
             flash("Datos actualizados correctamente.", "success")
         except mariadb.IntegrityError:
-            flash(" El RFC ya está registrado en otro productor.", "danger")
+            flash("El RFC ya está registrado en otro productor.", "danger")
 
         return redirect(url_for("mi_productor"))
 
-
-    # --- OBTENER DATOS DEL PRODUCTOR LOGUEADO ---
+    # --- OBTENER DATOS ---
     cursor.execute("""
         SELECT pk_productor, nombre, apellido_pat, apellido_mat, RFC
         FROM Productores
@@ -766,6 +780,18 @@ def mi_productor():
     conn.close()
 
     return render_template("mi_productor.html", productor=productor)
+
+#------------------ Mostrar imagen del fierro ------------------
+@app.route("/imagen_fierro/<int:id>")
+def imagen_fierro(id):
+    conn, cursor = conectar_bd()
+    cursor.execute("SELECT foto_fierro FROM Productores WHERE pk_productor=%s", (id,))
+    fila = cursor.fetchone()
+    conn.close()
+
+    if fila and fila[0]:
+        return Response(fila[0], mimetype="image/jpeg")
+    return "", 404
 
 # ------------------ PESAJES ----------------------------------
 
