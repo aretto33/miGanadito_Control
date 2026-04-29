@@ -19,7 +19,8 @@ from ganacontrol.db import get_connection
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
-ASSET_FOLDERS = ("public", "static")
+PUBLIC_ASSET_FOLDER = "public"
+ASSET_FOLDERS = (PUBLIC_ASSET_FOLDER, "static")
 
 
 def _safe_asset_path(folder, filename):
@@ -65,6 +66,11 @@ def asset_file(filename):
 @app.context_processor
 def inject_asset_helpers():
     def asset_url(filename):
+        public_asset_path = _safe_asset_path(PUBLIC_ASSET_FOLDER, filename)
+        if public_asset_path:
+            version = int(os.path.getmtime(public_asset_path))
+            return url_for('static', filename=filename, v=version)
+
         asset_path = resolve_asset_path(filename)
         version = int(os.path.getmtime(asset_path)) if asset_path else None
         return url_for('asset_file', filename=filename, v=version)
