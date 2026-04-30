@@ -51,9 +51,6 @@ def resolve_asset_path(filename):
 
 @app.route('/assets/<path:filename>')
 def asset_file(filename):
-    if filename.startswith("css/"):
-        return redirect(url_for('static', filename=filename), code=307)
-
     asset_path = resolve_asset_path(filename)
     if not asset_path:
         abort(404)
@@ -69,13 +66,19 @@ def asset_file(filename):
 @app.context_processor
 def inject_asset_helpers():
     def asset_url(filename):
+        asset_path = resolve_asset_path(filename)
+        version = int(os.path.getmtime(asset_path)) if asset_path else None
+
+        # El CSS pasa por /assets para poder resolver la copia mas reciente
+        # entre public/ y static/ sin depender de una sola carpeta.
+        if filename.startswith("css/"):
+            return url_for('asset_file', filename=filename, v=version)
+
         public_asset_path = _safe_asset_path(PUBLIC_ASSET_FOLDER, filename)
         if public_asset_path:
             version = int(os.path.getmtime(public_asset_path))
             return url_for('static', filename=filename, v=version)
 
-        asset_path = resolve_asset_path(filename)
-        version = int(os.path.getmtime(asset_path)) if asset_path else None
         return url_for('asset_file', filename=filename, v=version)
 
     return {"asset_url": asset_url}
