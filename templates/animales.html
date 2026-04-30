@@ -50,10 +50,17 @@
                          onerror="this.style.display='none'">
                 </td>
                 <td>
+                    <img class="animal-img"
+                         src="{{ url_for('imagen_animal', id=a[0], tipo='foto_arete') }}"
+                         onerror="this.style.display='none'">
+                </td>
+                <td>
                     <span class="estatus-badge {{ a[9]|lower }}">
                         {{ a[9] }}
                     </span>
                 </td>
+                    
+                
 
                 <td class="actions-cell">
                     <button type="button" class="btn btn-small btn-ver"
@@ -144,6 +151,9 @@
 
             <label for="f_foto_lateral">Foto lateral:</label>
             <input type="file" name="foto_lateral" id="f_foto_lateral" accept="image/*">
+
+            <label for="f_foto_arete">Foto arete:</label>
+            <input type="file" name="foto_arete" id="f_foto_arete" accept="image/*">
 
             <label for="f_sexo">Sexo:</label>
             <select name="sexo" id="f_sexo" required>
