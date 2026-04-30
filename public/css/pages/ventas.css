@@ -1,0 +1,76 @@
+.table-box {
+    background: #f5e8d8;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+/* Inputs */
+input, select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #bca58b;
+    margin-bottom: 12px;
+}
+
+/* Botones */
+.btn {
+    background: #8b5e3c;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+.btn:hover { background: #6b452e; }
+
+.btn-small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
+.btn-ver {
+    background: #3e6db5;
+}
+.btn-ver:hover {
+    background: #305692;
+}
+
+/* ===== CARDS MODALES ===== */
+.card-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.card-contenido {
+    background: #f5e8d8;
+    padding: 25px;
+    border-radius: 14px;
+    width: 420px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.35);
+}
+
+/* Tabla */
+table th {
+    background: #d8c2a8;
+    color: #4a2f16;
+}
+table td:first-child {
+    background: #f0dbc4;
+    font-weight: bold;
+}
+
+.banner {
+        width: 100%;
+        max-width: 1300px;
+        height: auto;
+        display: block;
+        margin: 20px auto;
+        border-radius: 12px;
+    }

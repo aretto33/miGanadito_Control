@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/tabla_precio.css') }}">
+{% endblock %}
 {% block content %}
 
 <div class="text-center">
@@ -14,31 +17,6 @@
     Para calcular el precio multiplicamos los Peso en Kg x el precio acorde al rango de peso
 </p>
 
-<style>
-/* Paleta café 'cute' */
-:root{
-  --cafe-dark: #5a3e2b;
-  --cafe: #8b5e3c;
-  --cafe-light: #c7a97a;
-  --cream: #f7efe5;
-  --bg: #fbf7f2;
-}
-
-.price-wrap{ max-width:1100px; margin:26px auto 60px; padding:20px; background: linear-gradient(180deg,var(--bg), #fff); border-radius:14px; box-shadow: 0 10px 30px rgba(91,66,47,0.08);} 
-.section-title{ color:var(--cafe); margin-bottom:8px; }
-.price-grid{ display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
-.price-card{ flex:1 1 480px; background: linear-gradient(180deg, #fff, var(--cream)); border-radius:12px; padding:14px; box-shadow: 0 6px 18px rgba(102,70,48,0.06); }
-.price-card h3{ color:var(--cafe-dark); margin-bottom:10px; }
-.table-coffee{ width:100%; border-collapse: separate; border-spacing:0; overflow:hidden; border-radius:8px; }
-.table-coffee thead th{ background: linear-gradient(90deg,var(--cafe-light), #e7d6c1); color:var(--cafe-dark); padding:12px 14px; text-align:left; font-weight:700; }
-.table-coffee tbody td{ padding:12px 14px; border-bottom:1px solid rgba(139,94,60,0.08); }
-.table-coffee tbody tr:nth-child(even){ background: rgba(139,94,60,0.03); }
-.price-small{ font-size:0.95rem; color:var(--cafe-dark); }
-.price-amount{ font-weight:700; color:var(--cafe-dark); }
-.price-img{ display:block; margin:18px auto 0; max-width:760px; width:100%; border-radius:10px; box-shadow: 0 12px 30px rgba(91,66,47,0.06); }
-.note{ text-align:center; color:#6b4b36; margin-top:12px; }
-@media (max-width:900px){ .price-grid{ flex-direction:column; } }
-</style>
 
 <div class="price-wrap">
   <div class="price-grid">

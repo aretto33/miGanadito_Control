@@ -1,308 +1,8 @@
 {% extends "base.html" %}
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/dashboard.css') }}">
+{% endblock %}
 {% block content %}
-<style>
-body {
-    margin: 0;
-    background: #f5f0e6;
-    font-family: 'Segoe UI', sans-serif;
-}
-
-/* ===== WRAPPER ===== */
-.dashboard-wrapper {
-    margin-left: -12px;
-    margin-right: -12px;
-}
-
-/* ===== SIDEBAR ===== */
-.sidebar-3d {
-    width: 250px;
-    min-height: 200vh;
-    background: #543d28ff;
-    padding: 20px 15px;
-    box-shadow: 4px 0 12px rgba(0,0,0,0.3);
-
-    position: absolute; /* cambiado */
-    top: 90px;
-    left: 0;
-    transition: top 0.3s ease; /* suavizado */
-    z-index: 2000;
-}
-
-
-.sidebar-3d.active {
-    left: -250px; /*  se esconde */
-}
-
-.sidebar-header {
-    text-align: center;
-    color: #f3e4cb;
-    margin-bottom: 30px;
-}
-
-.sidebar-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* ===== BOTONES 3D ===== */
-.btn-3d {
-    background: #c7a97a;
-    color: #4b3621;
-    padding: 12px 15px;
-    border-radius: 10px;
-    font-weight: bold;
-    text-decoration: none;
-    border-bottom: 4px solid #9b7b54;
-    box-shadow: 0 4px 0 #8b6b47;
-    transition: 0.12s;
-}
-
-.btn-3d:hover {
-    background: #d8be92;
-}
-
-.btn-3d:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #8b6b47;
-    border-bottom: 2px solid #9b7b54;
-}
-
-.btn-main {
-    background: #eed9b6;
-    border-bottom: 4px solid #c4a076;
-    box-shadow: 0 4px 0 #a58563;
-}
-
-.sidebar-menu .btn-3d img.icon-3d {
-    height: 24px;
-    width: auto;
-    margin-right: 8px;
-}
-
-.sidebar-header img.icon-3d {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
-}
-
-/* ===== BOTÓN CERRAR / ABRIR ===== */
-.btn-closeDetails {
-    background-color: #7f5539;
-    color: #f7efe5;
-    position: absolute;
-    top: 10%;
-    right: -22px;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%; /* redondo */
-    cursor: pointer;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-}
-
-/* ===== CONTENIDO ===== */
-.dashboard-content {
-    margin-left: 250px;
-    padding: 30px;
-    transition: margin-left 0.3s ease;
-}
-
-.sidebar-3d.active ~ .dashboard-content {
-    margin-left: 0;
-}
-
-/* ===== BANNER ===== */
-.banner {
-    width: 150%;
-    max-width: 1000px;
-    border-radius: 7px;
-    margin: 10px 0;
-}
-
-/* ===== TRAMITES ===== */
-.tramites {
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-/* ===== WIDGETS ===== */
-.dashboard-content .widgets {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 30px;
-}
-
-/* ===== CARD ===== */
-.widgets .card {
-    background: linear-gradient(135deg, #c7a97a, #e6cfa6);
-    border-radius: 15px;
-    padding: 22px 26px;
-    height: 120px;
-    min-width: 240px;
-    flex: 1;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    box-shadow: 0 6px 14px rgba(115, 63, 17, 0.22);
-    transition: all 0.25s ease;
-
-    display: flex;
-    flex-direction: row;     
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* Hover */
-.widgets .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 22px rgba(78, 52, 29, 0.28);
-}
-
-/* ===== INFO IZQUIERDA ===== */
-.card-info h2 {
-    margin: 0;
-    font-size: 32px;
-    font-weight: bold;
-    color: #3a2f22;
-}
-
-.card-info p {
-    margin: 4px 0 0;
-    font-size: 14px;
-    color: #5b4a36;
-}
-.card-icon img {
-    height: 90px;
-    width: auto;
-}
-
-    /* Modal / overlay para datos del animal */
-    .busqueda-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:9999; }
-    .busqueda-card { background:#fff; width:90%; max-width:640px; border-radius:10px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
-    .busqueda-card .close-btn { float:right; background:transparent; border:none; font-size:1.2rem; cursor:pointer; }
-    .busqueda-card p{ margin:8px 0 }
-
-    .card-wide{
-    flex: 1 1 100%;
-    min-height: 160px;
-}
-/* ===== INFO IZQUIERDA ===== */
-.card-info h2 {
-    margin: 0;
-    font-size: 32px;
-    font-weight: bold;
-    color: #3a2f22;
-}
-
-.card-info p {
-    margin: 4px 0 0;
-    font-size: 14px;
-    color: #5b4a36;
-}
-.estatus-badge.normal{ background:#4CAF50; }
-.estatus-badge.leve{ background:#FFC107; color:#3b2f1d; }
-.estatus-badge.grave{ background:#E53935; }
-
-/* ===== CENTER BOX ===== */
-.center-box {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-top: 20px;
-}
-
-.center-box .tramites {
-    flex: 1 1 250px;
-}
-
-.center-box .estatus-box {
-    flex: 2 1 400px;
-}
-
-/* ===================== ESTATUS BOX ===================== */
-.estatus-box {
-    background: #fdfcf7;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 6px 14px rgba(115, 63, 17, 0.22);
-    width: 100%;
-    max-height: 450px;
-    overflow-y: auto;
-}
-
-/* ===================== ESTATUS INFO ===================== */
-.estatus-info h3 {
-    margin: 0 0 10px;
-    font-size: 22px;
-    color: #3a2f22;
-}
-
-.estatus-info small {
-    display: block;
-    margin-bottom: 12px;
-    color: #5b4a36;
-    font-size: 14px;
-}
-
-/* ===================== TABLA ESTATUS ===================== */
-.estatus-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.estatus-table th,
-.estatus-table td {
-    padding: 8px 12px;
-    text-align: left;
-}
-
-.estatus-table th {
-    background: #e6cfa6;
-    color: #3a2f22;
-    font-weight: 600;
-    border-bottom: 2px solid #c7a97a;
-}
-
-.estatus-table tr:nth-child(even) {
-    background: #f5f0e6;
-}
-
-.estatus-table tr:hover {
-    background: #eed9b6;
-}
-
-/* ===================== NOMBRE DEL ANIMAL ===================== */
-.animal-nombre {
-    font-weight: 600;
-    color: #4b3621;
-}
-
-/* ===================== BADGES ===================== */
-.estatus-badge {
-    padding: 6px 14px;
-    border-radius: 14px;
-    font-size: 13px;
-    font-weight: 600;
-    text-align: center;
-    display: inline-block;
-    min-width: 60px;
-}
-
-.estatus-badge.normal { background:#4CAF50; color:white; }
-.estatus-badge.leve { background:#FFC107; color:#3b2f1d; }
-.estatus-badge.grave { background:#E53935; color:white; }
-
-</style>
 
 <div class="dashboard-wrapper">
 
@@ -312,8 +12,8 @@ body {
             <img src="{{ url_for('static', filename='img/user.png') }}" class="icon-3d"> {{ usuario }} ({{rol}})
         </div>
 
-        <button class="btn-closeDetails" onclick="toogleSidebar()">
-            <img src="{{ url_for('static', filename='img/menu.png') }}" style="height:20px; width:auto;">
+        <button class="btn-closeDetails" onclick="toggleSidebar()">
+            <img src="{{ url_for('static', filename='img/menu.png') }}" class="sidebar-toggle-icon">
         </button>
         
         <nav class="sidebar-menu">
@@ -466,7 +166,7 @@ body {
                         {% endfor %}
                     </select>
 
-                    <button type="button" id="btnDescargarPDF" class="btn-cafe" style="margin-top:10px;">
+                    <button type="button" id="btnDescargarPDF" class="btn-cafe dashboard-pdf-btn">
                         Descargar PDF
                     </button>
                 </form>
@@ -513,17 +213,9 @@ if (btnPDF) {
     });
 }
 
-function toogleSidebar() {
+function toggleSidebar() {
     document.querySelector('.sidebar-3d').classList.toggle('active');
 }
-
-const sidebar = document.querySelector('.sidebar-3d');
-
-window.addEventListener('scroll', () => {
-    // 90 = offset inicial
-    sidebar.style.top = 91 - window.scrollY + 'px';
-});
-
 
 </script>
 {% endblock %}

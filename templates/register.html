@@ -1,70 +1,90 @@
 {% extends "base.html" %}
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/register.css') }}">
+{% endblock %}
 {% block content %}
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-
-        <h3 class="text-center mb-3">Registrar usuario</h3>
-
-        <form method="POST" class="card p-4 shadow">
-
-            <img src="{{ url_for('static', filename='img/new.png') }}" class="img-fluid mb-3">
-
-            <!-- DATOS DE USUARIO -->
-            <label>Usuario:</label>
-            <input type="text" name="usuario" class="form-control mb-3" required>
-
-            <label>Contraseña:</label>
-            <input type="password" name="password" class="form-control mb-3" required>
-
-            <label>Tipo de usuario:</label>
-            <div class="d-flex gap-4 mb-3">
-                <label><input type="radio" name="rol" value="Veterinario" onclick="actualizarFormularioRol()" required> Veterinario</label>
-                <label><input type="radio" name="rol" value="Productor" onclick="actualizarFormularioRol()" required> Productor</label>
+<section class="register-shell">
+    <div class="register-panel register-panel-copy">
+        <span class="register-kicker">Registro guiado</span>
+        <h1 class="register-title">Crea tu acceso y empieza a organizar tu ganado.</h1>
+        <p class="register-text">
+            Elige el perfil correcto y completa solo los datos que tu rol necesita. La idea es que el alta
+            sea clara y rápida desde el primer intento.
+        </p>
+        <div class="register-visual-card">
+            <img src="{{ url_for('static', filename='img/new.png') }}" class="register-visual-image" alt="Nuevo usuario">
+            <div class="register-visual-copy">
+                <strong>MiGanadito Control</strong>
+                <span>Un acceso más ordenado para productores y veterinarios.</span>
             </div>
-
-            <!-- DATOS EXTRA PARA PRODUCTOR -->
-            <div id="formProductor" class="border rounded p-3 mb-3" style="display:none; background:#f9f9f9;">
-                <h5>Datos del Productor</h5>
-
-                <label>Nombre:</label>
-                <input type="text" name="prod_nombre" class="form-control mb-2">
-
-                <label>Apellido paterno:</label>
-                <input type="text" name="prod_apellido_pat" class="form-control mb-2">
-
-                <label>Apellido materno:</label>
-                <input type="text" name="prod_apellido_mat" class="form-control mb-2">
-
-                <label>RFC:</label>
-                <input type="text" name="prod_rfc" class="form-control mb-2">
-            </div>
-
-            <!-- DATOS EXTRA PARA VETERINARIO -->
-            <div id="formVeterinario" class="border rounded p-3 mb-3" style="display:none; background:#f9f9f9;">
-                <h5>Datos del Veterinario</h5>
-
-                <label>Nombre:</label>
-                <input type="text" name="vet_nombre" class="form-control mb-2">
-
-                <label>Apellidos:</label>
-                <input type="text" name="vet_apellidos" class="form-control mb-2">
-
-                <label>Cédula profesional:</label>
-                <input type="text" name="vet_cedula" class="form-control mb-2">
-
-                <label>Dirección de consultorio:</label>
-                <input type="text" name="vet_direccion" class="form-control mb-2" placeholder="Opcional">
-
-                <label>Teléfono:</label>
-                <input type="text" name="vet_telefono" class="form-control mb-2">
-            </div>
-
-            <button class="btn btn-success w-100">Registrar</button>
-        </form>
-
+        </div>
     </div>
-</div>
+
+    <div class="register-panel register-panel-form">
+        <form method="POST" class="register-card">
+            <h2 class="register-form-title">Registrar usuario</h2>
+            <p class="register-form-text">Captura los datos principales y después completa la información específica del perfil.</p>
+
+            <label class="register-label" for="usuario">Usuario</label>
+            <input id="usuario" type="text" name="usuario" class="form-control register-input" required>
+
+            <label class="register-label" for="password">Contraseña</label>
+            <input id="password" type="password" name="password" class="form-control register-input" required>
+
+            <fieldset class="register-role-group">
+                <legend class="register-label">Tipo de usuario</legend>
+                <div class="register-role-options">
+                    <label class="register-role-option">
+                        <input type="radio" name="rol" value="Veterinario" onclick="actualizarFormularioRol()" required>
+                        <span>Veterinario</span>
+                    </label>
+                    <label class="register-role-option">
+                        <input type="radio" name="rol" value="Productor" onclick="actualizarFormularioRol()" required>
+                        <span>Productor</span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <div id="formProductor" class="register-extra-card" hidden>
+                <h3>Datos del Productor</h3>
+
+                <label class="register-label">Nombre</label>
+                <input type="text" name="prod_nombre" class="form-control register-input">
+
+                <label class="register-label">Apellido paterno</label>
+                <input type="text" name="prod_apellido_pat" class="form-control register-input">
+
+                <label class="register-label">Apellido materno</label>
+                <input type="text" name="prod_apellido_mat" class="form-control register-input">
+
+                <label class="register-label">RFC</label>
+                <input type="text" name="prod_rfc" class="form-control register-input">
+            </div>
+
+            <div id="formVeterinario" class="register-extra-card" hidden>
+                <h3>Datos del Veterinario</h3>
+
+                <label class="register-label">Nombre</label>
+                <input type="text" name="vet_nombre" class="form-control register-input">
+
+                <label class="register-label">Apellidos</label>
+                <input type="text" name="vet_apellidos" class="form-control register-input">
+
+                <label class="register-label">Cédula profesional</label>
+                <input type="text" name="vet_cedula" class="form-control register-input">
+
+                <label class="register-label">Dirección de consultorio</label>
+                <input type="text" name="vet_direccion" class="form-control register-input" placeholder="Opcional">
+
+                <label class="register-label">Teléfono</label>
+                <input type="text" name="vet_telefono" class="form-control register-input">
+            </div>
+
+            <button class="btn-cafe btn-cafe-primary register-submit" type="submit">Registrar</button>
+        </form>
+    </div>
+</section>
 
 <script>
     function marcarRequeridos(selector, requerido) {
@@ -83,8 +103,8 @@
         const esProductor = rol === "Productor";
         const esVeterinario = rol === "Veterinario";
 
-        formProductor.style.display = esProductor ? "block" : "none";
-        formVeterinario.style.display = esVeterinario ? "block" : "none";
+        formProductor.hidden = !esProductor;
+        formVeterinario.hidden = !esVeterinario;
 
         marcarRequeridos('#formProductor input[name="prod_nombre"], #formProductor input[name="prod_apellido_pat"], #formProductor input[name="prod_apellido_mat"], #formProductor input[name="prod_rfc"]', esProductor);
         marcarRequeridos('#formVeterinario input[name="vet_nombre"], #formVeterinario input[name="vet_apellidos"], #formVeterinario input[name="vet_cedula"], #formVeterinario input[name="vet_telefono"]', esVeterinario);

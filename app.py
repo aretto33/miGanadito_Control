@@ -1,5 +1,5 @@
 from flask import (
-    Flask, render_template, request, redirect, url_for,
+    Flask, render_template, request, redirect, url_for, abort,
     session, flash, Response, send_from_directory,
     send_file, make_response, Blueprint
 )
@@ -19,11 +19,76 @@ from ganacontrol.db import get_connection
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
+PUBLIC_ASSET_FOLDER = "public"
+ASSET_FOLDERS = (PUBLIC_ASSET_FOLDER, "static")
+
+
+def _safe_asset_path(folder, filename):
+    root = os.path.abspath(os.path.join(app.root_path, folder))
+    candidate = os.path.abspath(os.path.join(root, filename))
+
+    try:
+        is_inside_root = os.path.commonpath([root, candidate]) == root
+    except ValueError:
+        return None
+
+    if not is_inside_root or not os.path.isfile(candidate):
+        return None
+
+    return candidate
+
+
+def resolve_asset_path(filename):
+    candidates = [
+        path for folder in ASSET_FOLDERS
+        if (path := _safe_asset_path(folder, filename))
+    ]
+    if not candidates:
+        return None
+
+    return max(candidates, key=os.path.getmtime)
+
+
+@app.route('/assets/<path:filename>')
+def asset_file(filename):
+    asset_path = resolve_asset_path(filename)
+    if not asset_path:
+        abort(404)
+
+    directory, basename = os.path.split(asset_path)
+    response = send_from_directory(directory, basename)
+    response.cache_control.public = True
+    response.cache_control.max_age = 0
+    response.cache_control.must_revalidate = True
+    return response
+
+
+@app.context_processor
+def inject_asset_helpers():
+    def asset_url(filename):
+        asset_path = resolve_asset_path(filename)
+        version = int(os.path.getmtime(asset_path)) if asset_path else None
+
+        # El CSS pasa por /assets para poder resolver la copia mas reciente
+        # entre public/ y static/ sin depender de una sola carpeta.
+        if filename.startswith("css/"):
+            return url_for('asset_file', filename=filename, v=version)
+
+        public_asset_path = _safe_asset_path(PUBLIC_ASSET_FOLDER, filename)
+        if public_asset_path:
+            version = int(os.path.getmtime(public_asset_path))
+            return url_for('static', filename=filename, v=version)
+
+        return url_for('asset_file', filename=filename, v=version)
+
+    return {"asset_url": asset_url}
 
 
 @app.route('/static/<path:filename>')
 def legacy_static(filename):
     # Compatibilidad con rutas antiguas /static/... ahora que Vercel sirve public/ desde la raiz.
+    if filename.startswith("css/"):
+        return redirect(url_for('static', filename=filename), code=307)
     return redirect(url_for('static', filename=filename), code=307)
 
 def conectar_bd(dictionary=False):

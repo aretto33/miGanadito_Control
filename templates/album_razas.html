@@ -1,15 +1,17 @@
 {% extends "base.html" %}
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/album_razas.css') }}">
+{% endblock %}
 {% block content %}
 
 <div class="text-center">
-    <img src="{{ url_for('static', filename='img/banner.png') }}" 
-         class="img-fluid mb-4"
-         style="max-height:200px">
+    <img src="{{ url_for('static', filename='img/banner.png') }}"
+         class="img-fluid mb-4 album-banner">
 </div>
 
-<h1 class="fw-bold text-center" style="color:#8b5e3c;">Guía de razas bovinas en Tabasco</h1>
+<h1 class="fw-bold text-center album-title">Guía de razas bovinas en Tabasco</h1>
 
-<p class="fs-5 text-secondary text-align: justify" style="max-width:1000px; margin:auto;">
+<p class="fs-5 text-secondary album-intro">
     Alrededor de todo el mundo existen 250 de razas de ganado, esto es sumamente interesante de conocer ya que 
     mayoría de las razas son creadas por medio de una combinación de cruzes y experimentación de genes. Cada una 
     tiene sus únicas características que las hacen destacar y para el mundo ganadero es de suma importancia 
@@ -17,7 +19,7 @@
     la genética de nuestras reces.
 </p>
 <br>
-<p class="fs-5 text-secondary text-align: justify" style="max-width:1000px; margin:auto;">
+<p class="fs-5 text-secondary album-intro">
     En Tabasco los factores que más influyen a la hora de elegir una raza de bovinos es la adaptabilidad al clima particulas de Tabasco,
     ya que la sona sur mexica es calurosa y húmeda por la región selvática y tropical por ello no todas laas razas son aptas para nuestra región.
     A continuación se presentarán una lista de lñas razas más comunes en Tabasco junto con sus características principales.
@@ -25,15 +27,15 @@
 <br>
 
 <!-- CONTENEDOR PRINCIPAL POLAROID -->
-<div class="d-flex justify-content-center align-items-start mt-4 flex-wrap" style="gap: 30px;">
+<div class="d-flex justify-content-center align-items-start mt-4 flex-wrap album-grid">
 
     <!-- Polaroid 1 -->
-    <div class="polaroid p-3 shadow" style="max-width:340px; background:white; border-radius:12px;">
+    <div class="polaroid p-3 shadow breed-card">
         <img src="{{ url_for('static', filename='img/nelore.png') }}" class="img-fluid rounded mb-2">
 
         <h3 class="text-center mb-2 fw-bold">Nelore</h3>
 
-        <p style="text-align: justify;">
+        <p class="breed-copy">
             Raza cuyo origen se remonta a más de 3,000 años en el Estado de Madras, India. Allí se le conoce como 
             Ongole. Es criado principalmente por agricultores y alimentado en praderas artificiales y con residuos 
             de cereales. Pertenece al Grupo II del ganado blanco cenizo, de perfil ligeramente convexo, cuernos 
@@ -41,98 +43,98 @@
             de carne magra.
         </p>
 
-        <div class="mt-3 p-2 border rounded" style="background:#f7f7f7;">
+        <div class="mt-3 p-2 border rounded breed-stats">
             <h5 class="text-center fw-bold mb-1">Peso promedio</h5>
             <p class="text-center mb-0">Machos: 700–600 kg<br>Hembras: 500–600 kg</p>
         </div>
     </div>
 
     <!-- Polaroid 2 -->
-    <div class="polaroid p-3 shadow" style="max-width:340px; background:white; border-radius:12px;">
+    <div class="polaroid p-3 shadow breed-card">
         <img src="{{ url_for('static', filename='img/beefmaster.png') }}" class="img-fluid rounded mb-2">
 
         <h3 class="text-center mb-2 fw-bold">Beefmaster</h3>
 
-        <p style="text-align: justify;">
+        <p class="breed-copy">
             Esta raza proviene de Texas, EE.UU. Resultado de la cruza entre Hereford, Shorthorn y Cebú. Destaca por 
             su adaptabilidad, crecimiento rápido, resistencia y buen rendimiento en canal. Es ½ Brahman, ¼ Shorthorn 
             y ¼ Hereford. Su selección se basa únicamente en caracteres funcionales: fertilidad, crecimiento, 
             producción láctea y rendimiento económico.
         </p>
 
-        <div class="mt-3 p-2 border rounded" style="background:#f7f7f7;">
+        <div class="mt-3 p-2 border rounded breed-stats">
             <h5 class="text-center fw-bold mb-1">Peso promedio</h5>
             <p class="text-center mb-0">Machos: 1,100–1,300 kg<br>Hembras: 550–750 kg</p>
         </div>
     </div>
 
     <!-- Polaroid 3 -->
-    <div class="polaroid p-3 shadow" style="max-width:340px; background:white; border-radius:12px;">
+    <div class="polaroid p-3 shadow breed-card">
         <img src="{{ url_for('static', filename='img/charolais.png') }}" class="img-fluid rounded mb-2">
 
         <h3 class="text-center mb-2 fw-bold">Charolais</h3>
 
-        <p style="text-align: justify;">
+        <p class="breed-copy">
             Raza europea muy apreciada por la calidad de su carne. Posee pelaje blanco o crema, con musculatura 
             sumamente desarrollada y excelente rendimiento. Es más delicada ante el clima tropical, por lo que se 
             cruza con Cebú para producir el Charbray, mejor adaptado a zonas cálidas.
         </p>
 
-        <div class="mt-3 p-2 border rounded" style="background:#f7f7f7;">
+        <div class="mt-3 p-2 border rounded breed-stats">
             <h5 class="text-center fw-bold mb-1">Peso promedio</h5>
             <p class="text-center mb-0">Machos: 900–1,650 kg<br>Hembras: 560–1,200 kg</p>
         </div>
     </div>
 
     <!-- Polaroid 4 -->
-    <div class="polaroid p-3 shadow" style="max-width:340px; background:white; border-radius:12px;">
+    <div class="polaroid p-3 shadow breed-card">
         <img src="{{ url_for('static', filename='img/sardo.png') }}" class="img-fluid rounded mb-2">
 
         <h3 class="text-center mb-2 fw-bold">Sardo Negro</h3>
 
-        <p style="text-align: justify;">
+        <p class="breed-copy">
             Raza cebúina con pelaje blanco y manchas negras. Posee rusticidad, excelente fertilidad, buena 
             producción de carne y aptitud lechera. Es apreciado por su belleza y adaptabilidad al clima tropical. 
             Popular en México gracias a su alto rendimiento y resistencia.
         </p>
 
-        <div class="mt-3 p-2 border rounded" style="background:#f7f7f7;">
+        <div class="mt-3 p-2 border rounded breed-stats">
             <h5 class="text-center fw-bold mb-1">Peso promedio</h5>
             <p class="text-center mb-0">Machos: 1000–1100 kg<br>Hembras: 600–700 kg</p>
         </div>
     </div>
 
     <!-- Polaroid 5 -->
-    <div class="polaroid p-3 shadow" style="max-width:340px; background:white; border-radius:12px;">
+    <div class="polaroid p-3 shadow breed-card">
         <img src="{{ url_for('static', filename='img/simmental.png') }}" class="img-fluid rounded mb-2">
 
         <h3 class="text-center mb-2 fw-bold">Simmental</h3>
 
-        <p style="text-align: justify;">
+        <p class="breed-copy">
             Una raza doble propósito (carne y leche), de alta corpulencia y fortaleza. Su pelaje es berrendo 
             amarillo o rojo con blanco. Excelente rendimiento en engorda y destacada producción láctea. Muy popular 
             por su capacidad de adaptación.
         </p>
 
-        <div class="mt-3 p-2 border rounded" style="background:#f7f7f7;">
+        <div class="mt-3 p-2 border rounded breed-stats">
             <h5 class="text-center fw-bold mb-1">Peso promedio</h5>
             <p class="text-center mb-0">Machos: 1000–1400 kg<br>Hembras: 700–1,000 kg</p>
         </div>
     </div>
 
     <!-- Polaroid 6 -->
-    <div class="polaroid p-3 shadow" style="max-width:340px; background:white; border-radius:12px;">
+    <div class="polaroid p-3 shadow breed-card">
         <img src="{{ url_for('static', filename='img/cebu.png') }}" class="img-fluid rounded mb-2">
 
         <h3 class="text-center mb-2 fw-bold">Cebú Brahman</h3>
 
-        <p style="text-align: justify;">
+        <p class="breed-copy">
             Raza asiática ampliamente difundida en América por su gran resistencia al calor y enfermedades. Talla 
             grande, giba desarrollada, orejas medianas, piel suelta y gran capacidad de adaptación. Muy usada para 
             cruzas que mejoran carne y resistencia climática.
         </p>
 
-        <div class="mt-3 p-2 border rounded" style="background:#f7f7f7;">
+        <div class="mt-3 p-2 border rounded breed-stats">
             <h5 class="text-center fw-bold mb-1">Peso promedio</h5>
             <p class="text-center mb-0">Machos: 800–1000 kg<br>Hembras: 550–650 kg</p>
         </div>
