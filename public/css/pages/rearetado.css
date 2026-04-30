@@ -1,0 +1,73 @@
+/* --- ESTILOS IDÉNTICOS A TU MÓDULO DE ANIMALES --- */
+.rearetado-form {
+    background: #f5e8d8; /* Mismo beige de fondo */
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid #dccbb5;
+}
+
+/* Aplicamos estilo a inputs y textarea */
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #bca58b; /* Borde café claro */
+    margin-bottom: 12px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+/* Estilo del botón */
+.btn {
+    background: #8b5e3c; /* Café fuerte */
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.btn:hover {
+    background: #6b452e; /* Oscurecer al pasar mouse */
+}
+
+h2 {
+    text-align: center;
+    color: #5d4037;
+    margin-bottom: 20px;
+}
+
+h3 {
+    margin-top: 0;
+    color: #6b452e;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #bca58b;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* Utilidad para poner inputs lado a lado */
+.form-group-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-group-half {
+    flex: 1;
+}
+
+/* Ajuste para celulares */
+@media (max-width: 600px) {
+    .form-group-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
