@@ -1,5 +1,5 @@
 from flask import (
-    Flask, render_template, request, redirect, url_for,
+    Flask, render_template, request, redirect, url_for, abort,
     session, flash, Response, send_from_directory,
     send_file, make_response, Blueprint
 )
@@ -19,11 +19,76 @@ from ganacontrol.db import get_connection
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
+PUBLIC_ASSET_FOLDER = "public"
+ASSET_FOLDERS = (PUBLIC_ASSET_FOLDER, "static")
+
+
+def _safe_asset_path(folder, filename):
+    root = os.path.abspath(os.path.join(app.root_path, folder))
+    candidate = os.path.abspath(os.path.join(root, filename))
+
+    try:
+        is_inside_root = os.path.commonpath([root, candidate]) == root
+    except ValueError:
+        return None
+
+    if not is_inside_root or not os.path.isfile(candidate):
+        return None
+
+    return candidate
+
+
+def resolve_asset_path(filename):
+    candidates = [
+        path for folder in ASSET_FOLDERS
+        if (path := _safe_asset_path(folder, filename))
+    ]
+    if not candidates:
+        return None
+
+    return max(candidates, key=os.path.getmtime)
+
+
+@app.route('/assets/<path:filename>')
+def asset_file(filename):
+    asset_path = resolve_asset_path(filename)
+    if not asset_path:
+        abort(404)
+
+    directory, basename = os.path.split(asset_path)
+    response = send_from_directory(directory, basename)
+    response.cache_control.public = True
+    response.cache_control.max_age = 0
+    response.cache_control.must_revalidate = True
+    return response
+
+
+@app.context_processor
+def inject_asset_helpers():
+    def asset_url(filename):
+        asset_path = resolve_asset_path(filename)
+        version = int(os.path.getmtime(asset_path)) if asset_path else None
+
+        # El CSS pasa por /assets para poder resolver la copia mas reciente
+        # entre public/ y static/ sin depender de una sola carpeta.
+        if filename.startswith("css/"):
+            return url_for('asset_file', filename=filename, v=version)
+
+        public_asset_path = _safe_asset_path(PUBLIC_ASSET_FOLDER, filename)
+        if public_asset_path:
+            version = int(os.path.getmtime(public_asset_path))
+            return url_for('static', filename=filename, v=version)
+
+        return url_for('asset_file', filename=filename, v=version)
+
+    return {"asset_url": asset_url}
 
 
 @app.route('/static/<path:filename>')
 def legacy_static(filename):
     # Compatibilidad con rutas antiguas /static/... ahora que Vercel sirve public/ desde la raiz.
+    if filename.startswith("css/"):
+        return redirect(url_for('static', filename=filename), code=307)
     return redirect(url_for('static', filename=filename), code=307)
 
 def conectar_bd(dictionary=False):
@@ -422,9 +487,11 @@ def animales():
 
             foto_perfil = request.files.get("foto_perfil")
             foto_lateral = request.files.get("foto_lateral")
+            foto_arete = request.files.get("foto_arete")
 
             perfil_bytes = foto_perfil.read() if foto_perfil and foto_perfil.filename else None
             lateral_bytes = foto_lateral.read() if foto_lateral and foto_lateral.filename else None
+            arete_bytes = foto_arete.read() if foto_arete and foto_arete.filename else None
 
             fk_prod_session = session.get("fk_productor") if session.get("rol") == "Productor" else None
 
@@ -433,8 +500,8 @@ def animales():
                 cursor.execute("""
                     INSERT INTO Animales
                     (nombre, fecha_nacimiento, cruze, sexo, peso_actual,
-                     fk_productor, fk_raza, fk_predio, foto_perfil, foto_lateral)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                     fk_productor, fk_raza, fk_predio, foto_perfil, foto_lateral, foto_arete)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     request.form.get("nombre"),
                     request.form.get("fecha"),
@@ -445,7 +512,8 @@ def animales():
                     request.form.get("fk_raza"),
                     request.form.get("fk_predio"),
                     perfil_bytes,
-                    lateral_bytes
+                    lateral_bytes,
+                    arete_bytes
                 ))
                 conn.commit()
 
@@ -479,6 +547,8 @@ def animales():
                     cursor.execute("UPDATE Animales SET foto_perfil=%s WHERE pk_animal=%s", (perfil_bytes, pk))
                 if lateral_bytes:
                     cursor.execute("UPDATE Animales SET foto_lateral=%s WHERE pk_animal=%s", (lateral_bytes, pk))
+                if arete_bytes:
+                    cursor.execute("UPDATE Animales SET foto_arete=%s WHERE pk_animal=%s", (arete_bytes, pk))
 
                 conn.commit()
 
@@ -553,7 +623,7 @@ def animales():
 @app.route("/imagen_animal/<int:id>/<string:tipo>")
 def imagen_animal(id, tipo):
     # Validar que el tipo sea una columna esperada para evitar inyección SQL
-    allowed = ("foto_perfil", "foto_lateral")
+    allowed = ("foto_perfil", "foto_lateral", "foto_arete")
     if tipo not in allowed:
         return "", 400
 
@@ -735,23 +805,37 @@ def mi_productor():
         apellido_mat = request.form.get("apellido_mat")
         rfc = request.form.get("RFC")
 
-        sql = """
-            UPDATE Productores
-            SET nombre=%s, apellido_pat=%s, apellido_mat=%s, RFC=%s
-            WHERE pk_productor=%s
-        """
+        # 📸 nueva imagen (fierro)
+        foto_fierro = request.files.get("foto_fierro")
+
+        if foto_fierro and foto_fierro.filename != "":
+            foto_binaria = foto_fierro.read()
+
+            sql = """
+                UPDATE Productores
+                SET nombre=%s, apellido_pat=%s, apellido_mat=%s, RFC=%s, foto_fierro=%s
+                WHERE pk_productor=%s
+            """
+            valores = (nombre, apellido_pat, apellido_mat, rfc, foto_binaria, fk_productor)
+
+        else:
+            sql = """
+                UPDATE Productores
+                SET nombre=%s, apellido_pat=%s, apellido_mat=%s, RFC=%s
+                WHERE pk_productor=%s
+            """
+            valores = (nombre, apellido_pat, apellido_mat, rfc, fk_productor)
 
         try:
-            cursor.execute(sql, (nombre, apellido_pat, apellido_mat, upp, rfc, fk_productor))
+            cursor.execute(sql, valores)
             conn.commit()
             flash("Datos actualizados correctamente.", "success")
         except mariadb.IntegrityError:
-            flash(" El RFC ya está registrado en otro productor.", "danger")
+            flash("El RFC ya está registrado en otro productor.", "danger")
 
         return redirect(url_for("mi_productor"))
 
-
-    # --- OBTENER DATOS DEL PRODUCTOR LOGUEADO ---
+    # --- OBTENER DATOS ---
     cursor.execute("""
         SELECT pk_productor, nombre, apellido_pat, apellido_mat, RFC
         FROM Productores
@@ -762,6 +846,18 @@ def mi_productor():
     conn.close()
 
     return render_template("mi_productor.html", productor=productor)
+
+#------------------ Mostrar imagen del fierro ------------------
+@app.route("/imagen_fierro/<int:id>")
+def imagen_fierro(id):
+    conn, cursor = conectar_bd()
+    cursor.execute("SELECT foto_fierro FROM Productores WHERE pk_productor=%s", (id,))
+    fila = cursor.fetchone()
+    conn.close()
+
+    if fila and fila[0]:
+        return Response(fila[0], mimetype="image/jpeg")
+    return "", 404
 
 # ------------------ PESAJES ----------------------------------
 

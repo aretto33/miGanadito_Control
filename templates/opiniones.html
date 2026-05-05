@@ -1,67 +1,10 @@
 {% extends "base.html" %}
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/opiniones.css') }}">
+{% endblock %}
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<style>
-/* ===== MARCO ESTILO ===== */
-.fancy-frame{
-  background:linear-gradient(135deg,#fff,#f7efe5);
-  border-radius:14px;
-  padding:12px;
-  box-shadow:0 12px 30px rgba(0,0,0,.12);
-}
-.fancy-frame img{
-  width:100%;
-  border-radius:10px;
-}
-
-/* ===== LAYOUT PRINCIPAL ===== */
-.opinion-layout{
-  max-width:1200px;
-  margin:40px auto;
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:40px;
-  align-items:start;
-}
-
-@media(max-width:900px){
-  .opinion-layout{ grid-template-columns:1fr; }
-}
-
-/* ===== GRAFICAS ===== */
-.chart-box{
-  background:#fff;
-  border-radius:14px;
-  padding:20px;
-  box-shadow:0 10px 20px rgba(0,0,0,.1);
-  margin-bottom:25px;
-}
-.chart-title{
-  font-weight:600;
-  color:#6b3e26;
-  margin-bottom:15px;
-  text-align:center;
-}
-
-/* ===== COMENTARIO ===== */
-.comment-box{
-  background:#f7efe5;
-  border-radius:14px;
-  padding:18px;
-  box-shadow:inset 0 2px 6px rgba(0,0,0,.08);
-}
-.comment-box p{
-  margin:0;
-  color:#4b2f1a;
-}
-.comment-author{
-  text-align:right;
-  margin-top:10px;
-  font-weight:600;
-  color:#8b5e3c;
-}
-</style>
 
 <!-- ===== BANNER ===== -->
 <div class="text-center">
