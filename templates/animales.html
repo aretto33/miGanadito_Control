@@ -206,6 +206,60 @@ td {
         border-radius: 12px;
     }
 
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.animal-table {
+    overflow-x: auto;
+}
+
+.animal-table table {
+    min-width: 760px;
+}
+
+@media(max-width: 992px) {
+    .animal-table {
+        padding: 16px;
+    }
+    .animal-table table {
+        min-width: 620px;
+    }
+    .actions-cell button,
+    .btn-small,
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+@media(max-width: 768px) {
+    .sidebar-3d {
+        position: relative;
+        width: 100%;
+        min-height: auto;
+        top: 0;
+        left: 0;
+    }
+    .dashboard-content {
+        margin-left: 0;
+    }
+    .modal-card,
+    .card-contenido {
+        width: min(100%, 100%);
+        margin: 0 12px;
+    }
+    .animal-table table {
+        min-width: 560px;
+    }
+    table th,
+    table td {
+        padding: 8px;
+        font-size: 0.95rem;
+    }
+}
+
 
 /* ===== ESTATUS ===== */
 .estatus-badge {
@@ -220,7 +274,7 @@ td {
 .estatus-badge.grave{ background:#E53935; }
 
 </style>
-<img src="{{ url_for('img/3.png') }}" class="banner">
+<img src="{{ url_for('static', filename='img/3.png') }}" class="banner">
 <h2>Gestión de Animales</h2>
 <h4 class= >Aquí puedes registrar y modificar los animales con la finalidad de tener registros de los nuevos nacimientos que ocurran y ubicar el animal.</h4>
 
@@ -233,6 +287,7 @@ td {
     <h3>Animales Registrados</h3>
     <!--La propiedad length de un objeto String representa la longitud de una cadena, en unidades de código-->
     <h4>Total: {{ animales|length }}</h4>
+    <div class="table-responsive">
     <table>
         <thead>
             <tr>
@@ -303,6 +358,7 @@ td {
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 
 <!-- MODAL FORM (Registrar/Modificar) -->

@@ -233,7 +233,7 @@ def register():
                     request.form.get("vet_telefono", "").strip()
                 ))
 
-            # Un único commit al final si todo fue bien
+            # Un único commit
             conn.commit()
 
             # Éxito
@@ -533,16 +533,9 @@ def animales():
         cursor.execute("SELECT pk_predio, nom_rancho FROM Predios ORDER BY nom_rancho")
         predios = cursor.fetchall()
 
-        cursor.execute("""
-            SELECT pk_tratamiento, nombre, impacto
-            FROM tratamientos
-            ORDER BY nombre
-        """)
-        tratamientos = cursor.fetchall()
-
     except Exception as e:
         flash(f"Error en Animales: {e}", "danger")
-        animales, productores, razas, predios, tratamientos = [], [], [], [], []
+        animales, productores, razas, predios = [], [], [], []
 
     finally:
         if conn:
@@ -553,8 +546,7 @@ def animales():
         animales=animales,
         productores=productores,
         razas=razas,
-        predios=predios,
-        tratamientos=tratamientos
+        predios=predios
     )
 
 # ------------------ Mostrar imágenes ------------------
