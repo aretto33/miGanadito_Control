@@ -1,0 +1,15 @@
+<div class="sidebar-3d">
+    <div class="sidebar-header">
+        <span style="font-weight:bold;">{{ session.get('usuario', 'demo (Productor)') }}</span>
+    </div>
+    <div class="sidebar-menu">
+        <a href="{{ url_for('mi_productor') }}" class="btn-3d"> <span class="icon">👤</span> Mis Datos</a>
+        <a href="{{ url_for('animales') }}" class="btn-3d"> <span class="icon">🐄</span> Animales</a>
+        <a href="{{ url_for('predios') }}" class="btn-3d"> <span class="icon">🏞️</span> Predios</a>
+        <a href="{{ url_for('pesajes') }}" class="btn-3d"> <span class="icon">⚖️</span> Pesaje</a>
+        <a href="{{ url_for('registro_siniga') }}" class="btn-3d"> <span class="icon"><img src='{{ url_for('static', filename='img/siniga.png') }}' alt='SINIGA' style='height:1.2em;vertical-align:middle;'></span> Registro SINIGA</a>
+        <a href="{{ url_for('seguimiento') }}" class="btn-3d"> <span class="icon">🩺</span> Seg. Veterinario</a>
+        <a href="{{ url_for('ventas') }}" class="btn-3d"> <span class="icon">📈</span> Ventas</a>
+        <a href="{{ url_for('razas') }}" class="btn-3d"> <span class="icon">🐂</span> Razas</a>
+    </div>
+</div>

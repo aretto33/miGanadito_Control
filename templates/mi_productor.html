@@ -4,6 +4,47 @@
 {% endblock %}
 {% block content %}
 
+{% include 'sidebar_panel.html' %}
+
+<style>
+.form-box {
+    background: #f5e8d8;
+    padding: 25px;
+    border-radius: 12px;
+    max-width: 600px;
+    margin: auto;
+    box-shadow: 0 0 8px rgba(0,0,0,0.15);
+}
+
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    color: #5a4632;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid #bca58b;
+}
+
+.btn-guardar {
+    background: #8b5e3c;
+    color: white;
+    padding: 12px;
+    width: 100%;
+    border-radius: 6px;
+    cursor: pointer;
+    border: none;
+    margin-top: 10px;
+}
+.btn-guardar:hover {
+    background: #6b452e;
+}
+</style>
+
 <div class="text-center">
     <img src="{{ url_for('static', filename='img/image.png') }}" 
          class="img-fluid mb-4"
