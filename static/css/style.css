@@ -1,126 +1,312 @@
-body {
-    background-color: #fffcf8;
+/* =========================================================
+   VARIABLES DE COLOR
+========================================================= */
+:root{
+    --cafe-claro:#c7a97a;
+    --cafe-medio:#b08968;
+    --cafe-oscuro:#7f5539;
+    --cafe-extra-oscuro:#3d2b1f;
+    --cafe-vainilla:#ecd9c3;
+    --crema:#f7efe5;
 }
 
-.card {
-    border-radius: 15px;
+/* =========================================================
+   ESTILOS GENERALES
+========================================================= */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-/* === COLORES PRINCIPALES CAFÉ === */
-:root {
-    --cafe-claro: #c7a97a;
-    --cafe-medio: #b08968;
-    --cafe-oscuro: #7f5539;
-    --cafe-extra-oscuro: #3d2b1f;
-    --cafe-vainilla: #ecd9c3;
-    --crema: #f7efe5;
+body{
+    background-color:var(--crema);
+    color:var(--cafe-extra-oscuro);
+    font-size:16px;
+    font-family:Arial, sans-serif;
+    line-height:1.6;
 }
 
-/* Fondo general */
-body {
-    background-color: var(--crema);
-    color: var(--cafe-extra-oscuro);
+.container{
+    width:90%;
+    max-width:1200px;
+    margin:auto;
+    padding:20px 0;
 }
 
-/* === Botón estándar café 3D === */
-.btn-cafe {
-    display: block;
-    background: var(--cafe-claro);
-    padding: 12px;
-    margin: 10px 0;
-    text-align: center;
-    text-decoration: none;
-    font-weight: bold;
-    color: var(--cafe-extra-oscuro);
-    border-radius: 10px;
-    border-bottom: 4px solid var(--cafe-medio);
-    box-shadow: 0px 4px 0px var(--cafe-oscuro);
-    transition: 0.1s;
+img{
+    max-width:100%;
+    height:auto;
+    display:block;
 }
 
-.btn-cafe:hover {
-    background: var(--cafe-medio);
+.card{
+    border-radius:15px;
+    padding:20px;
+    margin-bottom:20px;
+    background:white;
 }
 
-.btn-cafe:active {
-    transform: translateY(2px);
-    box-shadow: 0px 2px 0px var(--cafe-oscuro);
-    border-bottom: 2px solid var(--cafe-oscuro);
+/* =========================================================
+   TITULOS RESPONSIVOS
+========================================================= */
+h1{
+    font-size:clamp(2rem,5vw,4.5rem);
+    color:var(--cafe-oscuro);
 }
 
-/* === Botón especial MIS DATOS === */
-.btn-datos {
-    display: block;
-    background: var(--cafe-vainilla);
-    padding: 14px;
-    text-align: center;
-    text-decoration: none;
-    font-weight: bold;
-    color: var(--cafe-oscuro);
-    border-radius: 12px;
-    border-bottom: 5px solid var(--cafe-medio);
-    box-shadow: 0px 5px 0px var(--cafe-oscuro);
-    margin: 20px 0 30px 0;
-    transition: 0.1s;
+h2{
+    font-size:clamp(1.5rem,4vw,2.5rem);
+    color:var(--cafe-oscuro);
 }
 
-.btn-datos:hover {
-    background: var(--crema);
+h3{
+    font-size:clamp(1.2rem,3vw,2rem);
+    color:var(--cafe-oscuro);
 }
 
-.btn-datos:active {
-    transform: translateY(3px);
-    box-shadow: 0px 2px 0px var(--cafe-oscuro);
-    border-bottom: 2px solid var(--cafe-medio);
+.titulo,
+.bienvenido{
+    color:var(--cafe-oscuro);
 }
 
-/* === Sidebar === */
-.sidebar {
-    background: var(--crema);
-    border-right: 3px solid var(--cafe-medio);
+/* =========================================================
+   BOTONES
+========================================================= */
+.btn-cafe{
+    display:inline-block;
+    background:var(--cafe-claro);
+    color:var(--cafe-extra-oscuro);
+    padding:12px 24px;
+    text-decoration:none;
+    font-weight:bold;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    box-shadow:0 5px 0 var(--cafe-medio);
+    transition:all 0.15s ease;
+    text-align:center;
 }
 
-/* === Titulos === */
-.titulo, .bienvenido {
-    color: var(--cafe-oscuro);
+.btn-cafe:hover{
+    background:var(--cafe-medio);
 }
 
-/* === Mini juego cajas y textos === */
-#game-area {
-    background: #e9f5dd; /* sigue siendo verde muy suave */
-    border-color: var(--cafe-medio);
+.btn-cafe:active{
+    transform:translateY(3px);
+    box-shadow:0 2px 0 var(--cafe-oscuro);
 }
 
-#score {
-    color: var(--cafe-extra-oscuro);
+.btn-datos{
+    display:inline-block;
+    background:var(--cafe-vainilla);
+    color:var(--cafe-oscuro);
+    padding:14px 24px;
+    text-decoration:none;
+    font-weight:bold;
+    border-radius:12px;
+    box-shadow:0 5px 0 var(--cafe-medio);
+    transition:all 0.15s ease;
+    text-align:center;
 }
 
-/* Botón estilo café 3D */
-.btn-cafe {
-    background: #d2b48c; /* café claro tipo "tan" */
-    color: #4b2e18; /* café oscuro */
-    padding: 12px 25px;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    display: inline-block;
-    text-decoration: none;
-    text-align: center;
-
-    /* Efecto 3D */
-    box-shadow: 0px 5px 0px #b08a62; /* sombra sólida café */
-    transition: all 0.1s ease-in-out;
+.btn-datos:hover{
+    background:var(--crema);
 }
 
-/* Al pasar el mouse */
-.btn-cafe:hover {
-    background: #c8a97b;
+.btn-datos:active{
+    transform:translateY(3px);
+    box-shadow:0 2px 0 var(--cafe-oscuro);
 }
 
-/* Al presionar el botón (simula hundido) */
-.btn-cafe:active {
-    box-shadow: 0px 2px 0px #8b6a47;
-    transform: translateY(3px);
+/* =========================================================
+   SIDEBAR
+========================================================= */
+.sidebar{
+    background:var(--crema);
+    border-right:3px solid var(--cafe-medio);
+    padding:20px;
+}
+
+/* =========================================================
+   AREA PRINCIPAL RESPONSIVA
+========================================================= */
+.main-content{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:30px;
+}
+
+.text-section,
+.image-section{
+    flex:1 1 450px;
+}
+
+.center{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+}
+
+/* =========================================================
+   PANELES
+========================================================= */
+.panel{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    margin:20px auto;
+    padding:20px;
+    max-width:90%;
+    background:var(--crema);
+    border-radius:15px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.08);
+}
+
+.icon{
+    width:60px;
+    height:60px;
+    margin-bottom:10px;
+}
+
+/* =========================================================
+   FORMULARIOS
+========================================================= */
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px;
+    margin-bottom:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:1rem;
+}
+
+/* =========================================================
+   TABLAS
+========================================================= */
+.table-responsive{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+}
+
+th,
+td{
+    padding:10px;
+    text-align:left;
+}
+
+/* =========================================================
+   MINI JUEGO
+========================================================= */
+#game-area{
+    background:#e9f5dd;
+    border:2px solid var(--cafe-medio);
+    border-radius:12px;
+    padding:20px;
+}
+
+#score{
+    color:var(--cafe-extra-oscuro);
+}
+
+/* =========================================================
+   ESPACIADOS
+========================================================= */
+.mt-1{margin-top:5px;}
+.mt-2{margin-top:10px;}
+.mt-3{margin-top:15px;}
+.mt-4{margin-top:20px;}
+
+.mb-1{margin-bottom:5px;}
+.mb-2{margin-bottom:10px;}
+.mb-3{margin-bottom:15px;}
+.mb-4{margin-bottom:20px;}
+
+.p-1{padding:5px;}
+.p-2{padding:10px;}
+.p-3{padding:15px;}
+.p-4{padding:20px;}
+
+/* =========================================================
+   RESPONSIVE TABLET
+========================================================= */
+@media(max-width:768px){
+
+    body{
+        font-size:15px;
+    }
+
+    .main-content{
+        flex-direction:column;
+        text-align:center;
+    }
+
+    .sidebar{
+        width:100%;
+        border-right:none;
+        border-bottom:3px solid var(--cafe-medio);
+    }
+
+    .btn-cafe,
+    .btn-datos{
+        width:100%;
+        max-width:280px;
+        margin:10px auto;
+    }
+
+    .panel{
+        max-width:100%;
+        padding:15px;
+    }
+
+    .icon{
+        width:50px;
+        height:50px;
+    }
+}
+
+/* =========================================================
+   RESPONSIVE CELULARES PEQUEÑOS
+========================================================= */
+@media(max-width:480px){
+
+    body{
+        font-size:14px;
+    }
+
+    .container{
+        width:95%;
+    }
+
+    .card{
+        padding:15px;
+    }
+
+    h1{
+        font-size:2rem;
+    }
+
+    h2{
+        font-size:1.4rem;
+    }
+
+    h3{
+        font-size:1.1rem;
+    }
+
+    table{
+        font-size:12px;
+    }
 }

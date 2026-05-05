@@ -158,12 +158,29 @@ def login():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        usuario = request.form["usuario"]
-        contra = request.form["password"]
+        # Obtener datos de forma segura
+        usuario = request.form.get("usuario", "").strip()
+        contra = request.form.get("password", "").strip()
         rol_nombre = normalizar_rol(request.form.get("rol"))
+
+        # Validación básica
+        if not usuario or not contra or not rol_nombre:
+            flash("Todos los campos son obligatorios", "danger")
+            return redirect(url_for("register"))
+
         if rol_nombre not in ROLES_VALIDOS:
             flash("Rol inválido", "danger")
             return redirect(url_for("register"))
+
+        # Validar campos adicionales según rol
+        if rol_nombre == "Productor":
+            if not request.form.get("prod_nombre") or not request.form.get("prod_apellido_pat"):
+                flash("Nombre y apellido paterno del productor son obligatorios", "danger")
+                return redirect(url_for("register"))
+        elif rol_nombre == "Veterinario":
+            if not request.form.get("vet_nombre") or not request.form.get("vet_cedula") or not request.form.get("vet_telefono"):
+                flash("Nombre, cédula y teléfono del veterinario son obligatorios", "danger")
+                return redirect(url_for("register"))
 
         conn, cursor = conectar_bd()
         if not conn:
@@ -171,77 +188,69 @@ def register():
             return redirect(url_for("register"))
 
         try:
-            try:
-                # Esquema legado
-                cursor.execute("SELECT id_rol FROM Rol WHERE nombre=%s", (rol_nombre,))
-                row = cursor.fetchone()
-                if not row:
-                    raise mariadb.Error("Rol no encontrado en tabla Rol")
-                fk_rol = row[0]
+            # Obtener ID del rol
+            cursor.execute("SELECT id_rol FROM Rol WHERE nombre=%s", (rol_nombre,))
+            row = cursor.fetchone()
 
+            if not row:
+                raise Exception("Rol no encontrado en la base de datos")
+
+            fk_rol = row[0]
+
+            # Insertar usuario - SIN commit aún
+            cursor.execute("""
+                INSERT INTO Usuarios (usuario, password, fk_rol)
+                VALUES (%s, %s, %s)
+                RETURNING id_usuario
+            """, (usuario, contra, fk_rol))
+
+            # Obtener el ID del INSERT
+            id_usuario = cursor.fetchone()[0]
+
+            # Insertar datos adicionales según rol
+            if rol_nombre == "Productor":
                 cursor.execute("""
-                    INSERT INTO Usuarios (usuario, password, fk_rol)
-                    VALUES (%s, %s, %s)
-                """, (usuario, contra, fk_rol))
-                conn.commit()
-                id_usuario = cursor.lastrowid
+                    INSERT INTO Productores (fk_usuario, nombre, apellido_pat, apellido_mat, RFC)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (
+                    id_usuario,
+                    request.form.get("prod_nombre", "").strip(),
+                    request.form.get("prod_apellido_pat", "").strip(),
+                    request.form.get("prod_apellido_mat", "").strip(),
+                    request.form.get("prod_rfc", "").strip()
+                ))
 
-                if rol_nombre == "Productor":
-                    cursor.execute("""
-                        INSERT INTO Productores (fk_usuario, nombre, apellido_pat, apellido_mat, RFC)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """, (
-                        id_usuario,
-                        request.form.get("prod_nombre"),
-                        request.form.get("prod_apellido_pat"),
-                        request.form.get("prod_apellido_mat"),
-                        request.form.get("prod_rfc")
-                    ))
-                    conn.commit()
-
-                elif rol_nombre == "Veterinario":
-                    cursor.execute("""
-                        INSERT INTO Veterinario (fk_usuario, nombre, apellidos, cedula, direccion_consultorio, telefono)
-                        VALUES (%s, %s, %s, %s, %s, %s)
-                    """, (
-                        id_usuario,
-                        request.form.get("vet_nombre"),
-                        request.form.get("vet_apellidos"),
-                        request.form.get("vet_cedula"),
-                        request.form.get("vet_direccion") or "Consultas a domicilio",
-                        request.form.get("vet_telefono")
-                    ))
-                    conn.commit()
-            except mariadb.Error:
-                conn.rollback()
-                # Esquema nuevo
-                prod_id = None
-                if rol_nombre == "Productor":
-                    cursor.execute("""
-                        INSERT INTO Productores (nombre, apellido_pat, apellido_mat, UPP)
-                        VALUES (%s, %s, %s, 'No inscrito')
-                    """, (
-                        request.form.get("prod_nombre"),
-                        request.form.get("prod_apellido_pat"),
-                        request.form.get("prod_apellido_mat"),
-                    ))
-                    conn.commit()
-                    prod_id = cursor.lastrowid
-
+            elif rol_nombre == "Veterinario":
                 cursor.execute("""
-                    INSERT INTO usuarios (usuario, password, rol, fk_productor)
-                    VALUES (%s, %s, %s, %s)
-                """, (usuario, contra, rol_nombre, prod_id))
-                conn.commit()
+                    INSERT INTO Veterinario (fk_usuario, nombre, apellidos, cedula, direccion_consultorio, telefono)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (
+                    id_usuario,
+                    request.form.get("vet_nombre", "").strip(),
+                    request.form.get("vet_apellidos", "").strip(),
+                    request.form.get("vet_cedula", "").strip(),
+                    request.form.get("vet_direccion", "").strip() or "Consultas a domicilio",
+                    request.form.get("vet_telefono", "").strip()
+                ))
 
+            # Un único commit al final si todo fue bien
+            conn.commit()
+
+            # Éxito
             flash("Usuario registrado correctamente", "success")
             return redirect(url_for("login"))
 
-        except mariadb.Error as e:
-            flash(f"No se pudo registrar: {e}", "danger")
+        except Exception as e:
+            conn.rollback()
+            print("Error en registro:", str(e))
+            flash(f"No se pudo registrar: {str(e)}", "danger")
+            return redirect(url_for("register"))
+
         finally:
+            cursor.close()
             conn.close()
 
+    # Si es GET
     return render_template("register.html")
 
 #----------------- Dashboard -----------------

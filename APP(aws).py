@@ -33,7 +33,7 @@ def conectar_bd():
         print("Error de conexión:", e)
         return None, None
 
-# -------------------- VALIDAR CREDENCIALES --------------------
+# -------------------- VALIDAR CREDENCIALES ----------------------
 def verificar_credenciales(usuario, password, rol):
     conn, cursor = conectar_bd()
     if not conn:
