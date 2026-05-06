@@ -295,7 +295,7 @@ td {
         <thead>
             <tr>
                 <th>No. </th><th>Nombre</th><th>Fecha</th><th>Cruze</th>
-                <th>Productor</th><th>Predio</th><th>Raza</th><th>Sexo</th><th>Peso</th>
+                <th>Productor</th><th>Predio</th><th>Raza</th><th>Madre</th><th>Sexo</th><th>Peso</th>
                 <th>Perfil</th><th>Lateral</th>
                 <th>Estatus</th><th>Acciones</th>
             </tr>
@@ -309,6 +309,7 @@ td {
                 <td>{{ a[3] }}</td>
                 <td>{{ a[4] }}</td>
                 <td>{{ a[8] if a|length > 8 else '—' }}</td>
+                <td>{{ a[14] if a|length > 14 and a[14] else '—' }}</td>
                 <td>{{ a[5] }}</td>
                 <td>{{ a[6] }}</td>
                 <td>{{ a[7] }}</td>
@@ -340,7 +341,8 @@ td {
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "raza": a[5], "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else null
+                            "productor": a[4], "raza": a[5], "madre": a[14] if a|length > 14 else null,
+                            "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else null
                         } | tojson }})'>
                         Ver
                     </button>
@@ -348,8 +350,10 @@ td {
                     <button type="button" class="btn btn-small"
                         onclick='abrirFormEditar({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else null, 
-                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else null, 
+                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else null,
+                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else null,
+                            "madre": a[14] if a|length > 14 else null,
+                            "fk_madre": a[13] if a|length > 13 else null,
                             "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[10] if a|length > 10 else null
                         } | tojson }})'>
                         Modificar
@@ -421,6 +425,16 @@ td {
                 {% endfor %}
             </select>
 
+            <div style="margin-top: 8px; margin-bottom: 8px;">
+                <label for="f_fk_madre">Madre:</label>
+                <select name="fk_madre" id="f_fk_madre" style="width:100%; padding:10px; border-radius:6px; border:1px solid #bca58b;">
+                    <option value="">Ninguna</option>
+                    {% for m in madres %}
+                        <option value="{{ m[0] }}">{{ m[1] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <label for="f_foto_perfil">Foto perfil:</label>
             <input type="file" name="foto_perfil" id="f_foto_perfil" accept="image/*">
 
@@ -453,6 +467,7 @@ td {
         <p><strong>Productor:</strong> <span id="v_productor"></span></p>
         <p><strong>Predio:</strong> <span id="v_predio"></span></p>
         <p><strong>Raza:</strong> <span id="v_raza"></span></p>
+        <p><strong>Madre:</strong> <span id="v_madre"></span></p>
         <p><strong>Sexo:</strong> <span id="v_sexo"></span></p>
         <p><strong>Peso actual (kg):</strong> <span id="v_peso"></span></p>
         <div style="margin-top:12px;">
@@ -483,6 +498,10 @@ document.getElementById('btnNuevo').addEventListener('click', function(){
     document.getElementById('f_pk').value = '';
     document.getElementById('f_accion').value = 'registrar';
     document.getElementById('form-titulo').innerText = 'Registrar Animal';
+    const madreEl = document.getElementById('f_fk_madre');
+    if (madreEl) {
+        Array.from(madreEl.options).forEach(opt => opt.disabled = false);
+    }
     mostrarModal('modal-form');
 });
 
@@ -495,6 +514,17 @@ function abrirFormEditar(obj) {
     document.getElementById('f_fecha').value    = obj.fecha || '';
     document.getElementById('f_cruze').value    = obj.cruze || '';
     document.getElementById('f_sexo').value     = obj.sexo || 'M';
+
+    // ✅ MADRE (por ID)
+    const madreEl = document.getElementById('f_fk_madre');
+    if (madreEl) {
+        madreEl.value = obj.fk_madre || '';
+        if (obj.id) {
+            Array.from(madreEl.options).forEach(opt => {
+                opt.disabled = opt.value === String(obj.id);
+            });
+        }
+    }
 
     // ✅ PRODUCTOR (por ID)
     const prodEl = document.getElementById('f_fk_productor');
@@ -529,6 +559,7 @@ function verAnimal(obj) {
     document.getElementById('v_productor').textContent = obj.productor || '';
     document.getElementById('v_predio').textContent = obj.predio || 'N/A';
     document.getElementById('v_raza').textContent = obj.raza || '';
+    document.getElementById('v_madre').textContent = obj.madre || 'N/A';
     document.getElementById('v_sexo').textContent = obj.sexo || '';
     document.getElementById('v_peso').textContent = obj.peso || '';
     mostrarModal('modal-ver');

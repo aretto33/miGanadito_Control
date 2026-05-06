@@ -233,9 +233,9 @@ def animales():
                 fk_raza = request.form.get("fk_raza") or None
 
                 cursor.execute(
-                    """INSERT INTO Animales (nombre, fecha_nacimiento, cruze, sexo, peso_actual, fk_productor, fk_raza, foto_perfil, foto_lateral)
-                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                    (nombre, fecha, cruze, sexo, peso_actual, fk_productor, fk_raza, perfil_bytes, lateral_bytes)
+                    """INSERT INTO Animales (nombre, fecha_nacimiento, cruze, sexo, peso_actual, fk_productor, fk_raza, fk_predio, fk_animal, foto_perfil, foto_lateral)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (nombre, fecha, cruze, sexo, peso_actual, fk_productor, fk_raza, request.form.get("fk_predio") or None, request.form.get("fk_madre") or None, perfil_bytes, lateral_bytes)
                 )
                 conn.commit()
 
@@ -259,9 +259,9 @@ def animales():
                 cursor.execute(
                     """UPDATE Animales
                        SET nombre=%s, fecha_nacimiento=%s, cruze=%s, sexo=%s, peso_actual=%s,
-                           fk_productor=%s, fk_raza=%s
+                           fk_productor=%s, fk_raza=%s, fk_predio=%s, fk_animal=%s
                        WHERE pk_animal=%s""",
-                    (nombre, fecha, cruze, sexo, peso_actual, fk_productor, fk_raza, pk)
+                    (nombre, fecha, cruze, sexo, peso_actual, fk_productor, fk_raza, request.form.get("fk_predio") or None, request.form.get("fk_madre") or None, pk)
                 )
 
                 if perfil_bytes:
@@ -310,6 +310,15 @@ def animales():
         cursor.execute("SELECT pk_raza, nombre FROM Razas")
         razas = cursor.fetchall()
 
+        cursor.execute("SELECT pk_predio, nom_rancho FROM Predios ORDER BY nom_rancho")
+        predios = cursor.fetchall()
+
+        if session.get("rol") == "Productor":
+            cursor.execute("SELECT pk_animal, nombre FROM Animales WHERE sexo='H' AND fk_productor=%s ORDER BY nombre", (session.get("fk_productor"),))
+        else:
+            cursor.execute("SELECT pk_animal, nombre FROM Animales WHERE sexo='H' ORDER BY nombre")
+        madres = cursor.fetchall()
+
     except Exception as e:
         flash(f"Error en módulo Animales: {e}", "danger")
         animales = []
@@ -320,7 +329,7 @@ def animales():
         if conn:
             conn.close()
 
-    return render_template("animales.html", animales=animales, productores=productores, razas=razas)
+    return render_template("animales.html", animales=animales, productores=productores, razas=razas, predios=predios, madres=madres)
 
 # ------------------ Mostrar imágenes ------------------
 @app.route("/imagen_animal/<int:id>/<string:tipo>")
