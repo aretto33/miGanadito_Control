@@ -500,8 +500,8 @@ def animales():
                 cursor.execute("""
                     INSERT INTO Animales
                     (nombre, fecha_nacimiento, cruze, sexo, peso_actual,
-                     fk_productor, fk_raza, fk_predio, foto_perfil, foto_lateral, foto_arete)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                     fk_productor, fk_raza, fk_predio, fk_animal, foto_perfil, foto_lateral, foto_arete)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     request.form.get("nombre"),
                     request.form.get("fecha"),
@@ -511,6 +511,7 @@ def animales():
                     fk_prod_session or request.form.get("fk_productor"),
                     request.form.get("fk_raza"),
                     request.form.get("fk_predio"),
+                    request.form.get("fk_madre") or None,
                     perfil_bytes,
                     lateral_bytes,
                     arete_bytes
@@ -529,7 +530,8 @@ def animales():
                         peso_actual=%s,
                         fk_productor=%s,
                         fk_raza=%s,
-                        fk_predio=%s
+                        fk_predio=%s,
+                        fk_animal=%s
                     WHERE pk_animal=%s
                 """, (
                     request.form.get("nombre"),
@@ -540,6 +542,7 @@ def animales():
                     fk_prod_session or request.form.get("fk_productor"),
                     request.form.get("fk_raza"),
                     request.form.get("fk_predio"),
+                    request.form.get("fk_madre") or None,
                     pk
                 ))
 
@@ -570,11 +573,14 @@ def animales():
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
                        'Sin estatus' AS estatus_actual,
-                       a.fk_predio, r.pk_raza, a.fk_productor
+                       a.fk_predio, r.pk_raza, a.fk_productor,
+                       a.fk_animal AS fk_madre,
+                       m.nombre AS madre_nombre
                 FROM Animales a
                 LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
                 LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
                 LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
+                LEFT JOIN Animales m ON a.fk_animal = m.pk_animal
                 WHERE a.fk_productor=%s
                 ORDER BY a.pk_animal DESC
             """, (session.get("fk_productor"),))
@@ -584,11 +590,14 @@ def animales():
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
                        'Sin estatus' AS estatus_actual,
-                       a.fk_predio, r.pk_raza, a.fk_productor
+                       a.fk_predio, r.pk_raza, a.fk_productor,
+                       a.fk_animal AS fk_madre,
+                       m.nombre AS madre_nombre
                 FROM Animales a
                 LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
                 LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
                 LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
+                LEFT JOIN Animales m ON a.fk_animal = m.pk_animal
                 ORDER BY a.pk_animal DESC
             """)
 
@@ -603,6 +612,12 @@ def animales():
         cursor.execute("SELECT pk_predio, nom_rancho FROM Predios ORDER BY nom_rancho")
         predios = cursor.fetchall()
 
+        if session.get("rol") == "Productor":
+            cursor.execute("SELECT pk_animal, nombre FROM Animales WHERE sexo='H' AND fk_productor=%s ORDER BY nombre", (session.get("fk_productor"),))
+        else:
+            cursor.execute("SELECT pk_animal, nombre FROM Animales WHERE sexo='H' ORDER BY nombre")
+        madres = cursor.fetchall()
+
     except Exception as e:
         flash(f"Error en Animales: {e}", "danger")
         animales, productores, razas, predios = [], [], [], []
@@ -616,7 +631,8 @@ def animales():
         animales=animales,
         productores=productores,
         razas=razas,
-        predios=predios
+        predios=predios,
+        madres=madres
     )
 
 # ------------------ Mostrar imágenes ------------------
