@@ -712,6 +712,7 @@ def predios():
             fk_estado = request.form.get("fk_estado")
             fk_municipio = request.form.get("fk_municipio")
             nom_rancho = request.form.get("nom_rancho")
+            upp = request.form.get("upp")
             # Determinar fk_productor: si el usuario es Productor usar la sesión
             if session.get('rol') == 'Productor' and session.get('fk_productor'):
                 fk_prod = session.get('fk_productor')
@@ -719,10 +720,10 @@ def predios():
                 fk_prod = request.form.get("fk_productor")  # 👈 nuevo
 
             sql = """
-                INSERT INTO Predios (direccion, fk_estado, fk_municipio, fk_productor, nom_rancho)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO Predios (direccion, fk_estado, fk_municipio, fk_productor, nom_rancho, upp)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho))
+            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho, upp))
             conn.commit()
 
         elif accion == "modificar":
@@ -731,6 +732,7 @@ def predios():
             fk_estado = request.form.get("fk_estado")
             fk_municipio = request.form.get("fk_municipio")
             nom_rancho = request.form.get("nom_rancho")
+            upp = request.form.get("upp")
             # Determinar fk_productor: si el usuario es Productor usar la sesión
             if session.get('rol') == 'Productor' and session.get('fk_productor'):
                 fk_prod = session.get('fk_productor')
@@ -739,10 +741,10 @@ def predios():
 
             sql = """
                 UPDATE Predios
-                SET direccion=%s, fk_estado=%s, fk_municipio=%s, fk_productor=%s, nom_rancho=%s
+                SET direccion=%s, fk_estado=%s, fk_municipio=%s, fk_productor=%s, nom_rancho=%s, upp=%s
                 WHERE pk_predio=%s
             """
-            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho, pk))
+            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho, upp, pk))
             conn.commit()
 
         elif accion == "eliminar":
@@ -757,8 +759,10 @@ def predios():
     # --------------------
     # Seleccionar nombres de estado y municipio a través de JOINs
     cursor.execute("""
-        SELECT p.pk_predio, p.direccion, p.fk_estado, p.fk_municipio,
-               e.Nombre AS estado, m.Nombre AS municipio, p.fk_productor, pr.nombre AS productor, p.nom_rancho
+    SELECT p.pk_predio, p.direccion, p.fk_estado, p.fk_municipio,
+           e.Nombre AS estado, m.Nombre AS municipio,
+           p.fk_productor, pr.nombre AS productor,
+           p.nom_rancho, p.upp
         FROM Predios p
         LEFT JOIN Estados e ON p.fk_estado = e.pk_estado
         LEFT JOIN Municipios m ON p.fk_municipio = m.pk_municipio

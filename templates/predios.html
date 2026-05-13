@@ -15,7 +15,7 @@
     <table>
         <tr>
             <th>No. </th><th>Dirección</th><th>Estado</th>
-            <th>Municipio</th><th>Productor</th><th>Rancho</th>
+            <th>Municipio</th><th>Productor</th><th>Rancho</th><th>UPP</th>
             <th>Acciones</th>
         </tr>
         {% for p in predios %}
@@ -26,19 +26,21 @@
             <td>{{ p[5] }}</td>
             <td>{{ p[7] or '—' }}</td>
             <td>{{ p[8] or '—' }}</td>
+            <td>{{ p[9] or '—' }}</td>
             <td>
     <button class="btn btn-small btn-ver"
         onclick='verPredio({{ {
             "id":p[0], "direccion":p[1],
             "estado":p[4], "municipio":p[5],
             "productor":p[7], "rancho":p[8],
+            "upp":p[9],
             "fk_estado":p[2], "fk_municipio":p[3]
         } | tojson }})'>Ver</button>
 
     <button class="btn btn-small"
         onclick='editarPredio({{
             {"id":p[0],"direccion":p[1],
-             "fk_estado":p[2],"fk_municipio":p[3], "rancho": p[8]}
+             "fk_estado":p[2],"fk_municipio":p[3], "rancho": p[8], "upp": p[9]}
             | tojson
         }})'>Modificar</button>
 
@@ -47,7 +49,7 @@
         onclick="eliminarPredio({{ p[0] }})">
         Eliminar
     </button>
-</td>
+            </td>
 
         </tr>
         {% endfor %}
@@ -96,6 +98,9 @@
             <label>Nombre del Rancho (opcional)</label>
             <input type="text" name="nom_rancho" id="f_rancho" placeholder="Ej: Rancho El Buen Pastor">
 
+            <label>UPP</label>
+            <input type="text" name="upp" id="f_upp" placeholder="Ingrese UPP">
+
             <button class="btn" name="accion" value="registrar" id="btnAccion">
                 Guardar
             </button>
@@ -114,6 +119,7 @@
         <p><b>Municipio:</b> <span id="v_municipio"></span></p>
         <p><b>Productor:</b> <span id="v_productor"></span></p>
         <p><b>Rancho:</b> <span id="v_rancho"></span></p>
+        <p><b>UPP:</b> <span id="v_upp"></span></p>
 
         <button class="btn" onclick="editarDesdeVer()">Modificar</button>
     </div>
@@ -154,6 +160,7 @@ function verPredio(o){
     v_municipio.innerText=o.municipio;
     v_productor.innerText=o.productor||'—';
     v_rancho.innerText=o.rancho||'—';
+    v_upp.innerText=o.upp||'—';
     modalVer.style.display="flex";
 }
 
