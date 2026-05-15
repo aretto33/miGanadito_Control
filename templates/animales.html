@@ -219,7 +219,23 @@ td {
 }
 
 .animal-table table {
+    width: 100%;
     min-width: 760px;
+}
+
+table th,
+table td {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.animal-img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
 }
 
 @media(max-width: 992px) {
@@ -227,7 +243,7 @@ td {
         padding: 16px;
     }
     .animal-table table {
-        min-width: 620px;
+        min-width: 700px;
     }
     .actions-cell button,
     .btn-small,
@@ -258,8 +274,22 @@ td {
     }
     table th,
     table td {
-        padding: 8px;
-        font-size: 0.95rem;
+        padding: 6px;
+        font-size: 0.85rem;
+    }
+    .animal-img {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media(max-width: 576px) {
+    .animal-table table {
+        min-width: 520px;
+    }
+    table th,
+    table td {
+        font-size: 0.82rem;
     }
 }
 
@@ -296,7 +326,7 @@ td {
             <tr>
                 <th>No. </th><th>Nombre</th><th>Fecha</th><th>Cruze</th>
                 <th>Productor</th><th>Predio</th><th>Raza</th><th>Madre</th><th>Sexo</th><th>Peso</th>
-                <th>Perfil</th><th>Lateral</th>
+                <th>Perfil</th><th>Lateral</th><th>Arete</th>
                 <th>Estatus</th><th>Acciones</th>
             </tr>
         </thead>
@@ -309,8 +339,8 @@ td {
                 <td>{{ a[3] }}</td>
                 <td>{{ a[4] }}</td>
                 <td>{{ a[8] if a|length > 8 else '—' }}</td>
+                <td>{{ a[5] if a|length > 5 and a[5] else '—' }}</td>
                 <td>{{ a[14] if a|length > 14 and a[14] else '—' }}</td>
-                <td>{{ a[5] }}</td>
                 <td>{{ a[6] }}</td>
                 <td>{{ a[7] }}</td>
 
@@ -324,11 +354,7 @@ td {
                          src="{{ url_for('imagen_animal', id=a[0], tipo='foto_lateral') }}"
                          onerror="this.style.display='none'">
                 </td>
-                <td>
-                    <img class="animal-img"
-                         src="{{ url_for('imagen_animal', id=a[0], tipo='foto_arete') }}"
-                         onerror="this.style.display='none'">
-                </td>
+                <td>{{ a[15] if a|length > 15 and a[15] else '—' }}</td>
                 <td>
                     <span class="estatus-badge {{ a[9]|lower }}">
                         {{ a[9] }}
@@ -341,8 +367,9 @@ td {
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "raza": a[5], "madre": a[14] if a|length > 14 else null,
-                            "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else null
+                            "productor": a[4], "raza": a[5], "madre": a[14] if a|length > 14 else none,
+                            "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else none,
+                            "arete": a[15] if a|length > 15 else none
                         } | tojson }})'>
                         Ver
                     </button>
@@ -350,11 +377,12 @@ td {
                     <button type="button" class="btn btn-small"
                         onclick='abrirFormEditar({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else null,
-                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else null,
-                            "madre": a[14] if a|length > 14 else null,
-                            "fk_madre": a[13] if a|length > 13 else null,
-                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[10] if a|length > 10 else null
+                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else none,
+                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else none,
+                            "madre": a[14] if a|length > 14 else none,
+                            "fk_madre": a[13] if a|length > 13 else none,
+                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[10] if a|length > 10 else none,
+                            "arete": a[15] if a|length > 15 else none
                         } | tojson }})'>
                         Modificar
                     </button>
@@ -441,8 +469,8 @@ td {
             <label for="f_foto_lateral">Foto lateral:</label>
             <input type="file" name="foto_lateral" id="f_foto_lateral" accept="image/*">
 
-            <label for="f_foto_arete">Foto arete:</label>
-            <input type="file" name="foto_arete" id="f_foto_arete" accept="image/*">
+            <label for="f_arete">No. de arete:</label>
+            <input type="text" name="arete" id="f_arete" required placeholder="Ej: MX-1020">
 
             <label for="f_sexo">Sexo:</label>
             <select name="sexo" id="f_sexo" required>
@@ -468,6 +496,7 @@ td {
         <p><strong>Predio:</strong> <span id="v_predio"></span></p>
         <p><strong>Raza:</strong> <span id="v_raza"></span></p>
         <p><strong>Madre:</strong> <span id="v_madre"></span></p>
+        <p><strong>Arete:</strong> <span id="v_arete"></span></p>
         <p><strong>Sexo:</strong> <span id="v_sexo"></span></p>
         <p><strong>Peso actual (kg):</strong> <span id="v_peso"></span></p>
         <div style="margin-top:12px;">
@@ -532,6 +561,11 @@ function abrirFormEditar(obj) {
         prodEl.value = obj.fk_productor;
     }
 
+    const areteEl = document.getElementById('f_arete');
+    if (areteEl) {
+        areteEl.value = obj.arete || '';
+    }
+
     // ✅ RAZA (por ID)
     const razaEl = document.getElementById('f_raza');
     if (razaEl && obj.fk_raza) {
@@ -560,7 +594,7 @@ function verAnimal(obj) {
     document.getElementById('v_predio').textContent = obj.predio || 'N/A';
     document.getElementById('v_raza').textContent = obj.raza || '';
     document.getElementById('v_madre').textContent = obj.madre || 'N/A';
-    document.getElementById('v_sexo').textContent = obj.sexo || '';
+    document.getElementById('v_arete').textContent = obj.arete || 'N/A';    document.getElementById('v_arete').textContent = obj.arete || 'N/A';    document.getElementById('v_sexo').textContent = obj.sexo || '';
     document.getElementById('v_peso').textContent = obj.peso || '';
     mostrarModal('modal-ver');
 

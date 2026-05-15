@@ -55,6 +55,14 @@ input,select{
     border-radius:6px;
     border:1px solid #bca58b;
     margin-bottom:10px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .table-box { padding: 15px; overflow-x: auto; }
+    table { font-size: 0.85rem; }
+    th, td { padding: 6px; }
+    .modal-card { max-width: 90%; width: 100%; }
 }
 .banner{
     width:100%;

@@ -18,10 +18,11 @@
   grid-template-columns: 1fr 1fr;
   gap:40px;
   align-items:start;
+  padding: 0 1rem;
 }
 
 @media(max-width:900px){
-  .opinion-layout{ grid-template-columns:1fr; }
+  .opinion-layout{ grid-template-columns:1fr; gap: 25px; margin: 20px auto; padding: 0 1rem; }
 }
 
 /* ===== GRAFICAS ===== */
