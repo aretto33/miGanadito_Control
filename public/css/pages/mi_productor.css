@@ -34,3 +34,23 @@ input {
 .btn-guardar:hover {
     background: #6b452e;
 }
+
+.fierro-box {
+    margin-bottom: 16px;
+}
+
+.fierro-box .fierro-img {
+    display: block;
+    max-width: 100%;
+    max-height: 240px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border: 1px solid #d1c3b0;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.fierro-box input[type="file"] {
+    margin-top: 8px;
+}
