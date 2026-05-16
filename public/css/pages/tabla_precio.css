@@ -7,15 +7,21 @@
   --bg: #fbf7f2;
 }
 
-.price-wrap{ max-width:1100px; margin:26px auto 60px; padding:20px; background: linear-gradient(180deg,var(--bg), #fff); border-radius:14px; box-shadow: 0 10px 30px rgba(91,66,47,0.08);} 
+.price-wrap{ max-width:1100px; margin:26px auto 60px; padding:18px; background:#f1dfca; border:1px solid rgba(95,64,39,.18); border-radius:14px; box-shadow:0 10px 20px rgba(72,48,29,.1);} 
+.price-banner{ max-height:200px; }
+.price-title{ color:#8b5e3c; }
+.price-intro{ max-width:1000px; margin:auto; }
+.price-contact,
+.price-center-title{ color:var(--cafe); }
+.price-center-title{ margin-top:18px; }
 .section-title{ color:var(--cafe); margin-bottom:8px; }
 .price-grid{ display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
-.price-card{ flex:1 1 480px; background: linear-gradient(180deg, #fff, var(--cream)); border-radius:12px; padding:14px; box-shadow: 0 6px 18px rgba(102,70,48,0.06); }
+.price-card{ flex:1 1 480px; background:#f3e6d6; border-radius:12px; padding:14px; box-shadow: 0 6px 14px rgba(102,70,48,0.08); }
 .price-card h3{ color:var(--cafe-dark); margin-bottom:10px; }
-.table-coffee{ width:100%; border-collapse: separate; border-spacing:0; overflow:hidden; border-radius:8px; }
-.table-coffee thead th{ background: linear-gradient(90deg,var(--cafe-light), #e7d6c1); color:var(--cafe-dark); padding:12px 14px; text-align:left; font-weight:700; }
-.table-coffee tbody td{ padding:12px 14px; border-bottom:1px solid rgba(139,94,60,0.08); }
-.table-coffee tbody tr:nth-child(even){ background: rgba(139,94,60,0.03); }
+.table-coffee{ min-width:520px; overflow:hidden; border-radius:8px; }
+.table-coffee thead th{ background:#d8c2a8 !important; color:var(--cafe-dark) !important; padding:10px 12px !important; text-align:left; font-weight:700; }
+.table-coffee tbody td{ padding:9px 12px !important; border-bottom:1px solid rgba(139,94,60,0.16) !important; }
+.table-coffee tbody tr:nth-child(even){ background:#ead8c1 !important; }
 .price-small{ font-size:0.95rem; color:var(--cafe-dark); }
 .price-amount{ font-weight:700; color:var(--cafe-dark); }
 .price-img{ display:block; margin:18px auto 0; max-width:760px; width:100%; border-radius:10px; box-shadow: 0 12px 30px rgba(91,66,47,0.06); }

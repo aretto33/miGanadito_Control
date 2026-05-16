@@ -4,315 +4,55 @@
 {% endblock %}
 {% block content %}
 
-<style>
-/* ===== estilos ===== */
-.animal-table {
-    background: #f5e8d8;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-input, select, textarea {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #bca58b;
-    margin-bottom: 12px;
-    box-sizing: border-box;
-}
-
-.btn {
-    background: #8b5e3c;
-    color: white;
-    padding: 8px 14px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-}
-.btn:hover { background: #6b452e; }
-
-.btn-small {
-    padding: 6px 10px;
-    font-size: 0.8rem;
-}
-
-/* ===== SIDEBAR ===== */
-.sidebar-3d {
-    width: 250px;
-    min-height: 200vh;
-    background: #543d28ff;
-    padding: 20px 15px;
-    box-shadow: 4px 0 12px rgba(0,0,0,0.3);
-
-    position: absolute; /* cambiado */
-    top: 90px;
-    left: 0;
-    transition: top 0.3s ease; /* suavizado */
-    z-index: 2000;
-}
-
-
-.sidebar-3d.active {
-    left: -250px; /*  se esconde */
-}
-
-.sidebar-header {
-    text-align: center;
-    color: #f3e4cb;
-    margin-bottom: 30px;
-}
-
-.sidebar-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* ===== BOTONES 3D ===== */
-.btn-3d {
-    background: #c7a97a;
-    color: #4b3621;
-    padding: 12px 15px;
-    border-radius: 10px;
-    font-weight: bold;
-    text-decoration: none;
-    border-bottom: 4px solid #9b7b54;
-    box-shadow: 0 4px 0 #8b6b47;
-    transition: 0.12s;
-}
-
-.btn-3d:hover {
-    background: #d8be92;
-}
-
-.btn-3d:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 #8b6b47;
-    border-bottom: 2px solid #9b7b54;
-}
-
-.btn-main {
-    background: #eed9b6;
-    border-bottom: 4px solid #c4a076;
-    box-shadow: 0 4px 0 #a58563;
-}
-
-.sidebar-menu .btn-3d img.icon-3d {
-    height: 24px;
-    width: auto;
-    margin-right: 8px;
-}
-
-.sidebar-header img.icon-3d {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
-}
-
-/* ===== BOTÓN CERRAR / ABRIR ===== */
-.btn-closeDetails {
-    background-color: #7f5539;
-    color: #f7efe5;
-    position: absolute;
-    top: 10%;
-    right: -22px;
-    transform: translateY(-50%);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%; /* redondo */
-    cursor: pointer;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-}
-
-/* ===== CONTENIDO ===== */
-.dashboard-content {
-    margin-left: 250px;
-    padding: 30px;
-    transition: margin-left 0.3s ease;
-}
-
-.sidebar-3d.active ~ .dashboard-content {
-    margin-left: 0;
-}
-
-
-/* botón ver azul */
-.btn-ver {
-    background: #3e6db5;
-}
-.btn-ver:hover { background: #305692; }
-
-img.animal-img {
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-/* ===== modal/card ===== */
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    display: none; /* se muestra con JS */
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    padding: 20px;
-}
-.modal-card {
-    background: #f5e8d8;
-    padding: 20px;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 720px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-    position: relative;
-}
-.close-btn {
-    position: absolute;
-    right: 12px;
-    top: 8px;
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-}
-
-/* tabla */
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-th {
-    background: #d8c2a8;
-    padding: 8px;
-}
-td {
-    padding: 8px;
-    border: 1px solid #c4ab92;
-    text-align: center;
-}
-.actions-cell { white-space: nowrap; }
-
-.banner {
-        width: 100%;
-        max-width: 1300px;
-        height: auto;
-        display: block;
-        margin: 20px auto;
-        border-radius: 12px;
-    }
-
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.animal-table {
-    overflow-x: auto;
-}
-
-.animal-table table {
-    min-width: 760px;
-}
-
-@media(max-width: 992px) {
-    .animal-table {
-        padding: 16px;
-    }
-    .animal-table table {
-        min-width: 620px;
-    }
-    .actions-cell button,
-    .btn-small,
-    .btn {
-        width: 100%;
-        margin-bottom: 10px;
-    }
-}
-
-@media(max-width: 768px) {
-    .sidebar-3d {
-        position: relative;
-        width: 100%;
-        min-height: auto;
-        top: 0;
-        left: 0;
-    }
-    .dashboard-content {
-        margin-left: 0;
-    }
-    .modal-card,
-    .card-contenido {
-        width: min(100%, 100%);
-        margin: 0 12px;
-    }
-    .animal-table table {
-        min-width: 560px;
-    }
-    table th,
-    table td {
-        padding: 8px;
-        font-size: 0.95rem;
-    }
-}
-
-
-/* ===== ESTATUS ===== */
-.estatus-badge {
-    padding:6px 14px;
-    border-radius:14px;
-    font-size:13px;
-    font-weight:600;
-    color:white;
-}
-.estatus-badge.normal{ background:#4CAF50; }
-.estatus-badge.leve{ background:#FFC107; color:#3b2f1d; }
-.estatus-badge.grave{ background:#E53935; }
-
-</style>
 <img src="{{ url_for('static', filename='img/3.png') }}" class="banner">
 <h2>Gestión de Animales</h2>
-<h4 class= >Aquí puedes registrar y modificar los animales con la finalidad de tener registros de los nuevos nacimientos que ocurran y ubicar el animal.</h4>
+<h4>Aquí puedes registrar y modificar los animales con la finalidad de tener registros de los nuevos nacimientos que ocurran y ubicar el animal.</h4>
 
 <!-- botón para abrir modal de crear -->
 <button class="btn" id="btnNuevo">Registrar Animal</button>
 <br><br>
 
 <!-- TABLA -->
-<div class="animal-table">
-    <h3>Animales Registrados</h3>
-    <!--La propiedad length de un objeto String representa la longitud de una cadena, en unidades de código-->
-    <h4>Total: {{ animales|length }}</h4>
-    <div class="table-responsive">
-    <table>
+<div class="animal-table data-card">
+    <div class="data-card-header">
+        <h3>Animales Registrados</h3>
+        <span class="data-card-count">{{ animales|length }}</span>
+    </div>
+    <div class="data-card-body">
+    <div class="animals-table-shell">
+    <table class="animals-data-table">
         <thead>
             <tr>
-                <th>No. </th><th>Nombre</th><th>Fecha</th><th>Cruze</th>
-                <th>Productor</th><th>Predio</th><th>Raza</th><th>Madre</th><th>Sexo</th><th>Peso</th>
-                <th>Perfil</th><th>Lateral</th>
-                <th>Estatus</th><th>Acciones</th>
+                <th class="col-num">No.</th>
+                <th>Nombre</th>
+                <th class="col-date">Nacimiento</th>
+                <th>Cruze</th>
+                <th>Productor</th>
+                <th>Predio</th>
+                <th>Raza</th>
+                <th>Madre</th>
+                <th class="col-short">Sexo</th>
+                <th class="col-short">Peso</th>
+                <th class="col-photo">Perfil</th>
+                <th class="col-photo">Lateral</th>
+                <th class="col-photo">Arete</th>
+                <th class="col-status">Estatus</th>
+                <th class="col-actions">Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for a in animales %}
             <tr>
-                <td>{{ loop.index}}</td>
-                <td>{{ a[1] }}</td>
-                <td>{{ a[2] }}</td>
-                <td>{{ a[3] }}</td>
-                <td>{{ a[4] }}</td>
-                <td>{{ a[8] if a|length > 8 else '—' }}</td>
+                <td>{{ loop.index }}</td>
+                <td class="animal-name">{{ a[1] or 'Sin nombre' }}</td>
+                <td>{{ a[2] or '—' }}</td>
+                <td>{{ a[3] or '—' }}</td>
+                <td>{{ a[4] or '—' }}</td>
+                <td>{{ a[8] if a|length > 8 and a[8] else '—' }}</td>
+                <td>{{ a[5] if a|length > 5 and a[5] else '—' }}</td>
                 <td>{{ a[14] if a|length > 14 and a[14] else '—' }}</td>
-                <td>{{ a[5] }}</td>
-                <td>{{ a[6] }}</td>
-                <td>{{ a[7] }}</td>
+                <td>{{ 'Macho' if a[6] == 'M' else 'Hembra' if a[6] == 'H' else a[6] or '—' }}</td>
+                <td>{{ a[7] if a[7] is not none else '—' }}</td>
 
                 <td>
                     <img class="animal-img"
@@ -330,14 +70,16 @@ td {
                          onerror="this.style.display='none'">
                 </td>
                 <td>
-                    <span class="estatus-badge {{ a[9]|lower }}">
-                        {{ a[9] }}
+                    {% set estado = a[9] if a|length > 9 and a[9] else 'Sin estatus' %}
+                    <span class="estatus-badge {{ estado|lower|replace(' ', '-') }}">
+                        {{ estado }}
                     </span>
                 </td>
                     
                 
 
                 <td class="actions-cell">
+                    <div class="actions-row">
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
@@ -359,19 +101,21 @@ td {
                         Modificar
                     </button>
 
-                    <form method="POST" style="display:inline">
+                    <form method="POST">
                         <input type="hidden" name="pk" value="{{ a[0] }}">
-                        <button type="submit" class="btn btn-small" style="background:#a63c3c"
+                        <button type="submit" class="btn btn-small btn-danger"
                                 name="accion" value="eliminar"
                                 onclick="return confirm('¿Estás seguro de que deseas eliminar este animal?')">
                             Eliminar
                         </button>
                     </form>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     </div>
 </div>
 
@@ -425,9 +169,9 @@ td {
                 {% endfor %}
             </select>
 
-            <div style="margin-top: 8px; margin-bottom: 8px;">
+            <div class="form-field">
                 <label for="f_fk_madre">Madre:</label>
-                <select name="fk_madre" id="f_fk_madre" style="width:100%; padding:10px; border-radius:6px; border:1px solid #bca58b;">
+                <select name="fk_madre" id="f_fk_madre">
                     <option value="">Ninguna</option>
                     {% for m in madres %}
                         <option value="{{ m[0] }}">{{ m[1] }}</option>
@@ -470,7 +214,7 @@ td {
         <p><strong>Madre:</strong> <span id="v_madre"></span></p>
         <p><strong>Sexo:</strong> <span id="v_sexo"></span></p>
         <p><strong>Peso actual (kg):</strong> <span id="v_peso"></span></p>
-        <div style="margin-top:12px;">
+        <div class="modal-actions">
             <button class="btn" id="verToEditBtn">Modificar</button>
         </div>
     </div>

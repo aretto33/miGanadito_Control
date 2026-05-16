@@ -11,18 +11,24 @@
 
 <button class="btn" onclick="abrirForm()">➕ Registrar Seguimiento</button>
 
-<div class="table-box">
-    <h3>Registros</h3>
+<div class="table-box data-card">
+    <div class="data-card-header">
+        <h3>Registros</h3>
+        <span class="data-card-count">{{ seguimientos|length }}</span>
+    </div>
+    <div class="data-card-body">
+    <div class="data-toolbar">
+        <label for="filtroAnimal">Filtrar por animal</label>
+        <select id="filtroAnimal">
+            <option value="">Todos</option>
+            {% for a in animales %}
+                <option value="{{ a[0] }}">{{ a[1] }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-    <label><b>Filtrar por animal:</b></label>
-    <select id="filtroAnimal">
-        <option value="">Todos</option>
-        {% for a in animales %}
-            <option value="{{ a[0] }}">{{ a[1] }}</option>
-        {% endfor %}
-    </select>
-
-    <table>
+    <div class="data-table-wrap">
+    <table class="data-table">
         <thead>
         <tr>
             <th>No.</th>
@@ -53,6 +59,7 @@
             <td>{{ s[8] or "-" }}</td>
 
             <td>
+                <div class="actions-row">
                 <button class="btn btn-small"
                     onclick='editar({{
                         {
@@ -65,13 +72,16 @@
                         } | tojson
                     }})'>Modificar</button>
 
-                <button class="btn btn-small btn-ver"
+                <button class="btn btn-small btn-danger"
                     onclick="eliminar('{{ s[0] }}')">Eliminar</button>
+                </div>
             </td>
         </tr>
         {% endfor %}
         </tbody>
     </table>
+    </div>
+    </div>
 </div>
 
 <!-- ===== MODAL ===== -->

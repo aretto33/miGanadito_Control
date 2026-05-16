@@ -95,6 +95,82 @@
 
             </div>
 
+            {% set vacas_demo = [
+                {"label": "En producción", "value": 18, "bar_class": "bar-90"},
+                {"label": "Gestantes", "value": 9, "bar_class": "bar-45"},
+                {"label": "Crías registradas", "value": 7, "bar_class": "bar-35"},
+                {"label": "Revisión vet.", "value": 3, "bar_class": "bar-15"}
+            ] %}
+            <section class="demo-stats" aria-labelledby="demo-stats-title">
+                <div class="demo-stats-header">
+                    <div>
+                        <p class="demo-eyebrow">Modo demo</p>
+                        <h3 id="demo-stats-title">Estadísticas de vacas</h3>
+                    </div>
+                    <div class="demo-total">
+                        <span>37</span>
+                        <small>Total demo</small>
+                    </div>
+                </div>
+
+                <div class="cow-chart" role="img" aria-label="Gráfica demo de vacas por estado">
+                    {% for item in vacas_demo %}
+                    <div class="cow-chart-row">
+                        <div class="cow-chart-label">
+                            <span>{{ item.label }}</span>
+                            <strong>{{ item.value }}</strong>
+                        </div>
+                        <div class="cow-chart-track">
+                            <span class="cow-chart-bar {{ item.bar_class }}"></span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            {% set nacimientos_demo = [
+                {"mes": "Ene", "nacimientos": 4, "diferencia": "+1", "point_class": "point-4", "trend": "up"},
+                {"mes": "Feb", "nacimientos": 3, "diferencia": "-1", "point_class": "point-3", "trend": "down"},
+                {"mes": "Mar", "nacimientos": 6, "diferencia": "+3", "point_class": "point-6", "trend": "up"},
+                {"mes": "Abr", "nacimientos": 5, "diferencia": "-1", "point_class": "point-5", "trend": "down"},
+                {"mes": "May", "nacimientos": 8, "diferencia": "+3", "point_class": "point-8", "trend": "up"},
+                {"mes": "Jun", "nacimientos": 7, "diferencia": "-1", "point_class": "point-7", "trend": "down"}
+            ] %}
+            <section class="birth-finance-demo" aria-labelledby="birth-finance-title">
+                <div class="demo-stats-header">
+                    <div>
+                        <p class="demo-eyebrow">Finanzas demo</p>
+                        <h3 id="birth-finance-title">Nacimientos por mes</h3>
+                    </div>
+                    <div class="demo-total">
+                        <span>33</span>
+                        <small>Nacimientos</small>
+                    </div>
+                </div>
+
+                <div id="my-chart" role="img" aria-label="Line chart demo de nacimientos de vacas por mes y diferencia mensual">
+                    <table class="charts-css line">
+                        <caption>Nacimientos de vacas por mes</caption>
+                        <tbody>
+                            {% for item in nacimientos_demo %}
+                            <tr class="{{ item.point_class }}">
+                                <th scope="row">{{ item.mes }}</th>
+                                <td>
+                                    <span class="chart-value">{{ item.nacimientos }}</span>
+                                    <span class="chart-diff {{ item.trend }}">{{ item.diferencia }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <ul class="charts-css legend">
+                        <li>Nacimientos</li>
+                        <li>Diferencia mensual</li>
+                    </ul>
+                </div>
+            </section>
+
             <!-- CENTER BOX -->
             <div class="center-box">
 
@@ -112,7 +188,8 @@
         <h3>Estatus de Salud de los animales</h3>
         <small>Resumen del estatus de salud de los animales registrados categorizado por gravedad y atención</small>
 
-        <table class="estatus-table">
+        <div class="data-table-wrap">
+        <table class="data-table estatus-table">
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -138,6 +215,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 

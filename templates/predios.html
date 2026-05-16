@@ -10,14 +10,22 @@
 <button class="btn" onclick="abrirForm()">➕ Registrar Predio</button>
 
 <!-- ===== TABLA ===== -->
-<div class="table-box">
-    <h3>Predios Registrados</h3>
-    <table>
+<div class="table-box data-card">
+    <div class="data-card-header">
+        <h3>Predios Registrados</h3>
+        <span class="data-card-count">{{ predios|length }}</span>
+    </div>
+    <div class="data-card-body">
+    <div class="data-table-wrap">
+    <table class="data-table">
+        <thead>
         <tr>
             <th>No. </th><th>Dirección</th><th>Estado</th>
             <th>Municipio</th><th>Productor</th><th>Rancho</th>
             <th>Acciones</th>
         </tr>
+        </thead>
+        <tbody>
         {% for p in predios %}
         <tr>
             <td>{{ loop.index}}</td>
@@ -27,6 +35,7 @@
             <td>{{ p[7] or '—' }}</td>
             <td>{{ p[8] or '—' }}</td>
             <td>
+    <div class="actions-row">
     <button class="btn btn-small btn-ver"
         onclick='verPredio({{ {
             "id":p[0], "direccion":p[1],
@@ -42,16 +51,19 @@
             | tojson
         }})'>Modificar</button>
 
-    <button class="btn btn-small"
-        style="background:#b53e3e"
+    <button class="btn btn-small btn-danger"
         onclick="eliminarPredio({{ p[0] }})">
         Eliminar
     </button>
+    </div>
 </td>
 
         </tr>
         {% endfor %}
+        </tbody>
     </table>
+    </div>
+    </div>
 </div>
 
 <!-- ===== MODAL FORM ===== -->

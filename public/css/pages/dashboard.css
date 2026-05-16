@@ -188,6 +188,271 @@
     height: auto;
 }
 
+.demo-stats {
+    margin-top: 1.4rem;
+    padding: 1.45rem;
+    border: 1px solid rgba(95, 64, 39, 0.2);
+    border-radius: 18px;
+    background: #f1dfca;
+    box-shadow: 0 10px 20px rgba(72, 48, 29, 0.12);
+}
+
+.birth-finance-demo {
+    margin-top: 1.2rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(95, 64, 39, 0.2);
+    border-radius: 18px;
+    background: #f1dfca;
+    box-shadow: 0 10px 20px rgba(72, 48, 29, 0.12);
+}
+
+.demo-stats-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.2rem;
+}
+
+.demo-eyebrow {
+    margin: 0 0 0.2rem;
+    color: #8a6848;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.demo-stats h3 {
+    margin: 0;
+    font-family: "Fraunces", serif;
+    color: #3a2a1d;
+}
+
+.demo-total {
+    min-width: 104px;
+    padding: 0.75rem 0.9rem;
+    border-radius: 18px;
+    background: #3d2b1f;
+    color: #f7efe5;
+    text-align: center;
+    box-shadow: 0 12px 22px rgba(61, 43, 31, 0.18);
+}
+
+.demo-total span {
+    display: block;
+    font-family: "Fraunces", serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.demo-total small {
+    color: rgba(247, 239, 229, 0.78);
+    font-size: 0.75rem;
+}
+
+.cow-chart {
+    display: grid;
+    gap: 0.9rem;
+}
+
+.cow-chart-row {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+}
+
+.cow-chart-label {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: #4b3621;
+    font-weight: 700;
+}
+
+.cow-chart-label span {
+    min-width: 0;
+}
+
+.cow-chart-label strong {
+    color: #7f5539;
+}
+
+.cow-chart-track {
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(127, 85, 57, 0.14);
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(61, 43, 31, 0.12);
+}
+
+.cow-chart-bar {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7f5539 0%, #c7a97a 100%);
+}
+
+.cow-chart-bar.bar-90 { width: 90%; }
+.cow-chart-bar.bar-45 { width: 45%; }
+.cow-chart-bar.bar-35 { width: 35%; }
+.cow-chart-bar.bar-15 { width: 15%; }
+
+#my-chart {
+    display: grid;
+    gap: 0.8rem;
+}
+
+#my-chart .charts-css.line {
+    position: relative;
+    width: 100%;
+    min-height: 190px;
+    margin: 0;
+    border-collapse: collapse;
+    background:
+        linear-gradient(to top, rgba(127, 85, 57, 0.12) 1px, transparent 1px) 0 0 / 100% 25%,
+        rgba(243, 230, 214, 0.62);
+    border: 1px solid rgba(95, 64, 39, 0.18);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#my-chart caption {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+#my-chart .charts-css.line tbody {
+    position: absolute;
+    inset: 18px 18px 34px;
+}
+
+#my-chart .charts-css.line tr {
+    position: absolute;
+    bottom: 0;
+    width: 12px;
+    height: 12px;
+}
+
+#my-chart .charts-css.line tr::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    width: var(--line-width);
+    height: 4px;
+    background: #7f5539;
+    border-radius: 999px;
+    transform: rotate(var(--line-angle));
+    transform-origin: left center;
+    z-index: 1;
+}
+
+#my-chart .charts-css.line tr:last-child::before {
+    display: none;
+}
+
+#my-chart .charts-css.line th {
+    position: absolute;
+    top: 148px;
+    left: 50%;
+    width: 42px;
+    margin-left: -21px;
+    color: #6f5a46;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+#my-chart .charts-css.line td {
+    position: relative;
+    display: block;
+    width: 12px;
+    height: 12px;
+    padding: 0;
+    border-radius: 999px;
+    background: #7f5539;
+    box-shadow: 0 0 0 4px rgba(127, 85, 57, 0.14);
+    z-index: 2;
+}
+
+#my-chart .point-4 { left: 0%; bottom: 46%; --line-width: clamp(54px, 14vw, 150px); --line-angle: -18deg; }
+#my-chart .point-3 { left: 20%; bottom: 34%; --line-width: clamp(58px, 15vw, 158px); --line-angle: 39deg; }
+#my-chart .point-6 { left: 40%; bottom: 70%; --line-width: clamp(54px, 14vw, 150px); --line-angle: -18deg; }
+#my-chart .point-5 { left: 60%; bottom: 58%; --line-width: clamp(56px, 14.5vw, 154px); --line-angle: 31deg; }
+#my-chart .point-8 { left: 80%; bottom: 90%; --line-width: clamp(54px, 14vw, 150px); --line-angle: -14deg; }
+#my-chart .point-7 { left: calc(100% - 12px); bottom: 78%; --line-width: 0; --line-angle: 0deg; }
+
+#my-chart .chart-value {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    color: #4b3621;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+#my-chart .chart-diff {
+    position: absolute;
+    left: 50%;
+    bottom: 34px;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    padding: 0.18rem 0.4rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+#my-chart .chart-diff.up {
+    background: #d7e5c8;
+    color: #36592d;
+}
+
+#my-chart .chart-diff.down {
+    background: #ead1c5;
+    color: #813f32;
+}
+
+#my-chart .charts-css.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: #5d4330;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+#my-chart .charts-css.legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+#my-chart .charts-css.legend li::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    background: #7f5539;
+}
+
+#my-chart .charts-css.legend li:nth-child(2)::before {
+    background: #d7e5c8;
+    border: 1px solid #9eb98a;
+}
+
 .center-box {
     display: grid;
     grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.5fr);
@@ -397,11 +662,43 @@
     .tramites,
     .estatus-box,
     .widgets .card,
+    .demo-stats,
+    .birth-finance-demo,
     .busqueda-card {
         border-radius: 22px;
     }
 
     .dashboard-content > h3 {
         font-size: 1.65rem;
+    }
+
+    .demo-stats,
+    .birth-finance-demo {
+        padding: 1.1rem;
+    }
+
+    .demo-stats-header,
+    .cow-chart-row {
+        grid-template-columns: 1fr;
+    }
+
+    .demo-stats-header {
+        display: grid;
+    }
+
+    .demo-total {
+        width: 100%;
+    }
+
+    #my-chart .charts-css.line {
+        min-height: 210px;
+    }
+
+    #my-chart .charts-css.line tbody {
+        inset: 24px 22px 42px;
+    }
+
+    #my-chart .charts-css.line th {
+        top: 164px;
     }
 }

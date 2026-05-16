@@ -1,131 +1,9 @@
 {% extends "base.html" %}
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/ventas.css') }}">
+{% endblock %}
 {% block content %}
 
-<style>
-.table-box {
-    background: #f5e8d8;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-/* Inputs */
-input, select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #bca58b;
-    margin-bottom: 12px;
-}
-
-/* Botones */
-.btn {
-    background: #8b5e3c;
-    color: white;
-    padding: 10px 14px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-}
-.btn:hover { background: #6b452e; }
-
-.btn-small {
-    padding: 6px 10px;
-    font-size: 0.8rem;
-}
-
-.btn-ver {
-    background: #3e6db5;
-}
-.btn-ver:hover {
-    background: #305692;
-}
-
-/* ===== CARDS MODALES ===== */
-.card-modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.card-contenido {
-    background: #f5e8d8;
-    padding: 25px;
-    border-radius: 14px;
-    width: 420px;
-    box-shadow: 0 10px 28px rgba(0,0,0,.35);
-}
-
-/* Tabla */
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-.table-box table {
-    min-width: 780px;
-}
-table th {
-    background: #d8c2a8;
-    color: #4a2f16;
-}
-table td:first-child {
-    background: #f0dbc4;
-    font-weight: bold;
-}
-
-.card-contenido {
-    background: #f5e8d8;
-    padding: 25px;
-    border-radius: 14px;
-    width: 420px;
-    box-shadow: 0 10px 28px rgba(0,0,0,.35);
-}
-
-@media(max-width: 992px) {
-    .card-contenido {
-        width: min(100%, 420px);
-        margin: 0 12px;
-    }
-    .table-box {
-        padding: 16px;
-    }
-    .table-box table {
-        min-width: 700px;
-    }
-    .table-box button,
-    .btn-small {
-        width: 100%;
-        margin-bottom: 10px;
-    }
-}
-
-@media(max-width: 576px) {
-    .card-contenido {
-        padding: 18px;
-    }
-    .table-box table {
-        min-width: 650px;
-    }
-    .table-box th,
-    .table-box td {
-        padding: 8px;
-        font-size: 0.9rem;
-    }
-}
-
-.banner {
-        width: 100%;
-        max-width: 1300px;
-        height: auto;
-        display: block;
-        margin: 20px auto;
-        border-radius: 12px;
-    }
-</style>
 <img src="{{ url_for('static', filename='img/5.png') }}" class="banner">
 {% if session.get('rol') == 'Productor' %}
     <h2>Gestión Precios para la venta </h2>
@@ -137,11 +15,14 @@ table td:first-child {
 <br><br>
 
 <!-- ===== TABLA ===== -->
-<div class="table-box">
-    <h3>Ventas Registradas</h3>
-
-    <div class="table-responsive">
-    <table border="1" width="100%" cellpadding="6">
+<div class="table-box data-card">
+    <div class="data-card-header">
+        <h3>Ventas Registradas</h3>
+        <span class="data-card-count">{{ ventas|length }}</span>
+    </div>
+    <div class="data-card-body">
+    <div class="data-table-wrap">
+    <table class="data-table">
         <thead>
             <tr>
                 <th>No. </th>
@@ -169,6 +50,7 @@ table td:first-child {
                 <td>${{ v[4] }}</td>
                 <td>{{ v[5] }}</td>
                 <td>
+                    <div class="actions-row">
                     <button class="btn btn-small btn-ver"
                         onclick="verVenta('{{ v[0] }}','{{ v[6] }}','{{ v[7] }}','{{ v[8] }}','{{ v[9] }}','{{ v[10] }}','{{ v[11] }}','{{ v[4] }}','{{ v[5] }}')">
                         Ver
@@ -180,19 +62,21 @@ table td:first-child {
                         Modificar
                     </button>
 
-                    <form method="POST" style="display:inline">
+                    <form method="POST">
                         <input type="hidden" name="pk" value="{{ v[0] }}">
-                        <button class="btn btn-small" style="background:#a63c3c"
+                        <button class="btn btn-small btn-danger"
                                 name="accion" value="eliminar">
                             Eliminar
                         </button>
                     </form>
                     {% endif %}
+                    </div>
                 </td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
+    </div>
     </div>
 </div>
 
@@ -225,7 +109,7 @@ table td:first-child {
             <button class="btn" name="accion" value="registrar">
                 Guardar
             </button>
-            <button type="button" class="btn" style="background:#999" onclick="cerrarForm()">
+            <button type="button" class="btn btn-muted" onclick="cerrarForm()">
                 Cancelar
             </button>
         </form>
