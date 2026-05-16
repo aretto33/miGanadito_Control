@@ -30,23 +30,10 @@
                 <label for="password">Contraseña</label>
                 <input id="password" type="password" name="password" class="form-control auth-input" required>
 
-                <fieldset class="auth-role-group">
-                    <legend>Tipo de usuario</legend>
-                    <div class="auth-role-options">
-                        <label class="auth-role-option">
-                            <input type="radio" name="rol" value="Veterinario" required>
-                            <span>Veterinario</span>
-                        </label>
-                        <label class="auth-role-option">
-                            <input type="radio" name="rol" value="Productor" required>
-                            <span>Productor</span>
-                        </label>
-                        <label class="auth-role-option">
-                            <input type="radio" name="rol" value="Comprador" required>
-                            <span>Comprador</span>
-                        </label>
-                    </div>
-                </fieldset>
+                <input type="hidden" name="rol" value="Productor">
+                <div class="auth-notice">
+                    Estás ingresando al sistema como <strong>Productor</strong>.
+                </div>
 
                 <button class="btn-cafe btn-cafe-primary auth-submit" type="submit">Ingresar</button>
             </form>

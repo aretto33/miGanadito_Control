@@ -189,7 +189,7 @@ def login():
         if request.method == "POST":
             usuario = request.form["usuario"]
             contra = request.form["password"]
-            rol = normalizar_rol(request.form.get("rol"))
+            rol = normalizar_rol(request.form.get("rol")) or "Productor"
             if rol not in ROLES_VALIDOS:
                 flash("Rol inválido", "danger")
                 return redirect(url_for("login"))
@@ -226,7 +226,7 @@ def register():
         # Obtener datos de forma segura
         usuario = request.form.get("usuario", "").strip()
         contra = request.form.get("password", "").strip()
-        rol_nombre = normalizar_rol(request.form.get("rol"))
+        rol_nombre = normalizar_rol(request.form.get("rol")) or "Productor"
 
         # Validación básica
         if not usuario or not contra or not rol_nombre:

@@ -17,47 +17,26 @@
             <label>Contraseña:</label>
             <input type="password" name="password" class="form-control mb-3" required>
 
-            <label>Tipo de usuario:</label>
-            <div class="d-flex gap-4 mb-3">
-                <label><input type="radio" name="rol" value="Veterinario" onclick="actualizarFormularioRol()" required> Veterinario</label>
-                <label><input type="radio" name="rol" value="Productor" onclick="actualizarFormularioRol()" required> Productor</label>
+            <input type="hidden" name="rol" value="Productor">
+            <div class="mb-3">
+                <small>Se registrará automáticamente como <strong>Productor</strong>.</small>
             </div>
 
             <!-- DATOS EXTRA PARA PRODUCTOR -->
-            <div id="formProductor" class="border rounded p-3 mb-3" style="display:none; background:#f9f9f9;">
+            <div id="formProductor" class="border rounded p-3 mb-3" style="display:block; background:#f9f9f9;">
                 <h5>Datos del Productor</h5>
 
                 <label>Nombre:</label>
-                <input type="text" name="prod_nombre" class="form-control mb-2">
+                <input type="text" name="prod_nombre" class="form-control mb-2" required>
 
                 <label>Apellido paterno:</label>
-                <input type="text" name="prod_apellido_pat" class="form-control mb-2">
+                <input type="text" name="prod_apellido_pat" class="form-control mb-2" required>
 
                 <label>Apellido materno:</label>
                 <input type="text" name="prod_apellido_mat" class="form-control mb-2">
 
                 <label>RFC:</label>
                 <input type="text" name="prod_rfc" class="form-control mb-2">
-            </div>
-
-            <!-- DATOS EXTRA PARA VETERINARIO -->
-            <div id="formVeterinario" class="border rounded p-3 mb-3" style="display:none; background:#f9f9f9;">
-                <h5>Datos del Veterinario</h5>
-
-                <label>Nombre:</label>
-                <input type="text" name="vet_nombre" class="form-control mb-2">
-
-                <label>Apellidos:</label>
-                <input type="text" name="vet_apellidos" class="form-control mb-2">
-
-                <label>Cédula profesional:</label>
-                <input type="text" name="vet_cedula" class="form-control mb-2">
-
-                <label>Dirección de consultorio:</label>
-                <input type="text" name="vet_direccion" class="form-control mb-2" placeholder="Opcional">
-
-                <label>Teléfono:</label>
-                <input type="int4" name="vet_telefono" class="form-control mb-2">
             </div>
 
             <button class="btn btn-success w-100">Registrar</button>
@@ -67,30 +46,8 @@
 </div>
 
 <script>
-    function marcarRequeridos(selector, requerido) {
-        const campos = document.querySelectorAll(selector);
-        campos.forEach((campo) => {
-            campo.required = requerido;
-            if (!requerido) campo.value = "";
-        });
-    }
-
-    function actualizarFormularioRol() {
-        const rol = document.querySelector('input[name="rol"]:checked')?.value;
-        const formProductor = document.getElementById("formProductor");
-        const formVeterinario = document.getElementById("formVeterinario");
-
-        const esProductor = rol === "Productor";
-        const esVeterinario = rol === "Veterinario";
-
-        formProductor.style.display = esProductor ? "block" : "none";
-        formVeterinario.style.display = esVeterinario ? "block" : "none";
-
-        marcarRequeridos('#formProductor input[name="prod_nombre"], #formProductor input[name="prod_apellido_pat"], #formProductor input[name="prod_apellido_mat"], #formProductor input[name="prod_rfc"]', esProductor);
-        marcarRequeridos('#formVeterinario input[name="vet_nombre"], #formVeterinario input[name="vet_apellidos"], #formVeterinario input[name="vet_cedula"], #formVeterinario input[name="vet_telefono"]', esVeterinario);
-    }
-
-    document.addEventListener("DOMContentLoaded", actualizarFormularioRol);
+    // El registro siempre se realiza como Productor.
+    // El formulario muestra directamente los campos necesarios para Productor.
 </script>
 
 {% endblock %}
