@@ -193,6 +193,90 @@ td {
 }
 .actions-cell { white-space: nowrap; }
 
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.animal-table {
+    overflow-x: auto;
+}
+
+.animal-table table {
+    width: 100%;
+    min-width: 760px;
+}
+
+table th,
+table td {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.animal-img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
+}
+
+@media(max-width: 992px) {
+    .animal-table {
+        padding: 16px;
+    }
+    .animal-table table {
+        min-width: 700px;
+    }
+    .actions-cell button,
+    .btn-small,
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+@media(max-width: 768px) {
+    .sidebar-3d {
+        position: relative;
+        width: 100%;
+        min-height: auto;
+        top: 0;
+        left: 0;
+    }
+    .dashboard-content {
+        margin-left: 0;
+    }
+    .modal-card,
+    .card-contenido {
+        width: min(100%, 100%);
+        margin: 0 12px;
+    }
+    .animal-table table {
+        min-width: 560px;
+    }
+    table th,
+    table td {
+        padding: 6px;
+        font-size: 0.85rem;
+    }
+    .animal-img {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media(max-width: 576px) {
+    .animal-table table {
+        min-width: 520px;
+    }
+    table th,
+    table td {
+        font-size: 0.82rem;
+    }
+}
+
 .banner {
         width: 100%;
         max-width: 1300px;

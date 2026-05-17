@@ -219,7 +219,37 @@ td {
 }
 
 .animal-table table {
+    width: 100%;
     min-width: 760px;
+}
+
+table th,
+table td {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.actions-cell {
+    white-space: normal;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+}
+
+.actions-cell button,
+.actions-cell form {
+    margin: 0;
+}
+
+.animal-img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
 }
 
 @media(max-width: 992px) {
@@ -227,9 +257,15 @@ td {
         padding: 16px;
     }
     .animal-table table {
-        min-width: 620px;
+        min-width: 700px;
+    }
+    .actions-cell {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
     }
     .actions-cell button,
+    .actions-cell form,
     .btn-small,
     .btn {
         width: 100%;
@@ -258,8 +294,22 @@ td {
     }
     table th,
     table td {
-        padding: 8px;
-        font-size: 0.95rem;
+        padding: 6px;
+        font-size: 0.85rem;
+    }
+    .animal-img {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+@media(max-width: 576px) {
+    .animal-table table {
+        min-width: 520px;
+    }
+    table th,
+    table td {
+        font-size: 0.82rem;
     }
 }
 
@@ -309,8 +359,8 @@ td {
                 <td>{{ a[3] }}</td>
                 <td>{{ a[4] }}</td>
                 <td>{{ a[8] if a|length > 8 else '—' }}</td>
+                <td>{{ a[5] if a|length > 5 and a[5] else '—' }}</td>
                 <td>{{ a[14] if a|length > 14 and a[14] else '—' }}</td>
-                <td>{{ a[5] }}</td>
                 <td>{{ a[6] }}</td>
                 <td>{{ a[7] }}</td>
 
@@ -324,11 +374,7 @@ td {
                          src="{{ url_for('imagen_animal', id=a[0], tipo='foto_lateral') }}"
                          onerror="this.style.display='none'">
                 </td>
-                <td>
-                    <img class="animal-img"
-                         src="{{ url_for('imagen_animal', id=a[0], tipo='foto_arete') }}"
-                         onerror="this.style.display='none'">
-                </td>
+                
                 <td>
                     <span class="estatus-badge {{ a[9]|lower }}">
                         {{ a[9] }}
@@ -341,8 +387,8 @@ td {
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "raza": a[5], "madre": a[14] if a|length > 14 else null,
-                            "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else null
+                            "productor": a[4], "raza": a[5], "madre": a[14] if a|length > 14 else none,
+                                "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else none
                         } | tojson }})'>
                         Ver
                     </button>
@@ -350,11 +396,11 @@ td {
                     <button type="button" class="btn btn-small"
                         onclick='abrirFormEditar({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else null,
-                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else null,
-                            "madre": a[14] if a|length > 14 else null,
-                            "fk_madre": a[13] if a|length > 13 else null,
-                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[10] if a|length > 10 else null
+                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else none,
+                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else none,
+                            "madre": a[14] if a|length > 14 else none,
+                            "fk_madre": a[13] if a|length > 13 else none,
+                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[10] if a|length > 10 else none
                         } | tojson }})'>
                         Modificar
                     </button>
@@ -375,7 +421,7 @@ td {
     </div>
 </div>
 
-<!-- MODAL FORM (Registrar/Modificar) -->
+<!-- MODAL FORM (Registrar) -->
 <div id="modal-form" class="modal-overlay" aria-hidden="true" role="dialog">
     <div class="modal-card" role="document">
         <button type="button" class="close-btn" id="closeFormBtn" aria-label="Cerrar">✕</button>
@@ -441,9 +487,6 @@ td {
             <label for="f_foto_lateral">Foto lateral:</label>
             <input type="file" name="foto_lateral" id="f_foto_lateral" accept="image/*">
 
-            <label for="f_foto_arete">Foto arete:</label>
-            <input type="file" name="foto_arete" id="f_foto_arete" accept="image/*">
-
             <label for="f_sexo">Sexo:</label>
             <select name="sexo" id="f_sexo" required>
                 <option value="M">Macho</option>
@@ -452,6 +495,40 @@ td {
 
             <!-- botón que envía la acción que tu backend espera (registrar/modificar) -->
             <button class="btn" type="submit" name="accion" id="f_accion" value="registrar">Guardar</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL EDITAR (solo campos editables) -->
+<div id="modal-edit" class="modal-overlay" aria-hidden="true" role="dialog">
+    <div class="modal-card" role="document">
+        <button type="button" class="close-btn" id="closeEditBtn" aria-label="Cerrar">✕</button>
+        <h3 id="edit-titulo">Modificar Animal</h3>
+
+        <form id="form-animal-edit" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="pk" id="e_pk">
+
+            <label for="e_nombre">Nombre:</label>
+            <input type="text" name="nombre" id="e_nombre" readonly>
+
+            <label for="e_fk_predio">Predio (ubicación)</label>
+            <select name="fk_predio" id="e_fk_predio">
+                <option value="">Seleccione...</option>
+                {% for pr in predios %}
+                    <option value="{{ pr[0] }}">{{ pr[0] }} - {{ pr[1] }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="e_foto_perfil">Foto perfil:</label>
+            <input type="file" name="foto_perfil" id="e_foto_perfil" accept="image/*">
+
+            <label for="e_foto_lateral">Foto lateral:</label>
+            <input type="file" name="foto_lateral" id="e_foto_lateral" accept="image/*">
+
+            <label for="e_peso">Peso actual (kg):</label>
+            <input type="number" step="0.1" name="peso_actual" id="e_peso" placeholder="Peso en kg">
+
+            <button class="btn" type="submit" name="accion" id="e_accion" value="modificar">Guardar cambios</button>
         </form>
     </div>
 </div>
@@ -508,46 +585,26 @@ document.getElementById('btnNuevo').addEventListener('click', function(){
 /* ================= abrir editar con objeto ================= */
 function abrirFormEditar(obj) {
     if (!obj) return;
+    // Llenar modal de edición (nombre read-only, editar predio/fotos)
+    document.getElementById('e_pk').value       = obj.id || '';
+    document.getElementById('e_nombre').value   = obj.nombre || '';
 
-    document.getElementById('f_pk').value       = obj.id || '';
-    document.getElementById('f_nombre').value   = obj.nombre || '';
-    document.getElementById('f_fecha').value    = obj.fecha || '';
-    document.getElementById('f_cruze').value    = obj.cruze || '';
-    document.getElementById('f_sexo').value     = obj.sexo || 'M';
+    const predioEl = document.getElementById('e_fk_predio');
+    if (predioEl && obj.fk_predio) predioEl.value = obj.fk_predio;
 
-    // ✅ MADRE (por ID)
-    const madreEl = document.getElementById('f_fk_madre');
-    if (madreEl) {
-        madreEl.value = obj.fk_madre || '';
-        if (obj.id) {
-            Array.from(madreEl.options).forEach(opt => {
-                opt.disabled = opt.value === String(obj.id);
-            });
-        }
-    }
+    const pesoEl = document.getElementById('e_peso');
+    if (pesoEl) pesoEl.value = obj.peso || '';
 
-    // ✅ PRODUCTOR (por ID)
-    const prodEl = document.getElementById('f_fk_productor');
-    if (prodEl && obj.fk_productor) {
-        prodEl.value = obj.fk_productor;
-    }
+    // Reset file inputs (user may upload new files)
+    const perfilFile = document.getElementById('e_foto_perfil');
+    const lateralFile = document.getElementById('e_foto_lateral');
+    if (perfilFile) perfilFile.value = '';
+    if (lateralFile) lateralFile.value = '';
 
-    // ✅ RAZA (por ID)
-    const razaEl = document.getElementById('f_raza');
-    if (razaEl && obj.fk_raza) {
-        razaEl.value = obj.fk_raza;
-    }
+    document.getElementById('e_accion').value = 'modificar';
+    document.getElementById('edit-titulo').innerText = 'Modificar Animal';
 
-    // ✅ PREDIO (por ID)
-    const predioEl = document.getElementById('f_fk_predio');
-    if (predioEl && obj.fk_predio) {
-        predioEl.value = obj.fk_predio;
-    }
-
-    document.getElementById('f_accion').value = 'modificar';
-    document.getElementById('form-titulo').innerText = 'Modificar Animal';
-
-    mostrarModal('modal-form');
+    mostrarModal('modal-edit');
 }
 /* ================= ver animal (obj) ================= */
 function verAnimal(obj) {
@@ -577,6 +634,8 @@ function verAnimal(obj) {
 document.getElementById('closeFormBtn').addEventListener('click', function(){ ocultarModal('modal-form'); });
 /* cerrar ver */
 document.getElementById('closeVerBtn').addEventListener('click', function(){ ocultarModal('modal-ver'); });
+/* cerrar editar */
+document.getElementById('closeEditBtn').addEventListener('click', function(){ ocultarModal('modal-edit'); });
 
 /* clic fuera: cerrar si el target es el overlay */
 document.getElementById('modal-form').addEventListener('click', function(e){
@@ -584,6 +643,9 @@ document.getElementById('modal-form').addEventListener('click', function(e){
 });
 document.getElementById('modal-ver').addEventListener('click', function(e){
     if (e.target === this) ocultarModal('modal-ver');
+});
+document.getElementById('modal-edit').addEventListener('click', function(e){
+    if (e.target === this) ocultarModal('modal-edit');
 });
 
 /* ESC para cerrar */
@@ -603,6 +665,14 @@ document.getElementById('form-animal').addEventListener('submit', function(e){
         setTimeout(function(){ btn.disabled = true; btn.textContent = 'Enviando...'; }, 10);
     }
     // el form continúa su envío normal (POST) al backend
+});
+
+/* submit editar: impedir doble submit */
+document.getElementById('form-animal-edit').addEventListener('submit', function(e){
+    const btn = document.getElementById('e_accion');
+    if (btn) {
+        setTimeout(function(){ btn.disabled = true; btn.textContent = 'Enviando...'; }, 10);
+    }
 });
 </script>
 
