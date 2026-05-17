@@ -39,14 +39,12 @@ def _safe_asset_path(folder, filename):
 
 
 def resolve_asset_path(filename):
-    candidates = [
-        path for folder in ASSET_FOLDERS
-        if (path := _safe_asset_path(folder, filename))
-    ]
-    if not candidates:
-        return None
+    for folder in ASSET_FOLDERS:
+        path = _safe_asset_path(folder, filename)
+        if path:
+            return path
 
-    return max(candidates, key=os.path.getmtime)
+    return None
 
 
 @app.route('/assets/<path:filename>')
@@ -69,8 +67,8 @@ def inject_asset_helpers():
         asset_path = resolve_asset_path(filename)
         version = int(os.path.getmtime(asset_path)) if asset_path else None
 
-        # El CSS pasa por /assets para poder resolver la copia mas reciente
-        # entre public/ y static/ sin depender de una sola carpeta.
+        # El CSS pasa por /assets para resolver primero public/ y mantener
+        # static/ solo como compatibilidad con archivos antiguos.
         if filename.startswith("css/"):
             return url_for('asset_file', filename=filename, v=version)
 

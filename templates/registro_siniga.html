@@ -43,11 +43,15 @@
 </div>
 
 <!-- ===== TABLA ===== -->
-<div class="table-box">
-    <h3>Registros</h3>
-    <h4>Total: {{ registros|length }}</h4> <!-- Hace el conteo de los registros en la tabla -->
-
-    <table>
+<div class="table-box data-card">
+    <div class="data-card-header">
+        <h3>Registros</h3>
+        <span class="data-card-count">{{ registros|length }}</span>
+    </div>
+    <div class="data-card-body">
+    <div class="data-table-wrap">
+    <table class="data-table">
+        <thead>
         <tr>
             <th>No. </th>
             <th>ID Animal</th>
@@ -55,6 +59,8 @@
             <th>Arete</th>
             <th>Acciones</th>
         </tr>
+        </thead>
+        <tbody>
 
         {% for r in registros %}
         <tr>
@@ -63,27 +69,31 @@
             <td>{{ r[3] }}</td>
             <td>{{ r[2] }}</td>
             <td>
+                <div class="actions-row">
                 <button class="btn btn-small"
                     onclick="cargar('{{ r[0] }}','{{ r[1] }}','{{ r[2] }}')">
                     Modificar
                 </button>
 
-                <form method="POST" style="display:inline;">
+                <form method="POST">
                     <input type="hidden" name="pk" value="{{ r[0] }}">
-                    <button class="btn btn-small" name="accion" value="eliminar"
-                        style="background:#a63c3c">
+                    <button class="btn btn-small btn-danger" name="accion" value="eliminar">
                         Eliminar
                     </button>
                 </form>
 
-                <button class="btn-ver"
+                <button class="btn btn-small btn-ver"
                     onclick='showFloatingDetails({{ [r[0], r[1], r[3], r[2]] | tojson }})'>
                     Ver
                 </button>
+                </div>
             </td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
+    </div>
+    </div>
 </div>
 
 <!-- ===== FLOATING DETAILS ===== -->

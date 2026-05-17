@@ -4,86 +4,65 @@
 {% endblock %}
 {% block content %}
 
-{% include 'sidebar_panel.html' %}
+<section class="producer-page">
+    <nav class="producer-top-actions" aria-label="Navegacion de Mis datos">
+        <a href="{{ url_for('dashboard') }}" class="back-panel-link">Regresar al panel</a>
+    </nav>
 
-<style>
-.form-box {
-    background: #f5e8d8;
-    padding: 25px;
-    border-radius: 12px;
-    max-width: 600px;
-    margin: auto;
-    box-shadow: 0 0 8px rgba(0,0,0,0.15);
-}
+    <header class="producer-hero">
+        <div class="producer-hero-copy">
+            <p class="producer-kicker">Perfil del productor</p>
+            <h1>Mis datos</h1>
+            <p>Actualiza tu informacion personal y mantén listo el registro de tu fierro.</p>
+        </div>
+    </header>
 
-label {
-    font-weight: bold;
-    margin-top: 10px;
-    color: #5a4632;
-}
+    <div class="form-box">
+        <div class="form-heading">
+            <h2>Modificar mis datos</h2>
+            <p>Revisa que la informacion capturada sea correcta antes de guardar.</p>
+        </div>
 
-input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    border-radius: 6px;
-    border: 1px solid #bca58b;
-}
+        <form method="POST" enctype="multipart/form-data" class="producer-form">
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="nombre">Nombre</label>
+                    <input id="nombre" type="text" name="nombre" value="{{ productor[1] }}" required>
+                </div>
 
-.btn-guardar {
-    background: #8b5e3c;
-    color: white;
-    padding: 12px;
-    width: 100%;
-    border-radius: 6px;
-    cursor: pointer;
-    border: none;
-    margin-top: 10px;
-}
-.btn-guardar:hover {
-    background: #6b452e;
-}
-</style>
+                <div class="form-field">
+                    <label for="apellido_pat">Apellido Paterno</label>
+                    <input id="apellido_pat" type="text" name="apellido_pat" value="{{ productor[2] }}">
+                </div>
 
-<div class="text-center">
-    <img src="{{ url_for('static', filename='img/image.png') }}" 
-         class="img-fluid mb-4"
-         style="max-height:200px">
-</div>
+                <div class="form-field">
+                    <label for="apellido_mat">Apellido Materno</label>
+                    <input id="apellido_mat" type="text" name="apellido_mat" value="{{ productor[3] }}">
+                </div>
 
-<p class="text-center mt-3 mb-3">Modificar mis datos</p>
+                <div class="form-field">
+                    <label for="RFC">RFC</label>
+                    <input id="RFC" type="text" name="RFC" value="{{ productor[4] }}">
+                </div>
+            </div>
 
-<div class="form-box">
-    <form method="POST" enctype="multipart/form-data">
+            <div class="fierro-box">
+                <div>
+                    <label for="foto_fierro">Foto del fierro</label>
+                    <p>Sube una imagen clara para identificarlo facilmente.</p>
+                </div>
 
+                <img src="{{ url_for('imagen_fierro', id=productor[0]) }}"
+                     alt="Foto actual del fierro"
+                     class="fierro-img"
+                     onerror="this.style.display='none'">
 
-    <label>Nombre</label>
-    <input type="text" name="nombre" value="{{ productor[1] }}" required>
+                <input id="foto_fierro" type="file" name="foto_fierro" accept="image/*">
+            </div>
 
-    <label>Apellido Paterno</label>
-    <input type="text" name="apellido_pat" value="{{ productor[2] }}">
-
-    <label>Apellido Materno</label>
-    <input type="text" name="apellido_mat" value="{{ productor[3] }}">
-
-    <label>RFC</label>
-    <input type="text" name="RFC" value="{{ productor[4] }}">
-
-<div class="fierro-box">
-    <label>Foto del fierro</label>
-
-    <img src="{{ url_for('imagen_fierro', id=productor[0]) }}"
-         class="fierro-img"
-         onerror="this.style.display='none'">
-
-    <input type="file" name="foto_fierro" accept="image/*">
-</div>
-    
-
-    <button class="btn-guardar">Guardar Cambios</button>
-</form>
-
-    
-</div>
+            <button class="btn-guardar" type="submit">Guardar cambios</button>
+        </form>
+    </div>
+</section>
 
 {% endblock %}

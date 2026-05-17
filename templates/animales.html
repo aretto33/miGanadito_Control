@@ -219,37 +219,7 @@ td {
 }
 
 .animal-table table {
-    width: 100%;
     min-width: 760px;
-}
-
-table th,
-table td {
-    white-space: nowrap;
-    vertical-align: middle;
-}
-
-.actions-cell {
-    white-space: normal;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    justify-content: center;
-    align-items: center;
-}
-
-.actions-cell button,
-.actions-cell form {
-    margin: 0;
-}
-
-.animal-img {
-    width: 72px;
-    height: 72px;
-    object-fit: cover;
-    border-radius: 8px;
-    display: block;
-    margin: 0 auto;
 }
 
 @media(max-width: 992px) {
@@ -257,15 +227,9 @@ table td {
         padding: 16px;
     }
     .animal-table table {
-        min-width: 700px;
-    }
-    .actions-cell {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
+        min-width: 620px;
     }
     .actions-cell button,
-    .actions-cell form,
     .btn-small,
     .btn {
         width: 100%;
@@ -294,22 +258,8 @@ table td {
     }
     table th,
     table td {
-        padding: 6px;
-        font-size: 0.85rem;
-    }
-    .animal-img {
-        width: 60px;
-        height: 60px;
-    }
-}
-
-@media(max-width: 576px) {
-    .animal-table table {
-        min-width: 520px;
-    }
-    table th,
-    table td {
-        font-size: 0.82rem;
+        padding: 8px;
+        font-size: 0.95rem;
     }
 }
 
@@ -329,25 +279,38 @@ table td {
 </style>
 <img src="{{ url_for('static', filename='img/3.png') }}" class="banner">
 <h2>Gestión de Animales</h2>
-<h4 class= >Aquí puedes registrar y modificar los animales con la finalidad de tener registros de los nuevos nacimientos que ocurran y ubicar el animal.</h4>
+<h4>Aquí puedes registrar y modificar los animales con la finalidad de tener registros de los nuevos nacimientos que ocurran y ubicar el animal.</h4>
 
 <!-- botón para abrir modal de crear -->
 <button class="btn" id="btnNuevo">Registrar Animal</button>
 <br><br>
 
 <!-- TABLA -->
-<div class="animal-table">
-    <h3>Animales Registrados</h3>
-    <!--La propiedad length de un objeto String representa la longitud de una cadena, en unidades de código-->
-    <h4>Total: {{ animales|length }}</h4>
-    <div class="table-responsive">
-    <table>
+<div class="animal-table data-card">
+    <div class="data-card-header">
+        <h3>Animales Registrados</h3>
+        <span class="data-card-count">{{ animales|length }}</span>
+    </div>
+    <div class="data-card-body">
+    <div class="animals-table-shell">
+    <table class="animals-data-table">
         <thead>
             <tr>
-                <th>No. </th><th>Nombre</th><th>Fecha</th><th>Cruze</th>
-                <th>Productor</th><th>Predio</th><th>Raza</th><th>Madre</th><th>Sexo</th><th>Peso</th>
-                <th>Perfil</th><th>Lateral</th>
-                <th>Estatus</th><th>Acciones</th>
+                <th class="col-num">No.</th>
+                <th>Nombre</th>
+                <th class="col-date">Nacimiento</th>
+                <th>Cruze</th>
+                <th>Productor</th>
+                <th>Predio</th>
+                <th>Raza</th>
+                <th>Madre</th>
+                <th class="col-short">Sexo</th>
+                <th class="col-short">Peso</th>
+                <th class="col-photo">Perfil</th>
+                <th class="col-photo">Lateral</th>
+                <th class="col-photo">Arete</th>
+                <th class="col-status">Estatus</th>
+                <th class="col-actions">Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -359,8 +322,8 @@ table td {
                 <td>{{ a[3] }}</td>
                 <td>{{ a[4] }}</td>
                 <td>{{ a[8] if a|length > 8 else '—' }}</td>
-                <td>{{ a[5] if a|length > 5 and a[5] else '—' }}</td>
                 <td>{{ a[14] if a|length > 14 and a[14] else '—' }}</td>
+                <td>{{ a[5] }}</td>
                 <td>{{ a[6] }}</td>
                 <td>{{ a[7] }}</td>
 
@@ -376,14 +339,16 @@ table td {
                 </td>
                 
                 <td>
-                    <span class="estatus-badge {{ a[9]|lower }}">
-                        {{ a[9] }}
+                    {% set estado = a[9] if a|length > 9 and a[9] else 'Sin estatus' %}
+                    <span class="estatus-badge {{ estado|lower|replace(' ', '-') }}">
+                        {{ estado }}
                     </span>
                 </td>
                     
                 
 
                 <td class="actions-cell">
+                    <div class="actions-row">
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
@@ -405,19 +370,21 @@ table td {
                         Modificar
                     </button>
 
-                    <form method="POST" style="display:inline">
+                    <form method="POST">
                         <input type="hidden" name="pk" value="{{ a[0] }}">
-                        <button type="submit" class="btn btn-small" style="background:#a63c3c"
+                        <button type="submit" class="btn btn-small btn-danger"
                                 name="accion" value="eliminar"
                                 onclick="return confirm('¿Estás seguro de que deseas eliminar este animal?')">
                             Eliminar
                         </button>
                     </form>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     </div>
 </div>
 
@@ -471,9 +438,9 @@ table td {
                 {% endfor %}
             </select>
 
-            <div style="margin-top: 8px; margin-bottom: 8px;">
+            <div class="form-field">
                 <label for="f_fk_madre">Madre:</label>
-                <select name="fk_madre" id="f_fk_madre" style="width:100%; padding:10px; border-radius:6px; border:1px solid #bca58b;">
+                <select name="fk_madre" id="f_fk_madre">
                     <option value="">Ninguna</option>
                     {% for m in madres %}
                         <option value="{{ m[0] }}">{{ m[1] }}</option>
@@ -547,7 +514,7 @@ table td {
         <p><strong>Madre:</strong> <span id="v_madre"></span></p>
         <p><strong>Sexo:</strong> <span id="v_sexo"></span></p>
         <p><strong>Peso actual (kg):</strong> <span id="v_peso"></span></p>
-        <div style="margin-top:12px;">
+        <div class="modal-actions">
             <button class="btn" id="verToEditBtn">Modificar</button>
         </div>
     </div>

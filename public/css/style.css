@@ -239,6 +239,228 @@ body {
     background: #fff2e2;
 }
 
+.data-card {
+    margin: 1.2rem 0 1.6rem;
+    overflow: hidden;
+    border: 1px solid rgba(95, 64, 39, 0.22);
+    border-radius: 14px;
+    background: #f1dfca;
+    box-shadow: 0 10px 20px rgba(72, 48, 29, 0.12);
+}
+
+.data-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.9rem 1rem;
+    background: #7f5539;
+    color: #f7efe5;
+}
+
+.data-card-header h3,
+.data-card-title {
+    margin: 0;
+    color: #f7efe5;
+    font-family: "Fraunces", serif;
+    font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+    line-height: 1.2;
+}
+
+.data-card-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.1rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(247, 239, 229, 0.16);
+    color: #f7efe5;
+    font-weight: 700;
+}
+
+.data-card-body {
+    padding: 0.85rem;
+}
+
+.data-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+}
+
+.data-toolbar label {
+    margin: 0;
+    color: var(--cafe-oscuro);
+    font-weight: 700;
+}
+
+.data-toolbar select,
+.data-toolbar input {
+    min-width: min(100%, 260px);
+    margin-bottom: 0;
+}
+
+.data-table-wrap,
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    background: #f3e6d6 !important;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.58rem 0.65rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid rgba(124, 86, 54, 0.2) !important;
+    color: #4f3725;
+    text-align: left !important;
+    vertical-align: middle;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 1.32;
+    font-size: 0.9rem;
+}
+
+.data-table th {
+    background: #d8c2a8 !important;
+    color: #3d2b1f !important;
+    font-weight: 800;
+    font-size: 0.84rem;
+    line-height: 1.2;
+}
+
+.data-table tbody tr:nth-child(even) {
+    background: #ead8c1 !important;
+}
+
+.data-table tbody tr:hover {
+    background: #e3ccb1 !important;
+}
+
+.data-table td:first-child {
+    background: transparent !important;
+    color: #5d3f2a !important;
+    font-weight: 700;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+    width: 1%;
+    min-width: 132px;
+    white-space: normal;
+}
+
+.actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.32rem;
+    max-width: 180px;
+}
+
+.actions-row form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.actions-row .btn,
+.actions-row .btn-small {
+    width: auto !important;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0.38rem 0.55rem;
+    border-radius: 7px;
+    font-size: 0.78rem;
+    line-height: 1.1;
+}
+
+.btn.btn-danger,
+.btn-danger {
+    background: #9f3d35;
+    color: #fff;
+}
+
+.btn.btn-danger:hover,
+.btn-danger:hover {
+    background: #7f2f29;
+    color: #fff;
+}
+
+.btn.btn-muted,
+.btn-muted {
+    background: #d8c2a8;
+    color: #5c4033;
+}
+
+.btn.btn-muted:hover,
+.btn-muted:hover {
+    background: #c9ad8d;
+    color: #5c4033;
+}
+
+.btn-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-pill,
+.estatus-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 0.32rem 0.62rem;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+@media (max-width: 760px) {
+    .data-card {
+        border-radius: 12px;
+    }
+
+    .data-card-header,
+    .data-card-body {
+        padding: 1rem;
+    }
+
+    .data-card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .data-table {
+        min-width: 600px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 0.55rem !important;
+    }
+
+    .actions-row {
+        max-width: 160px;
+    }
+}
+
 .btn-datos {
     display: inline-flex;
     align-items: center;

@@ -6,13 +6,12 @@
 
 <div class="text-center">
     <img src="{{ url_for('static', filename='img/banner.png') }}" 
-         class="img-fluid mb-4"
-         style="max-height:200px">
+         class="img-fluid mb-4 price-banner">
 </div>
 
-<h1 class="fw-bold text-center" style="color:#8b5e3c;">Tabla de precios</h1>
+<h1 class="fw-bold text-center price-title">Tabla de precios</h1>
 
-<p class="fs-5 text-secondary text-align" style="max-width:1000px; margin:auto;">
+<p class="fs-5 text-secondary text-align price-intro">
     Para la venta del ganado se implementa una guía de precios acorde al sexo y peso de cada bovino.
     Para calcular el precio multiplicamos los Peso en Kg x el precio acorde al rango de peso
 </p>
@@ -22,8 +21,8 @@
   <div class="price-grid">
     <div class="price-card">
       <h3 class="section-title">Machos</h3>
-      <div class="table-responsive">
-        <table class="table-coffee">
+      <div class="data-table-wrap">
+        <table class="data-table table-coffee">
           <thead>
             <tr>
               <th>Tipo Ganado</th>
@@ -60,13 +59,13 @@
           </tbody>
         </table>
       </div>
-      <p class="note">Precios referenciales. Contacta <strong style="color:var(--cafe)">Carmen GUSJ</strong> para cotizaciones oficiales.</p>
+      <p class="note">Precios referenciales. Contacta <strong class="price-contact">Carmen GUSJ</strong> para cotizaciones oficiales.</p>
     </div>
 
     <div class="price-card">
       <h3 class="section-title">Hembras</h3>
-      <div class="table-responsive">
-        <table class="table-coffee">
+      <div class="data-table-wrap">
+        <table class="data-table table-coffee">
           <thead>
             <tr>
               <th>Tipo Ganado</th>
@@ -97,7 +96,7 @@
     </div>
   </div>
 
-  <h3 class="text-center" style="color:var(--cafe); margin-top:18px;">Carmen GUSJ - Centro de Acopio Ganadero</h3>
+  <h3 class="text-center price-center-title">Carmen GUSJ - Centro de Acopio Ganadero</h3>
   <img src="{{ url_for('static', filename='img/precios.png') }}" alt="Precios" class="price-img">
 </div>
 

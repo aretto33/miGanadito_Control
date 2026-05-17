@@ -23,21 +23,28 @@
         <input type="text" name="color" id="color" required>
 
         <button class="btn" name="accion" value="registrar">Registrar</button>
-        <button type="button" class="btn" style="background:#999; margin-left:10px;" onclick="limpiarFormulario()">Limpiar</button>
+        <button type="button" class="btn btn-muted" onclick="limpiarFormulario()">Limpiar</button>
     </form>
 </div>
 
-<div class="table-box">
-    <h3>Razas Registradas</h3>
-
-    <table border="1" width="100%" cellpadding="6">
-        <tr style="background:#d8c2a8;">
+<div class="table-box data-card">
+    <div class="data-card-header">
+        <h3>Razas Registradas</h3>
+        <span class="data-card-count">{{ razas|length }}</span>
+    </div>
+    <div class="data-card-body">
+    <div class="data-table-wrap">
+    <table class="data-table">
+        <thead>
+        <tr>
             <th>No. </th>
             <th>Nombre</th>
             <th>Origen</th>
             <th>Color</th>
             <th>Acciones</th>
         </tr>
+        </thead>
+        <tbody>
 
         {% for r in razas %}
         <tr>
@@ -46,16 +53,21 @@
             <td>{{ r[2] }}</td>
             <td>{{ r[3] }}</td>
             <td>
+                <div class="actions-row">
                 <button class="btn btn-small" onclick="cargarFormulario('{{ r[0] }}','{{ r[1] }}','{{ r[2] }}','{{ r[3] }}')">Modificar</button>
-                <form method="POST" style="display:inline;">
+                <form method="POST">
                     <input type="hidden" name="pk" value="{{ r[0] }}">
-                    <button class="btn btn-small" name="accion" value="eliminar" style="background:#a63c3c;">Eliminar</button>
+                    <button class="btn btn-small btn-danger" name="accion" value="eliminar">Eliminar</button>
                 </form>
-                <button class="btn-ver" onclick='showFloatingDetails({{ [r[0], r[1], r[2], r[3]] | tojson }})'>Ver</button>
+                <button class="btn btn-small btn-ver" onclick='showFloatingDetails({{ [r[0], r[1], r[2], r[3]] | tojson }})'>Ver</button>
+                </div>
             </td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
+    </div>
+    </div>
 </div>
 
 <script>
@@ -137,11 +149,11 @@ var floatOverlay = document.getElementById('floating-details'); if (floatOverlay
                         <p><strong>Origen:</strong> <span id="float-origen"></span></p>
                         <p><strong>Color:</strong> <span id="float-color"></span></p>
                 </div>
-                    <div style="margin-top:12px">
+                    <div class="actions-row floating-actions">
                         <button class="btn" id="float-modificar" onclick="submitModificarFromFloat()">Modificar</button>
-                        <form id="float-eliminar-form" method="POST" style="display:inline; margin-left:8px;">
+                        <form id="float-eliminar-form" method="POST">
                             <input type="hidden" name="pk" id="float-eliminar-pk">
-                            <button class="btn" name="accion" value="eliminar" style="background:#a63c3c;">Eliminar</button>
+                            <button class="btn btn-danger" name="accion" value="eliminar">Eliminar</button>
                         </form>
                     </div>
                 </div>
