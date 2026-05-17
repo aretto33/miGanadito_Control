@@ -92,6 +92,13 @@ def legacy_static(filename):
 def conectar_bd(dictionary=False):
     return get_connection(dictionary=dictionary)
 
+# Registrar rutas de prueba (solo para desarrollo). No fallar si faltan dependencias.
+try:
+    from temp_test_routes import register_test_routes
+    register_test_routes(app, conectar_bd)
+except Exception:
+    pass
+
 def normalizar_rol(rol):
     if not rol:
         return None
@@ -187,7 +194,7 @@ def login():
         if request.method == "POST":
             usuario = request.form["usuario"]
             contra = request.form["password"]
-            rol = normalizar_rol(request.form.get("rol"))
+            rol = normalizar_rol(request.form.get("rol")) or "Productor"
             if rol not in ROLES_VALIDOS:
                 flash("Rol inválido", "danger")
                 return redirect(url_for("login"))
@@ -224,7 +231,7 @@ def register():
         # Obtener datos de forma segura
         usuario = request.form.get("usuario", "").strip()
         contra = request.form.get("password", "").strip()
-        rol_nombre = normalizar_rol(request.form.get("rol"))
+        rol_nombre = normalizar_rol(request.form.get("rol")) or "Productor"
 
         # Validación básica
         if not usuario or not contra or not rol_nombre:
@@ -485,11 +492,9 @@ def animales():
 
             foto_perfil = request.files.get("foto_perfil")
             foto_lateral = request.files.get("foto_lateral")
-            foto_arete = request.files.get("foto_arete")
 
             perfil_bytes = foto_perfil.read() if foto_perfil and foto_perfil.filename else None
             lateral_bytes = foto_lateral.read() if foto_lateral and foto_lateral.filename else None
-            arete_bytes = foto_arete.read() if foto_arete and foto_arete.filename else None
 
             fk_prod_session = session.get("fk_productor") if session.get("rol") == "Productor" else None
 
@@ -498,8 +503,8 @@ def animales():
                 cursor.execute("""
                     INSERT INTO Animales
                     (nombre, fecha_nacimiento, cruze, sexo, peso_actual,
-                     fk_productor, fk_raza, fk_predio, fk_animal, foto_perfil, foto_lateral, foto_arete)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                     fk_productor, fk_raza, fk_predio, fk_animal, foto_perfil, foto_lateral)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     request.form.get("nombre"),
                     request.form.get("fecha"),
@@ -511,47 +516,57 @@ def animales():
                     request.form.get("fk_predio"),
                     request.form.get("fk_madre") or None,
                     perfil_bytes,
-                    lateral_bytes,
-                    arete_bytes
+                    lateral_bytes
                 ))
                 conn.commit()
 
-            # -------- MODIFICAR --------
+            # -------- MODIFICAR (parcial-safe) --------
             elif accion == "modificar":
                 pk = request.form.get("pk")
-                cursor.execute("""
-                    UPDATE Animales SET
-                        nombre=%s,
-                        fecha_nacimiento=%s,
-                        cruze=%s,
-                        sexo=%s,
-                        peso_actual=%s,
-                        fk_productor=%s,
-                        fk_raza=%s,
-                        fk_predio=%s,
-                        fk_animal=%s
-                    WHERE pk_animal=%s
-                """, (
-                    request.form.get("nombre"),
-                    request.form.get("fecha"),
-                    request.form.get("cruze"),
-                    request.form.get("sexo"),
-                    request.form.get("peso_actual"),
-                    fk_prod_session or request.form.get("fk_productor"),
-                    request.form.get("fk_raza"),
-                    request.form.get("fk_predio"),
-                    request.form.get("fk_madre") or None,
-                    pk
-                ))
 
-                if perfil_bytes:
-                    cursor.execute("UPDATE Animales SET foto_perfil=%s WHERE pk_animal=%s", (perfil_bytes, pk))
-                if lateral_bytes:
-                    cursor.execute("UPDATE Animales SET foto_lateral=%s WHERE pk_animal=%s", (lateral_bytes, pk))
-                if arete_bytes:
-                    cursor.execute("UPDATE Animales SET foto_arete=%s WHERE pk_animal=%s", (arete_bytes, pk))
+                # Obtener valores actuales
+                cursor.execute("SELECT nombre, fecha_nacimiento, cruze, sexo, peso_actual, fk_productor, fk_raza, fk_predio, fk_animal FROM Animales WHERE pk_animal=%s", (pk,))
+                current = cursor.fetchone()
+                if not current:
+                    flash("Animal no encontrado para modificar", "danger")
+                else:
+                    # Mapear campos y actualizar solo los presentes en el form
+                    updates = []
+                    params = []
 
-                conn.commit()
+                    field_map = {
+                        'nombre': 'nombre',
+                        'fecha': 'fecha_nacimiento',
+                        'cruze': 'cruze',
+                        'sexo': 'sexo',
+                        'peso_actual': 'peso_actual',
+                        'fk_productor': 'fk_productor',
+                        'fk_raza': 'fk_raza',
+                        'fk_predio': 'fk_predio',
+                        'fk_madre': 'fk_animal'
+                    }
+
+                    for form_key, col_name in field_map.items():
+                        if form_key in request.form:
+                            val = request.form.get(form_key) or None
+                            # si es fk_productor y el usuario es Productor, respetar la sesión
+                            if col_name == 'fk_productor' and fk_prod_session:
+                                val = fk_prod_session
+                            updates.append(f"{col_name}=%s")
+                            params.append(val)
+
+                    if updates:
+                        sql = "UPDATE Animales SET " + ", ".join(updates) + " WHERE pk_animal=%s"
+                        params.append(pk)
+                        cursor.execute(sql, tuple(params))
+
+                    # Fotos (archivo) -- se manejan independientemente
+                    if perfil_bytes:
+                        cursor.execute("UPDATE Animales SET foto_perfil=%s WHERE pk_animal=%s", (perfil_bytes, pk))
+                    if lateral_bytes:
+                        cursor.execute("UPDATE Animales SET foto_lateral=%s WHERE pk_animal=%s", (lateral_bytes, pk))
+
+                    conn.commit()
 
             # -------- ELIMINAR --------
             elif accion == "eliminar":
@@ -726,17 +741,20 @@ def predios():
             fk_estado = request.form.get("fk_estado")
             fk_municipio = request.form.get("fk_municipio")
             nom_rancho = request.form.get("nom_rancho")
+            upp = request.form.get("upp")
             # Determinar fk_productor: si el usuario es Productor usar la sesión
             if session.get('rol') == 'Productor' and session.get('fk_productor'):
+                fk_productor = session.get('fk_productor')
+
                 fk_prod = session.get('fk_productor')
             else:
                 fk_prod = request.form.get("fk_productor")  # 👈 nuevo
 
             sql = """
-                INSERT INTO Predios (direccion, fk_estado, fk_municipio, fk_productor, nom_rancho)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO Predios (direccion, fk_estado, fk_municipio, fk_productor, nom_rancho, upp)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho))
+            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho, upp))
             conn.commit()
 
         elif accion == "modificar":
@@ -745,6 +763,7 @@ def predios():
             fk_estado = request.form.get("fk_estado")
             fk_municipio = request.form.get("fk_municipio")
             nom_rancho = request.form.get("nom_rancho")
+            upp = request.form.get("upp")
             # Determinar fk_productor: si el usuario es Productor usar la sesión
             if session.get('rol') == 'Productor' and session.get('fk_productor'):
                 fk_prod = session.get('fk_productor')
@@ -753,10 +772,10 @@ def predios():
 
             sql = """
                 UPDATE Predios
-                SET direccion=%s, fk_estado=%s, fk_municipio=%s, fk_productor=%s, nom_rancho=%s
+                SET direccion=%s, fk_estado=%s, fk_municipio=%s, fk_productor=%s, nom_rancho=%s, upp=%s
                 WHERE pk_predio=%s
             """
-            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho, pk))
+            cursor.execute(sql, (direccion, fk_estado, fk_municipio, fk_prod, nom_rancho, upp, pk))
             conn.commit()
 
         elif accion == "eliminar":
@@ -771,8 +790,10 @@ def predios():
     # --------------------
     # Seleccionar nombres de estado y municipio a través de JOINs
     cursor.execute("""
-        SELECT p.pk_predio, p.direccion, p.fk_estado, p.fk_municipio,
-               e.Nombre AS estado, m.Nombre AS municipio, p.fk_productor, pr.nombre AS productor, p.nom_rancho
+    SELECT p.pk_predio, p.direccion, p.fk_estado, p.fk_municipio,
+           e.Nombre AS estado, m.Nombre AS municipio,
+           p.fk_productor, pr.nombre AS productor,
+           p.nom_rancho, p.upp
         FROM Predios p
         LEFT JOIN Estados e ON p.fk_estado = e.pk_estado
         LEFT JOIN Municipios m ON p.fk_municipio = m.pk_municipio

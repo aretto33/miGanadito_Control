@@ -5,6 +5,17 @@
     align-items: start;
 }
 
+@media (max-width: 992px) {
+    .register-shell {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+    
+    .register-title {
+        max-width: none;
+    }
+}
+
 .register-panel {
     border-radius: 28px;
 }
