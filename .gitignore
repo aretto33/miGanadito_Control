@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 ganacontrol/__pycache__/
 .vercel
+.venv
+venv
