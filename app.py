@@ -369,11 +369,11 @@ def dashboard():
                 productor_nombre = row[0]
 
             cursor.execute("""
-                SELECT r.arete, a.nombre
-                FROM Registro_SINIGA r
-                INNER JOIN Animales a ON r.fk_animal = a.pk_animal
+                SELECT a.pk_animal, r.arete, a.nombre
+                FROM Animales a
+                LEFT JOIN Registro_SINIGA r ON r.fk_animal = a.pk_animal
                 WHERE a.fk_productor = %s
-                ORDER BY r.arete
+                ORDER BY a.nombre
             """, (fk_productor,))
             aretes = cursor.fetchall()
 
@@ -1685,6 +1685,10 @@ def generar_pdf_rearetado():
     except Exception as e:
         return f"Error al generar PDF: {e}"
 #--------------Blog donde se hablan de tipos de razas en tabasco-------
+@app.route("/inventario")
+def inventario():
+    return render_template("inventario.html")
+
 @app.route("/album_razas")
 def album_razas():
     return render_template("album_razas.html")
@@ -1703,11 +1707,11 @@ bp = Blueprint('pdf', __name__)
 
 @bp.route("/pdf_animal")
 def pdf_animal():
-    arete = request.args.get("arete")
-    predio = request.args.get("predio")
+    animal_id = (request.args.get("animal_id") or "").strip()
+    animal_busqueda = (request.args.get("animal") or request.args.get("arete") or "").strip()
 
-    if not arete or not predio:
-        return "Datos incompletos", 400
+    if not animal_id and not animal_busqueda:
+        return "Selecciona o ingresa el animal", 400
 
     conn = None
     cursor = None
@@ -1734,16 +1738,24 @@ def pdf_animal():
                 m.Nombre AS municipio,
                 a.foto_perfil,
                 a.foto_lateral
-            FROM Registro_SINIGA r
-            JOIN Animales a ON r.fk_animal = a.pk_animal
-            LEFT JOIN Predios p ON p.pk_predio = %s
+            FROM Animales a
+            LEFT JOIN Registro_SINIGA r ON r.fk_animal = a.pk_animal
+            LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
             LEFT JOIN Productores pr ON pr.pk_productor = a.fk_productor
             LEFT JOIN Estados e ON e.pk_estado = p.fk_estado
             LEFT JOIN Municipios m ON m.pk_municipio = p.fk_municipio
-            WHERE r.arete = %s AND p.pk_predio = %s
+            WHERE a.pk_animal = %s OR r.arete = %s OR LOWER(a.nombre) = LOWER(%s)
+            ORDER BY
+                CASE
+                    WHEN a.pk_animal = %s THEN 0
+                    WHEN r.arete = %s THEN 0
+                    WHEN LOWER(a.nombre) = LOWER(%s) THEN 1
+                    ELSE 2
+                END,
+                a.pk_animal DESC
             LIMIT 1
             """,
-            (int(predio), arete, int(predio))
+            (animal_id or None, animal_busqueda, animal_busqueda, animal_id or None, animal_busqueda, animal_busqueda)
         )
         animal = cursor.fetchone()
 

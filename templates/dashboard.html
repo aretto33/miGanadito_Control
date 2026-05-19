@@ -179,6 +179,7 @@
                     <h3>Trámites</h3>
                     <a href="{{ url_for('upp') }}" class="btn-3d">Descargar UPP</a>
                     <a href="{{ url_for('rearetado') }}" class="btn-3d">Rearetado</a>
+                    <a href="{{ url_for('inventario') }}" class="btn-3d">Inventario</a>
                     <a href="#" class="btn-3d" onclick="abrirDatosAnimal()">Datos del Animal</a>
                 </div>
 
@@ -228,19 +229,15 @@
                 <button class="close-btn" onclick="closeDetails()">✕</button>
                 <h4>PDF datos del animal</h4>
                 <form id="datosForm" onsubmit="return false;">
-                    <label>No. Arete</label>
-                    <select id="detalle-noarete" class="form-control">
-                        <option value="">-- Selecciona un arete --</option>
+                    <label>Animal</label>
+                    <select id="detalle-animal" class="form-control">
+                        <option value="">-- Selecciona un animal --</option>
                         {% for a in aretes %}
-                        <option value="{{ a[0] }}">{{ a[0] }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <label>Predio</label>
-                    <select id="detalle-predio" class="form-control">
-                        <option value="">-- Selecciona un predio --</option>
-                        {% for p in predios %}
-                        <option value="{{ p[0] }}">{{ p[1] }} (ID {{ p[0] }})</option>
+                        <option value="{{ a[0] }}">
+                            {{ a[2] }}{% if a[1] %} - Arete {{ a[1] }}{% endif %}
+                        </option>
+                        {% else %}
+                        <option value="" disabled>No hay animales registrados</option>
                         {% endfor %}
                     </select>
 
@@ -266,11 +263,10 @@ function closeDetails() {
 const btnPDF = document.getElementById("btnDescargarPDF");
 if (btnPDF) {
     btnPDF.addEventListener("click", function () {
-        const arete = document.getElementById("detalle-noarete").value.trim();
-        const predio = document.getElementById("detalle-predio").value.trim();
+        const animalId = document.getElementById("detalle-animal").value.trim();
 
-        if (!arete || !predio) {
-            alert("Debes ingresar el número de arete y el ID del predio");
+        if (!animalId) {
+            alert("Debes seleccionar un animal");
             return;
         }
 
@@ -279,14 +275,13 @@ if (btnPDF) {
 
         const baseUrl = "{{ url_for('pdf.pdf_animal') }}";
 
-        window.open(`${baseUrl}?arete=${encodeURIComponent(arete)}&predio=${predio}`, "_blank");
+        window.open(`${baseUrl}?animal_id=${encodeURIComponent(animalId)}`, "_blank");
 
         setTimeout(() => {
             closeDetails();
             this.disabled = false;
             this.textContent = "Descargar PDF";
-            document.getElementById("detalle-noarete").value = "";
-            document.getElementById("detalle-predio").value = "";
+            document.getElementById("detalle-animal").value = "";
         }, 800);
     });
 }

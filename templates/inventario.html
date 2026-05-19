@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block page_css %}
+    <link rel="">
+{% endblock %}
+
+{% block content %}
+
+
+<h2>Generación de Documentos</h2>
+
+<!-- CONTENEDOR PRINCIPAL -->
+<div class="rearetado-form">
+    <h1>Descargar Inventario</h1>
+    <p>Descargar el invetario por fechas de los bovinos administrados</p>
+    
+    <form action="/generar_pdf_rearetado" method="POST" target="_blank">
+        
+        <!-- FILA 1: ARETES -->
+        <div class="form-group-row">
+            <div class="form-group-half">
+                <label style="font-weight:bold; color:#5d4037;">Fecha Inicio:</label>
+                <input type="date" name="fecha_inicio" required>
+            </div>
+            <div class="form-group-half">
+                <label style="font-weight:bold; color:#5d4037;">Fecha Fin:</label>
+                <input type="date" name="fecha_fin" required>
+            </div>
+        </div> 
+        <div>
+            <h1>Previsualizacion del inventario</h1>
+            <section id="Preview">
+                <!-- Aquí se mostraría la previsualización del inventario -->
+                 
+            </section>
+        </div>
+        <!-- BOTÓN DE ACCIÓN -->
+        <button type="submit" class="btn">
+            Generar y Descargar PDF
+        </button>
+
+    </form>
+</div>
+
+{% endblock %}
