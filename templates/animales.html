@@ -185,20 +185,78 @@ img.animal-img {
 }
 
 /* tabla */
-table {
+.animals-table-shell {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid rgba(127, 85, 57, 0.18);
+    border-radius: 10px;
+    background: #fffaf3;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.animal-table .animals-data-table {
     width: 100%;
-    border-collapse: collapse;
+    min-width: 1120px;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
 }
-th {
-    background: #d8c2a8;
-    padding: 8px;
+
+.animal-table .animals-data-table th,
+.animal-table .animals-data-table td {
+    padding: 10px 9px;
+    border-bottom: 1px solid rgba(124, 86, 54, 0.16);
+    text-align: left;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+    font-size: 0.86rem;
 }
-td {
-    padding: 8px;
-    border: 1px solid #c4ab92;
-    text-align: center;
+
+.animal-table .animals-data-table th {
+    background: #6f4f35;
+    color: #fff6e8;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
-.actions-cell { white-space: nowrap; }
+
+.animal-table .animals-data-table tbody tr:nth-child(even) {
+    background: #f8efe3;
+}
+
+.animal-table .animals-data-table tbody tr:hover {
+    background: #f1dfc8;
+}
+
+.col-num { width: 42px; }
+.col-date { width: 96px; }
+.col-short { width: 68px; }
+.col-photo { width: 74px; }
+.col-status { width: 108px; }
+.col-actions { width: 156px; }
+
+.animal-name {
+    color: #3f2c1d;
+    font-weight: 700;
+}
+
+.muted-value {
+    color: #806854;
+}
+
+.actions-cell {
+    white-space: normal;
+}
+
+.actions-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
 
 .banner {
         width: 100%;
@@ -218,16 +276,16 @@ td {
     overflow-x: auto;
 }
 
-.animal-table table {
-    min-width: 760px;
+.animal-table .animals-data-table {
+    min-width: 1120px;
 }
 
 @media(max-width: 992px) {
     .animal-table {
         padding: 16px;
     }
-    .animal-table table {
-        min-width: 620px;
+    .animal-table .animals-data-table {
+        min-width: 1080px;
     }
     .actions-cell button,
     .btn-small,
@@ -253,8 +311,8 @@ td {
         width: min(100%, 100%);
         margin: 0 12px;
     }
-    .animal-table table {
-        min-width: 560px;
+    .animal-table .animals-data-table {
+        min-width: 1040px;
     }
     table th,
     table td {
@@ -266,15 +324,22 @@ td {
 
 /* ===== ESTATUS ===== */
 .estatus-badge {
-    padding:6px 14px;
-    border-radius:14px;
-    font-size:13px;
-    font-weight:600;
-    color:white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 78px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4b3621;
+    background: #e6d4bd;
+    line-height: 1.1;
 }
-.estatus-badge.normal{ background:#4CAF50; }
-.estatus-badge.leve{ background:#FFC107; color:#3b2f1d; }
-.estatus-badge.grave{ background:#E53935; }
+.estatus-badge.normal{ background:#d8f1df; color:#1e6b37; }
+.estatus-badge.leve{ background:#ffe9b5; color:#8c5a0d; }
+.estatus-badge.grave{ background:#ffd2d0; color:#a03533; }
+.estatus-badge.sin-estatus{ background:#e7dac9; color:#6f5139; }
 
 </style>
 <img src="{{ url_for('static', filename='img/3.png') }}" class="banner">
@@ -317,13 +382,13 @@ td {
             {% for a in animales %}
             <tr>
                 <td>{{ loop.index}}</td>
-                <td>{{ a[1] }}</td>
+                <td class="animal-name">{{ a[1] }}</td>
                 <td>{{ a[2] }}</td>
                 <td>{{ a[3] }}</td>
                 <td>{{ a[4] }}</td>
                 <td>{{ a[8] if a|length > 8 else '—' }}</td>
-                <td>{{ a[14] if a|length > 14 and a[14] else '—' }}</td>
-                <td>{{ a[5] }}</td>
+                <td>{{ a[5] or '—' }}</td>
+                <td>{{ a[15] if a|length > 15 and a[15] else '—' }}</td>
                 <td>{{ a[6] }}</td>
                 <td>{{ a[7] }}</td>
 
@@ -338,8 +403,10 @@ td {
                          onerror="this.style.display='none'">
                 </td>
                 
+                <td>{{ a[9] if a|length > 9 and a[9] else '—' }}</td>
+
                 <td>
-                    {% set estado = a[9] if a|length > 9 and a[9] else 'Sin estatus' %}
+                    {% set estado = a[10] if a|length > 10 and a[10] else 'Sin estatus' %}
                     <span class="estatus-badge {{ estado|lower|replace(' ', '-') }}">
                         {{ estado }}
                     </span>
@@ -352,7 +419,7 @@ td {
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "raza": a[5], "madre": a[14] if a|length > 14 else none,
+                            "productor": a[4], "raza": a[5], "madre": a[15] if a|length > 15 else none,
                                 "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else none
                         } | tojson }})'>
                         Ver
@@ -361,11 +428,11 @@ td {
                     <button type="button" class="btn btn-small"
                         onclick='abrirFormEditar({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
-                            "productor": a[4], "fk_productor": a[12] if a|length > 12 else none,
-                            "raza": a[5], "fk_raza": a[11] if a|length > 11 else none,
-                            "madre": a[14] if a|length > 14 else none,
-                            "fk_madre": a[13] if a|length > 13 else none,
-                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[10] if a|length > 10 else none
+                            "productor": a[4], "fk_productor": a[13] if a|length > 13 else none,
+                            "raza": a[5], "fk_raza": a[12] if a|length > 12 else none,
+                            "madre": a[15] if a|length > 15 else none,
+                            "fk_madre": a[14] if a|length > 14 else none,
+                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[11] if a|length > 11 else none
                         } | tojson }})'>
                         Modificar
                     </button>
