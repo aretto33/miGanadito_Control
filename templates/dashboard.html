@@ -202,15 +202,10 @@
                 <tr>
                     <td class="animal-nombre">{{ a[0] }}</td>
                     <td>
-                        {% if a[1] == 'Normal' %}
-                            <span class="estatus-badge normal">Normal</span>
-                        {% elif a[1] == 'Leve' %}
-                            <span class="estatus-badge leve">Leve</span>
-                        {% elif a[1] == 'Grave' %}
-                            <span class="estatus-badge grave">Grave</span>
-                        {% else %}
-                            <span class="estatus-badge normal">Sin estatus</span>
-                        {% endif %}
+                        {% set estado = a[1] if a[1] else 'Sin estatus' %}
+                        <span class="estatus-badge {{ estado|lower|replace(' ', '-') }}">
+                            {{ estado }}
+                        </span>
                     </td>
                 </tr>
                 {% endfor %}

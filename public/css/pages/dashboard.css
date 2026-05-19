@@ -558,6 +558,11 @@
     color: #a03533;
 }
 
+.estatus-badge.sin-estatus {
+    background: #e7dac9;
+    color: #6f5139;
+}
+
 .busqueda-overlay {
     position: fixed;
     inset: 0;

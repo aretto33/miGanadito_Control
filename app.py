@@ -398,10 +398,19 @@ def dashboard():
             total_predios = cursor.fetchone()[0]
 
             cursor.execute("""
-                SELECT nombre, 'Sin estatus' AS estatus_actual
-                FROM Animales
-                WHERE fk_productor = %s
-                ORDER BY nombre
+                SELECT
+                    a.nombre,
+                    COALESCE((
+                        SELECT t.impacto
+                        FROM Seguimiento_vet s
+                        JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+                        WHERE s.fk_animal = a.pk_animal
+                        ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
+                        LIMIT 1
+                    ), 'Sin estatus') AS estatus_actual
+                FROM Animales a
+                WHERE a.fk_productor = %s
+                ORDER BY a.nombre
             """, (fk_productor,))
             estados_animales = cursor.fetchall()
     except Exception as e:
@@ -585,7 +594,15 @@ def animales():
                 SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
-                       'Sin estatus' AS estatus_actual,
+                       rs.arete,
+                       COALESCE((
+                           SELECT t.impacto
+                           FROM Seguimiento_vet s
+                           JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+                           WHERE s.fk_animal = a.pk_animal
+                           ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
+                           LIMIT 1
+                       ), 'Sin estatus') AS estatus_actual,
                        a.fk_predio, r.pk_raza, a.fk_productor,
                        a.fk_animal AS fk_madre,
                        m.nombre AS madre_nombre
@@ -594,6 +611,7 @@ def animales():
                 LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
                 LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
                 LEFT JOIN Animales m ON a.fk_animal = m.pk_animal
+                LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
                 WHERE a.fk_productor=%s
                 ORDER BY a.pk_animal DESC
             """, (session.get("fk_productor"),))
@@ -602,7 +620,15 @@ def animales():
                 SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
-                       'Sin estatus' AS estatus_actual,
+                       rs.arete,
+                       COALESCE((
+                           SELECT t.impacto
+                           FROM Seguimiento_vet s
+                           JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+                           WHERE s.fk_animal = a.pk_animal
+                           ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
+                           LIMIT 1
+                       ), 'Sin estatus') AS estatus_actual,
                        a.fk_predio, r.pk_raza, a.fk_productor,
                        a.fk_animal AS fk_madre,
                        m.nombre AS madre_nombre
@@ -611,6 +637,7 @@ def animales():
                 LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
                 LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
                 LEFT JOIN Animales m ON a.fk_animal = m.pk_animal
+                LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
                 ORDER BY a.pk_animal DESC
             """)
 
