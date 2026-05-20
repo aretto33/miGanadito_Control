@@ -1,44 +1,103 @@
 {% extends "base.html" %}
 {% block page_css %}
-    <link rel="">
+    <link rel="stylesheet" href="{{ asset_url('css/pages/inventario.css') }}">
 {% endblock %}
 
 {% block content %}
 
-
-<h2>Generación de Documentos</h2>
-
-<!-- CONTENEDOR PRINCIPAL -->
-<div class="rearetado-form">
-    <h1>Descargar Inventario</h1>
-    <p>Descargar el invetario por fechas de los bovinos administrados</p>
-    
-    <form action="/generar_pdf_rearetado" method="POST" target="_blank">
-        
-        <!-- FILA 1: ARETES -->
-        <div class="form-group-row">
-            <div class="form-group-half">
-                <label style="font-weight:bold; color:#5d4037;">Fecha Inicio:</label>
-                <input type="date" name="fecha_inicio" required>
-            </div>
-            <div class="form-group-half">
-                <label style="font-weight:bold; color:#5d4037;">Fecha Fin:</label>
-                <input type="date" name="fecha_fin" required>
-            </div>
-        </div> 
+<section class="inventory-page">
+    <div class="inventory-hero">
         <div>
-            <h1>Previsualizacion del inventario</h1>
-            <section id="Preview">
-                <!-- Aquí se mostraría la previsualización del inventario -->
-                 
-            </section>
+            <span class="inventory-kicker">Inventario de animales</span>
+            <h2>Descargar inventario</h2>
+            <p>
+                Filtra por fecha de nacimiento, revisa la previsualización y descarga el listado
+                de animales en formato CSV.
+            </p>
         </div>
-        <!-- BOTÓN DE ACCIÓN -->
-        <button type="submit" class="btn">
-            Generar y Descargar PDF
-        </button>
+        <div class="inventory-summary">
+            <span class="summary-label">Registros encontrados</span>
+            <strong>{{ animales|length }}</strong>
+        </div>
+    </div>
 
+    <form class="inventory-filters" method="GET" action="{{ url_for('inventario') }}">
+        <div class="filter-field">
+            <label for="fecha_inicio">Fecha inicio</label>
+            <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="filter-field">
+            <label for="fecha_fin">Fecha fin</label>
+            <input type="date" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-inventory btn-inventory-primary">Previsualizar</button>
+            <a class="btn-inventory btn-inventory-soft" href="{{ url_for('inventario') }}">Limpiar</a>
+            <a class="btn-inventory btn-inventory-download"
+               href="{{ url_for('descargar_inventario', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}">
+                Descargar CSV
+            </a>
+        </div>
     </form>
-</div>
+
+    <div class="inventory-card">
+        <div class="inventory-card-header">
+            <div>
+                <h3>Previsualización del inventario</h3>
+                <p>Datos principales para control, trazabilidad y revisión rápida.</p>
+            </div>
+        </div>
+
+        <div class="inventory-table-wrap">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Nombre</th>
+                        <th>Nacimiento</th>
+                        <th>Cruze</th>
+                        <th>Productor</th>
+                        <th>Predio</th>
+                        <th>Raza</th>
+                        <th>Madre</th>
+                        <th>Sexo</th>
+                        <th>Peso</th>
+                        <th>Arete</th>
+                        <th>Estatus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in animales %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td class="animal-name">{{ a[1] }}</td>
+                        <td>{{ a[2] }}</td>
+                        <td>{{ a[3] or 'Sin conocer' }}</td>
+                        <td>{{ a[4] or '—' }}</td>
+                        <td>{{ a[5] or '—' }}</td>
+                        <td>{{ a[6] or '—' }}</td>
+                        <td>{{ a[7] or '—' }}</td>
+                        <td>{{ 'Macho' if a[8] == 'M' else 'Hembra' if a[8] == 'H' else a[8] }}</td>
+                        <td>{{ a[9] if a[9] is not none else '—' }}</td>
+                        <td>{{ a[10] or '—' }}</td>
+                        <td>
+                            {% set estado = a[11] or 'Sin estatus' %}
+                            <span class="inventory-status {{ estado|lower|replace(' ', '-') }}">
+                                {{ estado }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="empty-state" colspan="12">
+                            No hay animales para el rango seleccionado.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
 {% endblock %}
