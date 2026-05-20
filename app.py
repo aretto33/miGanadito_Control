@@ -1764,14 +1764,14 @@ def obtener_animales_inventario(fecha_inicio=None, fecha_fin=None):
                    p.nombre AS productor, pr.nom_rancho AS predio,
                    r.nombre AS raza, m.nombre AS madre, a.sexo,
                    a.peso_actual, rs.arete,
-                   COALESCE((
-                       SELECT t.impacto
-                       FROM Seguimiento_vet s
-                       JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
-                       WHERE s.fk_animal = a.pk_animal
-                       ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
-                       LIMIT 1
-                   ), 'Sin estatus') AS estatus_actual
+                   CASE
+                       WHEN EXISTS (
+                           SELECT 1
+                           FROM Ventas v
+                           WHERE v.fk_animal = a.pk_animal
+                       ) THEN 'VENDIDO'
+                       ELSE 'ACTIVO (VIVO)'
+                   END AS estado_animal
             FROM Animales a
             LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
             LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
@@ -1805,7 +1805,7 @@ def descargar_inventario():
     writer = csv.writer(salida)
     writer.writerow([
         "ID", "Nombre", "Fecha de nacimiento", "Cruze", "Productor",
-        "Predio", "Raza", "Madre", "Sexo", "Peso actual", "Arete", "Estatus"
+        "Predio", "Raza", "Madre", "Sexo", "Peso actual", "Arete", "Estado"
     ])
 
     for animal in animales:

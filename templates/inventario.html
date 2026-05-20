@@ -63,7 +63,7 @@
                         <th>Sexo</th>
                         <th>Peso</th>
                         <th>Arete</th>
-                        <th>Estatus</th>
+                        <th>Estado</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -81,8 +81,9 @@
                         <td>{{ a[9] if a[9] is not none else '—' }}</td>
                         <td>{{ a[10] or '—' }}</td>
                         <td>
-                            {% set estado = a[11] or 'Sin estatus' %}
-                            <span class="inventory-status {{ estado|lower|replace(' ', '-') }}">
+                            {% set estado = a[11] or 'ACTIVO (VIVO)' %}
+                            {% set estado_class = estado|lower|replace(' ', '-')|replace('(', '')|replace(')', '') %}
+                            <span class="inventory-status {{ estado_class }}">
                                 {{ estado }}
                             </span>
                         </td>
