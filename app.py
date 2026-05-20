@@ -6,6 +6,7 @@ from flask import (
 from fpdf import FPDF
 from datetime import datetime
 import io
+import csv
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import Image
@@ -1714,7 +1715,106 @@ def generar_pdf_rearetado():
 #--------------Blog donde se hablan de tipos de razas en tabasco-------
 @app.route("/inventario")
 def inventario():
-    return render_template("inventario.html")
+    if "usuario" not in session:
+        flash("Debes iniciar sesión", "warning")
+        return redirect(url_for("login"))
+
+    fecha_inicio = request.args.get("fecha_inicio") or ""
+    fecha_fin = request.args.get("fecha_fin") or ""
+    animales = []
+
+    try:
+        animales = obtener_animales_inventario(fecha_inicio, fecha_fin)
+    except Exception as e:
+        flash(f"Error al cargar el inventario: {e}", "danger")
+
+    return render_template(
+        "inventario.html",
+        animales=animales,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+    )
+
+
+def obtener_animales_inventario(fecha_inicio=None, fecha_fin=None):
+    conn, cursor = conectar_bd()
+    if not conn or not cursor:
+        raise RuntimeError("No se pudo conectar a la base de datos")
+
+    filtros = []
+    params = []
+
+    if session.get("rol") == "Productor":
+        filtros.append("a.fk_productor=%s")
+        params.append(session.get("fk_productor"))
+
+    if fecha_inicio:
+        filtros.append("a.fecha_nacimiento >= %s")
+        params.append(fecha_inicio)
+
+    if fecha_fin:
+        filtros.append("a.fecha_nacimiento <= %s")
+        params.append(fecha_fin)
+
+    where_sql = f"WHERE {' AND '.join(filtros)}" if filtros else ""
+
+    try:
+        cursor.execute(f"""
+            SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
+                   p.nombre AS productor, pr.nom_rancho AS predio,
+                   r.nombre AS raza, m.nombre AS madre, a.sexo,
+                   a.peso_actual, rs.arete,
+                   COALESCE((
+                       SELECT t.impacto
+                       FROM Seguimiento_vet s
+                       JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+                       WHERE s.fk_animal = a.pk_animal
+                       ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
+                       LIMIT 1
+                   ), 'Sin estatus') AS estatus_actual
+            FROM Animales a
+            LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
+            LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
+            LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
+            LEFT JOIN Animales m ON a.fk_animal=m.pk_animal
+            LEFT JOIN Registro_SINIGA rs ON rs.fk_animal=a.pk_animal
+            {where_sql}
+            ORDER BY a.fecha_nacimiento DESC, a.pk_animal DESC
+        """, tuple(params))
+        return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+@app.route("/inventario/descargar")
+def descargar_inventario():
+    if "usuario" not in session:
+        flash("Debes iniciar sesión", "warning")
+        return redirect(url_for("login"))
+
+    fecha_inicio = request.args.get("fecha_inicio") or ""
+    fecha_fin = request.args.get("fecha_fin") or ""
+
+    try:
+        animales = obtener_animales_inventario(fecha_inicio, fecha_fin)
+    except Exception as e:
+        flash(f"No se pudo generar el inventario: {e}", "danger")
+        return redirect(url_for("inventario", fecha_inicio=fecha_inicio, fecha_fin=fecha_fin))
+
+    salida = io.StringIO()
+    writer = csv.writer(salida)
+    writer.writerow([
+        "ID", "Nombre", "Fecha de nacimiento", "Cruze", "Productor",
+        "Predio", "Raza", "Madre", "Sexo", "Peso actual", "Arete", "Estatus"
+    ])
+
+    for animal in animales:
+        writer.writerow([campo if campo is not None else "" for campo in animal])
+
+    response = make_response(salida.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = "attachment; filename=inventario_animales.csv"
+    return response
 
 @app.route("/album_razas")
 def album_razas():
