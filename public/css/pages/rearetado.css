@@ -1,73 +1,191 @@
-/* --- ESTILOS IDÉNTICOS A TU MÓDULO DE ANIMALES --- */
-.rearetado-form {
-    background: #f5e8d8; /* Mismo beige de fondo */
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-    border: 1px solid #dccbb5;
+.rearetado-page {
+    display: grid;
+    gap: 1.25rem;
 }
 
-/* Aplicamos estilo a inputs y textarea */
-input, select, textarea {
+.rearetado-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(127, 85, 57, 0.16);
+    border-radius: 18px;
+    background: rgba(255, 250, 245, 0.92);
+    box-shadow: 0 18px 34px rgba(61, 43, 31, 0.11);
+}
+
+.hero-kicker {
+    display: inline-flex;
+    margin-bottom: 0.55rem;
+    padding: 0.34rem 0.72rem;
+    border-radius: 999px;
+    background: rgba(47, 111, 78, 0.12);
+    color: #2f6f4e;
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.hero-copy h2 {
+    margin: 0;
+    color: #3d2b1f;
+    font-family: "Fraunces", serif;
+    font-size: clamp(1.9rem, 4vw, 3.2rem);
+    line-height: 1.05;
+}
+
+.hero-copy p {
+    max-width: 64ch;
+    margin: 0.75rem 0 0;
+    color: #6f5a46;
+    line-height: 1.65;
+}
+
+.hero-reference {
     width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #bca58b; /* Borde café claro */
-    margin-bottom: 12px;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    object-fit: cover;
+    object-position: left center;
+    box-shadow: 0 14px 24px rgba(61, 43, 31, 0.16);
+}
+
+.rearetado-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-section {
+    padding: 1rem;
+    border: 1px solid rgba(127, 85, 57, 0.16);
+    border-radius: 14px;
+    background: #fffaf5;
+    box-shadow: 0 14px 28px rgba(61, 43, 31, 0.09);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.9rem;
+}
+
+.section-title span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: #7f5539;
+    color: #f7efe5;
+    font-weight: 900;
+}
+
+.section-title h3 {
+    margin: 0;
+    color: #4f3725;
+    font-family: "Fraunces", serif;
+    font-size: 1.25rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.form-field {
+    display: grid;
+    gap: 0.34rem;
+}
+
+.form-field.span-2 {
+    grid-column: span 2;
+}
+
+.form-field label {
+    color: #5d4037;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    width: 100%;
+    margin: 0;
+    padding: 0.78rem 0.85rem;
+    border: 1px solid #bca58b;
+    border-radius: 10px;
+    background: #fff;
+    color: #3d2b1f;
     font-family: inherit;
     box-sizing: border-box;
 }
 
-/* Estilo del botón */
-.btn {
-    background: #8b5e3c; /* Café fuerte */
-    color: white;
-    padding: 12px 20px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    width: 100%;
-    margin-top: 10px;
+.form-field textarea {
+    resize: vertical;
 }
 
-.btn:hover {
-    background: #6b452e; /* Oscurecer al pasar mouse */
+.choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin-bottom: 0.85rem;
 }
 
-h2 {
-    text-align: center;
-    color: #5d4037;
-    margin-bottom: 20px;
+.choice-grid.four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-h3 {
-    margin-top: 0;
-    color: #6b452e;
-    font-size: 1.2rem;
-    border-bottom: 2px solid #bca58b;
-    padding-bottom: 10px;
-    margin-bottom: 15px;
-}
-
-/* Utilidad para poner inputs lado a lado */
-.form-group-row {
+.choice-card {
     display: flex;
-    gap: 15px;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 48px;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid rgba(127, 85, 57, 0.18);
+    border-radius: 10px;
+    background: #f8efe3;
+    color: #4f3725;
+    font-weight: 800;
+    cursor: pointer;
 }
 
-.form-group-half {
-    flex: 1;
+.choice-card input {
+    width: auto;
+    margin: 0;
+    accent-color: #7f5539;
 }
 
-/* Ajuste para celulares */
-@media (max-width: 600px) {
-    .form-group-row {
-        flex-direction: column;
-        gap: 0;
+.btn-submit {
+    min-height: 52px;
+    padding: 0.85rem 1rem;
+    border: 0;
+    border-radius: 12px;
+    background: #2f6f4e;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 12px 22px rgba(47, 111, 78, 0.18);
+}
+
+.btn-submit:hover,
+.btn-submit:focus {
+    background: #285d43;
+}
+
+@media (max-width: 900px) {
+    .rearetado-hero,
+    .form-grid,
+    .choice-grid,
+    .choice-grid.four {
+        grid-template-columns: 1fr;
+    }
+
+    .form-field.span-2 {
+        grid-column: span 1;
     }
 }

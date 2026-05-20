@@ -5,50 +5,202 @@
 
 {% block content %}
 
+{% set productor_nombre = productor[1] if productor else session.get('usuario', '') %}
+{% set productor_direccion = productor[2] if productor and productor|length > 2 else '' %}
+{% set productor_upp = productor[3] if productor and productor|length > 3 else '' %}
 
-<h2>Generación de Documentos</h2>
+<section class="rearetado-page">
+    <div class="rearetado-hero">
+        <div class="hero-copy">
+            <span class="hero-kicker">Solicitud SINIIGA</span>
+            <h2>Reposición o rearetado</h2>
+            <p>
+                Selecciona el animal para completar automáticamente propietario, dirección,
+                UPP y arete anterior. Los datos faltantes se llenan manualmente.
+            </p>
+        </div>
+        <img src="{{ asset_url('maxresdefault (2).jpg') }}" alt="Formato de solicitud SINIIGA" class="hero-reference">
+    </div>
 
-<!-- CONTENEDOR PRINCIPAL -->
-<div class="rearetado-form">
-    <h3>Generar Acta de Re-aretado</h3>
-    
-    <form action="/generar_pdf_rearetado" method="POST" target="_blank">
-        
-        <!-- FILA 1: ARETES -->
-        <div class="form-group-row">
-            <div class="form-group-half">
-                <label style="font-weight:bold; color:#5d4037;">Arete Anterior (Baja):</label>
-                <input type="text" name="arete_anterior" placeholder="Ej: MX-1020" required>
+    <form action="{{ url_for('generar_pdf_rearetado') }}" method="POST" target="_blank" class="rearetado-form" id="formRearetado">
+        <div class="form-section">
+            <div class="section-title">
+                <span>1</span>
+                <h3>Datos del propietario</h3>
             </div>
-            <div class="form-group-half">
-                <label style="font-weight:bold; color:#5d4037;">Arete Nuevo (Alta):</label>
-                <input type="text" name="arete_nuevo" placeholder="Ej: MX-9900" required>
+
+            <div class="form-grid">
+                <div class="form-field span-2">
+                    <label for="animal_select">Animal registrado</label>
+                    <select id="animal_select" name="animal_id">
+                        <option value="">Selecciona un animal para autollenar</option>
+                        {% for a in animales %}
+                            <option value="{{ a[0] }}"
+                                    data-arete="{{ a[2] or '' }}"
+                                    data-upp="{{ a[3] or productor_upp }}"
+                                    data-direccion="{{ a[4] or productor_direccion }}"
+                                    data-rancho="{{ a[5] or '' }}">
+                                {{ a[1] }}{% if a[2] %} - {{ a[2] }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-field span-2">
+                    <label for="propietario">Nombre del propietario</label>
+                    <input type="text" id="propietario" name="propietario" value="{{ productor_nombre }}" required>
+                </div>
+
+                <div class="form-field span-2">
+                    <label for="direccion">Dirección</label>
+                    <input type="text" id="direccion" name="direccion" value="{{ productor_direccion }}" placeholder="Dirección del predio o propietario">
+                </div>
+
+                <div class="form-field">
+                    <label for="telefono">Teléfono</label>
+                    <input type="tel" id="telefono" name="telefono" placeholder="Ej. 9931234567">
+                </div>
+
+                <div class="form-field">
+                    <label for="fecha">Fecha de solicitud</label>
+                    <input type="date" id="fecha" name="fecha" value="{{ fecha_actual }}" required>
+                </div>
             </div>
         </div>
 
-        <!-- FILA 2: MOTIVO -->
-        <label style="font-weight:bold; color:#5d4037;">Motivo del Cambio:</label>
-        <textarea name="motivo" rows="4" placeholder="Describa la razón del cambio (pérdida, daño, infección...)" required></textarea>
-
-        <!-- FILA 3: DATOS FINALES -->
-        <div class="form-group-row">
-            <div class="form-group-half">
-                <label style="font-weight:bold; color:#5d4037;">Responsable:</label>
-                <!-- Input grisáceo para indicar que es de solo lectura -->
-                <input type="text" name="responsable" value="{{ session.get('usuario', '') }}" readonly style="background-color: #e6dace; color: #555;">
+        <div class="form-section">
+            <div class="section-title">
+                <span>2</span>
+                <h3>Motivo y claves</h3>
             </div>
-            <div class="form-group-half">
-                <label style="font-weight:bold; color:#5d4037;">Fecha del Suceso:</label>
-                <input type="date" name="fecha" required>
+
+            <div class="choice-grid">
+                <label class="choice-card">
+                    <input type="radio" name="motivo_solicitud" value="reposicion">
+                    <span>Reposición</span>
+                </label>
+                <label class="choice-card">
+                    <input type="radio" name="motivo_solicitud" value="rearetado" checked>
+                    <span>Rearetado / reidentificación</span>
+                </label>
+            </div>
+
+            <div class="choice-grid four">
+                <label class="choice-card">
+                    <input type="radio" name="causa" value="perdida" checked>
+                    <span>Pérdida</span>
+                </label>
+                <label class="choice-card">
+                    <input type="radio" name="causa" value="robo">
+                    <span>Robo</span>
+                </label>
+                <label class="choice-card">
+                    <input type="radio" name="causa" value="malfuncionamiento">
+                    <span>Mal funcionamiento</span>
+                </label>
+                <label class="choice-card">
+                    <input type="radio" name="causa" value="deterioro">
+                    <span>Deterioro</span>
+                </label>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="upp">Clave UPP</label>
+                    <input type="text" id="upp" name="upp" value="{{ productor_upp }}" placeholder="Clave UPP">
+                </div>
+                <div class="form-field">
+                    <label for="psg">Clave PSG</label>
+                    <input type="text" id="psg" name="psg" placeholder="Si aplica">
+                </div>
+                <div class="form-field">
+                    <label for="clave_pg">Clave PG</label>
+                    <input type="text" id="clave_pg" name="clave_pg" placeholder="Si aplica">
+                </div>
             </div>
         </div>
-        
-        <!-- BOTÓN DE ACCIÓN -->
-        <button type="submit" class="btn">
-            Generar y Descargar PDF
-        </button>
 
+        <div class="form-section">
+            <div class="section-title">
+                <span>3</span>
+                <h3>Dispositivo y aretes</h3>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="especie">Especie</label>
+                    <select id="especie" name="especie">
+                        <option value="BOVINO" selected>Bovino</option>
+                        <option value="OVINO">Ovino</option>
+                        <option value="CAPRINO">Caprino</option>
+                        <option value="COLMENAS">Colmenas</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="dispositivo">Dispositivo necesario</label>
+                    <select id="dispositivo" name="dispositivo">
+                        <option value="BOTON" selected>Botón</option>
+                        <option value="BANDERA">Bandera</option>
+                        <option value="RADIOFRECUENCIA">Radiofrecuencia</option>
+                        <option value="BANDERA PEQ.">Bandera pequeña</option>
+                        <option value="BANDERA GDE.">Bandera grande</option>
+                        <option value="GRAPA">Grapa</option>
+                        <option value="DISCO PEQ.">Disco pequeño</option>
+                        <option value="DISCO GDE.">Disco grande</option>
+                        <option value="TARJETAS">Tarjetas</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="cantidad">Cantidad</label>
+                    <input type="number" id="cantidad" name="cantidad" min="1" value="1">
+                </div>
+
+                <div class="form-field">
+                    <label for="arete_anterior">Número anterior</label>
+                    <input type="text" id="arete_anterior" name="arete_anterior" placeholder="Arete actual o extraviado">
+                </div>
+
+                <div class="form-field">
+                    <label for="arete_nuevo">Número nuevo</label>
+                    <input type="text" id="arete_nuevo" name="arete_nuevo" placeholder="Nuevo identificador">
+                </div>
+
+                <div class="form-field">
+                    <label for="responsable">Punto de atención</label>
+                    <input type="text" id="responsable" name="responsable" value="{{ session.get('usuario', '') }}">
+                </div>
+
+                <div class="form-field span-2">
+                    <label for="observaciones">Observaciones</label>
+                    <textarea id="observaciones" name="observaciones" rows="3" placeholder="Detalles adicionales, si hacen falta"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Generar PDF de solicitud</button>
     </form>
-</div>
+</section>
 
-{% endblock %}on>
+<script>
+const animalSelect = document.getElementById('animal_select');
+const areteAnterior = document.getElementById('arete_anterior');
+const uppInput = document.getElementById('upp');
+const direccionInput = document.getElementById('direccion');
+
+animalSelect.addEventListener('change', () => {
+    const option = animalSelect.selectedOptions[0];
+    if (!option) return;
+
+    const arete = option.dataset.arete || '';
+    const upp = option.dataset.upp || '';
+    const direccion = option.dataset.direccion || '';
+
+    if (arete) areteAnterior.value = arete;
+    if (upp) uppInput.value = upp;
+    if (direccion) direccionInput.value = direccion;
+});
+</script>
+
+{% endblock %}
