@@ -1597,36 +1597,152 @@ def upp():
 # --- CLASE PDF PERSONALIZADA ---
 class PDFRearetado(FPDF):
     def header(self):
-        # Título principal centrado
-        self.set_font('Arial', 'B', 14)
-        self.cell(0, 10, 'CONTROL GANADERO - REPORTE DE INCIDENCIA', 0, 1, 'C')
-        
-        # Subtítulo itálica
-        self.set_font('Arial', 'I', 10)
-        self.cell(0, 5, 'Departamento de Control Sanitario e Identificación', 0, 1, 'C')
-        self.ln(20) # Espacio después del encabezado
+        agricultura_logo = resolve_asset_path("logo_agricultura.jpg")
+        siniiga_logo = resolve_asset_path("logo_pdf.png")
+        guia_rearetado = resolve_asset_path("maxresdefault (2).jpg")
+
+        if agricultura_logo:
+            self.image(agricultura_logo, 12, 8, 42)
+        if siniiga_logo:
+            self.image(siniiga_logo, 96, 8, 18)
+        if guia_rearetado:
+            self.image(guia_rearetado, 158, 8, 40)
+
+        self.set_xy(12, 32)
+        self.set_font('Arial', 'B', 8)
+        self.cell(186, 5, 'SISTEMA NACIONAL DE IDENTIFICACION INDIVIDUAL DE GANADO', 0, 1, 'C')
+        self.cell(186, 5, 'SISTEMA NACIONAL DE IDENTIFICACION ANIMAL', 0, 1, 'C')
+        self.cell(186, 5, 'SOLICITUD DE IDENTIFICADORES PARA REPOSICION O REARETADO', 0, 1, 'C')
+        self.ln(4)
 
     def footer(self):
-        # Pie de página simple
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
         self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'R')
 
+
+def texto_pdf(valor):
+    return str(valor or "").encode("latin-1", "replace").decode("latin-1")
+
+
+def dibujar_linea_dato(pdf, x, y, etiqueta, valor, ancho=180):
+    pdf.set_xy(x, y)
+    pdf.set_font('Arial', 'B', 8)
+    pdf.cell(40, 6, texto_pdf(etiqueta), 0, 0)
+    pdf.set_font('Arial', '', 8)
+    pdf.cell(ancho - 40, 6, texto_pdf(valor), 'B', 0)
+
+
+def dibujar_checkbox(pdf, x, y, texto, activo=False):
+    pdf.rect(x, y, 4, 4)
+    if activo:
+        pdf.line(x + 0.7, y + 2.1, x + 1.7, y + 3.3)
+        pdf.line(x + 1.7, y + 3.3, x + 3.4, y + 0.8)
+    pdf.set_xy(x + 5.5, y - 1)
+    pdf.set_font('Arial', '', 8)
+    pdf.cell(42, 6, texto_pdf(texto), 0, 0)
+
+
+def dibujar_cajas_codigo(pdf, x, y, valor, total_cajas=12, caja=6):
+    valor = texto_pdf(valor).replace("-", "").replace(" ", "").upper()
+    for i in range(total_cajas):
+        pdf.rect(x + (i * caja), y, caja - 0.8, 5.5)
+        if i < len(valor):
+            pdf.set_xy(x + (i * caja), y + 0.4)
+            pdf.set_font('Arial', 'B', 7)
+            pdf.cell(caja - 0.8, 4, valor[i], 0, 0, 'C')
+
+
+def obtener_datos_rearetado():
+    datos = {"productor": None, "animales": [], "predios": []}
+
+    if "usuario" not in session:
+        return datos
+
+    conn, cursor = conectar_bd()
+    if not conn or not cursor:
+        return datos
+
+    try:
+        if session.get("rol") == "Productor" and session.get("fk_productor"):
+            cursor.execute("""
+                SELECT pr.pk_productor,
+                       CONCAT_WS(' ', pr.nombre, pr.apellido_pat, pr.apellido_mat) AS nombre,
+                       COALESCE(p.direccion, '') AS direccion,
+                       COALESCE(p.upp, '') AS upp,
+                       COALESCE(p.nom_rancho, '') AS rancho
+                FROM Productores pr
+                LEFT JOIN Predios p ON p.fk_productor = pr.pk_productor
+                WHERE pr.pk_productor=%s
+                ORDER BY p.pk_predio ASC
+                LIMIT 1
+            """, (session.get("fk_productor"),))
+            datos["productor"] = cursor.fetchone()
+
+            cursor.execute("""
+                SELECT a.pk_animal, a.nombre, COALESCE(rs.arete, ''),
+                       COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
+                       COALESCE(p.nom_rancho, '')
+                FROM Animales a
+                LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
+                LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
+                WHERE a.fk_productor=%s
+                ORDER BY a.nombre
+            """, (session.get("fk_productor"),))
+        else:
+            cursor.execute("""
+                SELECT a.pk_animal, a.nombre, COALESCE(rs.arete, ''),
+                       COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
+                       COALESCE(p.nom_rancho, '')
+                FROM Animales a
+                LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
+                LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
+                ORDER BY a.nombre
+            """)
+
+        datos["animales"] = cursor.fetchall()
+    except Exception:
+        datos["animales"] = []
+    finally:
+        conn.close()
+
+    return datos
+
 # 2. RUTA PARA MOSTRAR EL FORMULARIO
 @app.route('/rearetado')
 def rearetado():
-    return render_template('rearetado.html')
+    if "usuario" not in session:
+        flash("Debes iniciar sesión", "warning")
+        return redirect(url_for("login"))
+
+    datos = obtener_datos_rearetado()
+    return render_template(
+        'rearetado.html',
+        productor=datos["productor"],
+        animales=datos["animales"],
+        fecha_actual=datetime.now().strftime('%Y-%m-%d')
+    )
 
 # 3. RUTA QUE GENERA EL PDF IDÉNTICO A TU IMAGEN
 @app.route('/generar_pdf_rearetado', methods=['POST'])
 def generar_pdf_rearetado():
     try:
-        # Obtener datos del formulario
-        arete_ant = request.form.get('arete_anterior', '---')
-        arete_nue = request.form.get('arete_nuevo', '---')
-        motivo = request.form.get('motivo', '---')
-        responsable = request.form.get('responsable', '').upper()
+        propietario = request.form.get('propietario', '')
+        direccion = request.form.get('direccion', '')
+        telefono = request.form.get('telefono', '')
         fecha = request.form.get('fecha')
+        motivo_solicitud = request.form.get('motivo_solicitud', 'rearetado')
+        causa = request.form.get('causa', '')
+        upp = request.form.get('upp', '')
+        psg = request.form.get('psg', '')
+        clave_pg = request.form.get('clave_pg', '')
+        especie = request.form.get('especie', 'BOVINO')
+        dispositivo = request.form.get('dispositivo', 'BOTON')
+        cantidad = request.form.get('cantidad', '1')
+        arete_ant = request.form.get('arete_anterior', '')
+        arete_nue = request.form.get('arete_nuevo', '')
+        responsable = request.form.get('responsable', '').upper()
+        observaciones = request.form.get('observaciones', '')
 
         # Formatear la fecha a dd/mm/aaaa si es posible
         try:
@@ -1638,66 +1754,109 @@ def generar_pdf_rearetado():
         # --- CREACIÓN DEL PDF ---
         pdf = PDFRearetado()
         pdf.add_page()
-        
-        # Título del Acta
-        pdf.ln(5)
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, 'ACTA DE RE-ARETADO / CAMBIO DE IDENTIFICADOR', 0, 1, 'C')
-        pdf.ln(10)
 
-        # Fecha alineada a la derecha
-        pdf.set_font('Arial', '', 11)
-        pdf.cell(0, 10, f'Fecha del suceso: {fecha_fmt}', 0, 1, 'R')
-        pdf.ln(5)
+        y = 50
+        dibujar_linea_dato(pdf, 12, y, "NOMBRE DEL PROPIETARIO:", propietario)
+        dibujar_linea_dato(pdf, 12, y + 8, "DIRECCION:", direccion)
+        dibujar_linea_dato(pdf, 12, y + 16, "TELEFONO:", telefono, 88)
+        dibujar_linea_dato(pdf, 125, y + 16, "FECHA:", fecha_fmt, 72)
 
-        # Párrafo introductorio
-        texto_intro = "Por medio de la presente se hace constar el cambio de identificación oficial del animal, debido a una incidencia reportada en el sistema."
-        # Decodificar caracteres latinos
-        pdf.multi_cell(0, 8, texto_intro.encode('latin-1', 'replace').decode('latin-1'))
-        pdf.ln(10)
+        y = 68
+        pdf.set_xy(12, y)
+        pdf.set_font('Arial', 'B', 8)
+        pdf.cell(55, 6, 'MOTIVO DE LA SOLICITUD:', 0, 0)
+        dibujar_checkbox(pdf, 78, y, "REPOSICION", motivo_solicitud == "reposicion")
+        dibujar_checkbox(pdf, 118, y, "REARETADO (REIDENTIFICACION)", motivo_solicitud == "rearetado")
 
-        # --- SECCIÓN DETALLES (Idéntico a tu imagen) ---
-        pdf.set_font('Arial', '', 11)
-        pdf.cell(0, 8, "DETALLES DEL CAMBIO:", 0, 1)
-        
-        # Línea punteada simulada
-        pdf.cell(0, 5, "-"*65, 0, 1) 
-        
-        # Datos de los aretes
-        pdf.ln(2)
-        pdf.cell(60, 8, f"Identificador Anterior (Baja):   {arete_ant}", 0, 1)
-        pdf.cell(60, 8, f"Identificador Nuevo (Alta):      {arete_nue}", 0, 1)
-        pdf.ln(2)
-        
-        # Línea punteada cierre
-        pdf.cell(0, 5, "-"*65, 0, 1)
-        pdf.ln(10)
+        pdf.set_xy(12, y + 10)
+        pdf.set_font('Arial', 'B', 8)
+        pdf.cell(55, 6, 'CAUSA:', 0, 0)
+        dibujar_checkbox(pdf, 78, y + 10, "PERDIDA", causa == "perdida")
+        dibujar_checkbox(pdf, 118, y + 10, "MAL FUNCIONAMIENTO", causa == "malfuncionamiento")
+        dibujar_checkbox(pdf, 78, y + 18, "ROBO", causa == "robo")
+        dibujar_checkbox(pdf, 118, y + 18, "DETERIORO", causa == "deterioro")
 
-        # --- SECCIÓN MOTIVO ---
-        pdf.cell(0, 8, "MOTIVO DECLARADO:", 0, 1)
-        motivo_safe = motivo.encode('latin-1', 'replace').decode('latin-1')
-        pdf.multi_cell(0, 8, motivo_safe)
-        
-        # --- FIRMAS AL PIE ---
-        pdf.set_y(-60) # Posición fija abajo
+        y = 100
+        pdf.set_font('Arial', 'B', 8)
+        pdf.set_xy(12, y)
+        pdf.cell(35, 6, 'CLAVE DE UPP:', 0, 0)
+        dibujar_cajas_codigo(pdf, 48, y, upp, 12)
+        pdf.set_xy(12, y + 9)
+        pdf.cell(35, 6, 'CLAVE DE PSG:', 0, 0)
+        dibujar_cajas_codigo(pdf, 48, y + 9, psg, 12)
+        pdf.set_xy(12, y + 18)
+        pdf.cell(35, 6, 'CLAVE DE PG:', 0, 0)
+        dibujar_cajas_codigo(pdf, 48, y + 18, clave_pg, 9)
+        pdf.set_xy(116, y + 18)
+        pdf.cell(25, 6, 'PG1', 1, 0, 'C')
+
+        y = 130
+        pdf.set_font('Arial', 'B', 8)
+        pdf.cell(0, 6, 'SENALE CON UNA CRUZ EL DISPOSITIVO DE REPOSICION QUE NECESITE:', 0, 1)
+        filas_dispositivo = [
+            ("BOVINO", ["BOTON", "BANDERA", "RADIOFRECUENCIA"]),
+            ("OVINO", ["BANDERA PEQ.", "BANDERA GDE.", "RADIOFRECUENCIA"]),
+            ("CAPRINO", ["BANDERA PEQ.", "GRAPA", "RADIOFRECUENCIA"]),
+            ("COLMENAS", ["DISCO PEQ.", "DISCO GDE.", "TARJETAS"]),
+        ]
+        for idx, (tipo, opciones) in enumerate(filas_dispositivo):
+            row_y = y + 7 + (idx * 10)
+            pdf.rect(12, row_y, 186, 9)
+            pdf.set_xy(16, row_y + 1.6)
+            pdf.set_font('Arial', 'B', 8)
+            pdf.cell(30, 5, tipo, 0, 0)
+            for opt_idx, opcion in enumerate(opciones):
+                checked = especie == tipo and dispositivo == opcion
+                dibujar_checkbox(pdf, 52 + (opt_idx * 47), row_y + 2.5, opcion, checked)
+
+        pdf.set_xy(156, 170)
+        pdf.set_font('Arial', 'B', 8)
+        pdf.cell(22, 6, 'CANTIDAD:', 0, 0)
+        pdf.set_font('Arial', '', 8)
+        pdf.cell(18, 6, texto_pdf(cantidad), 1, 0, 'C')
+
+        y = 178
+        pdf.set_xy(12, y)
+        pdf.set_font('Arial', 'B', 8)
+        pdf.cell(0, 7, 'CODIGO DE IDENTIFICACION SINIIGA', 1, 1, 'C')
+        pdf.set_font('Arial', 'B', 7)
+        pdf.cell(28, 7, 'CLAVE DISTR.', 1, 0, 'C')
+        pdf.cell(24, 7, 'ESPECIE', 1, 0, 'C')
+        pdf.cell(24, 7, 'ESTADO', 1, 0, 'C')
+        pdf.cell(110, 7, 'NUMERO DE IDENTIFICACION INDIVIDUAL DEL ANIMAL', 1, 1, 'C')
+        pdf.set_font('Arial', '', 8)
+        for i in range(6):
+            valor_arete = arete_nue if i == 0 else ""
+            pdf.cell(28, 8, "", 1, 0)
+            pdf.cell(24, 8, especie if i == 0 else "", 1, 0, 'C')
+            pdf.cell(24, 8, "", 1, 0)
+            pdf.cell(110, 8, texto_pdf(valor_arete), 1, 1)
+
+        if observaciones:
+            pdf.set_y(242)
+            pdf.set_font('Arial', 'B', 8)
+            pdf.cell(0, 5, 'OBSERVACIONES:', 0, 1)
+            pdf.set_font('Arial', '', 8)
+            pdf.multi_cell(0, 4, texto_pdf(observaciones))
+
+        pdf.set_y(260)
         y_firmas = pdf.get_y()
-        
-        # Línea Izquierda
-        pdf.line(30, y_firmas, 90, y_firmas)
-        pdf.set_xy(30, y_firmas + 2)
-        pdf.set_font('Arial', '', 10)
-        pdf.cell(60, 5, "Firma del Responsable", 0, 0, 'C')
-        # Nombre del responsable debajo de la firma
-        pdf.set_xy(30, y_firmas + 7)
+        pdf.line(18, y_firmas, 82, y_firmas)
+        pdf.set_xy(18, y_firmas + 2)
+        pdf.set_font('Arial', '', 8)
+        pdf.cell(64, 5, "FIRMA DEL PROPIETARIO", 0, 0, 'C')
+        pdf.set_xy(18, y_firmas + 7)
         pdf.set_font('Arial', 'B', 10)
-        pdf.cell(60, 5, responsable, 0, 0, 'C')
+        pdf.cell(64, 5, texto_pdf(propietario.upper()), 0, 0, 'C')
 
-        # Línea Derecha
-        pdf.line(120, y_firmas, 180, y_firmas)
-        pdf.set_xy(120, y_firmas + 2)
-        pdf.set_font('Arial', '', 10)
-        pdf.cell(60, 5, "Sello Institucional", 0, 0, 'C')
-        # Salida del PDF
+        pdf.line(118, y_firmas, 182, y_firmas)
+        pdf.set_xy(118, y_firmas + 2)
+        pdf.set_font('Arial', '', 8)
+        pdf.cell(64, 5, "FIRMA Y SELLO DEL PUNTO DE ATENCION", 0, 0, 'C')
+        pdf.set_xy(118, y_firmas + 7)
+        pdf.set_font('Arial', 'B', 8)
+        pdf.cell(64, 5, texto_pdf(responsable), 0, 0, 'C')
+
         pdf_data = pdf.output(dest='S')
         # pdf.output puede devolver str, bytes o bytearray según la versión de fpdf
         if isinstance(pdf_data, bytearray):
@@ -1707,7 +1866,7 @@ def generar_pdf_rearetado():
         else:
             response = make_response(pdf_data.encode('latin-1')) 
         response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'inline; filename=Rearetado_{arete_nue}.pdf'
+        response.headers['Content-Disposition'] = f'inline; filename=Solicitud_Rearetado_{arete_nue or arete_ant}.pdf'
         return response
 
     except Exception as e:
@@ -1764,14 +1923,14 @@ def obtener_animales_inventario(fecha_inicio=None, fecha_fin=None):
                    p.nombre AS productor, pr.nom_rancho AS predio,
                    r.nombre AS raza, m.nombre AS madre, a.sexo,
                    a.peso_actual, rs.arete,
-                   COALESCE((
-                       SELECT t.impacto
-                       FROM Seguimiento_vet s
-                       JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
-                       WHERE s.fk_animal = a.pk_animal
-                       ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
-                       LIMIT 1
-                   ), 'Sin estatus') AS estatus_actual
+                   CASE
+                       WHEN EXISTS (
+                           SELECT 1
+                           FROM Ventas v
+                           WHERE v.fk_animal = a.pk_animal
+                       ) THEN 'VENDIDO'
+                       ELSE 'ACTIVO (VIVO)'
+                   END AS estado_animal
             FROM Animales a
             LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
             LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
@@ -1805,7 +1964,7 @@ def descargar_inventario():
     writer = csv.writer(salida)
     writer.writerow([
         "ID", "Nombre", "Fecha de nacimiento", "Cruze", "Productor",
-        "Predio", "Raza", "Madre", "Sexo", "Peso actual", "Arete", "Estatus"
+        "Predio", "Raza", "Madre", "Sexo", "Peso actual", "Arete", "Estado"
     ])
 
     for animal in animales:

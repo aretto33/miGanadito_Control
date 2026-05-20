@@ -221,17 +221,17 @@
     line-height: 1.1;
 }
 
-.inventory-status.normal {
+.inventory-status.activo-vivo {
     background: #d8f1df;
     color: #1e6b37;
 }
 
-.inventory-status.leve {
-    background: #ffe9b5;
-    color: #8c5a0d;
+.inventory-status.vendido {
+    background: #dbeafe;
+    color: #24538f;
 }
 
-.inventory-status.grave {
+.inventory-status.baja-muerte {
     background: #ffd2d0;
     color: #a03533;
 }
