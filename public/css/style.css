@@ -165,7 +165,7 @@ body {
 
 .hero-title {
     font-size: clamp(2.5rem, 5vw, 4.4rem);
-    max-width: 10ch;
+    max-width: 15ch;
 }
 
 .hero-text,
