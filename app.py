@@ -11,6 +11,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import Image
 import os
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from ganacontrol.config import Config
 from ganacontrol.db_compat import db as mariadb
@@ -120,6 +121,22 @@ def _es_error_columna_email_faltante(error):
     )
 
 
+def crear_hash_contrasena(password):
+    # pbkdf2 con salt corto cabe en password varchar(100) del esquema legado.
+    return generate_password_hash(password, method="pbkdf2:sha256", salt_length=8)
+
+
+def verificar_contrasena(password_guardada, password_ingresada):
+    if not password_guardada:
+        return False
+
+    try:
+        return check_password_hash(password_guardada, password_ingresada)
+    except ValueError:
+        # Compatibilidad temporal con usuarios creados antes del hash.
+        return password_guardada == password_ingresada
+
+
 def verificar_credenciales(identificador, password, rol_nombre):
     conn, cursor = conectar_bd()
     if not conn:
@@ -154,7 +171,7 @@ def verificar_credenciales(identificador, password, rol_nombre):
 
         if row:
             id_usuario, db_user, db_pass, db_rol = row
-            if db_pass != password:
+            if not verificar_contrasena(db_pass, password):
                 return False, "Contraseña incorrecta"
 
             fk_productor = None
@@ -194,7 +211,7 @@ def verificar_credenciales(identificador, password, rol_nombre):
             return False, "Usuario o rol no encontrado"
 
         id_usuario, db_user, db_pass, db_rol, fk_productor = row
-        if db_pass != password:
+        if not verificar_contrasena(db_pass, password):
             return False, "Contraseña incorrecta"
 
         return True, {"id_usuario": id_usuario, "usuario": db_user, "rol": db_rol, "fk_productor": fk_productor}
@@ -309,6 +326,7 @@ def register():
                 raise Exception("Rol no encontrado en la base de datos")
 
             fk_rol = row[0]
+            password_hash = crear_hash_contrasena(contra)
 
             # Insertar usuario - SIN commit aún. Si la base aún no tiene email,
             # se mantiene compatibilidad con el esquema anterior.
@@ -317,7 +335,7 @@ def register():
                     INSERT INTO Usuarios (usuario, email, password, fk_rol)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id_usuario
-                """, (usuario, email, contra, fk_rol))
+                """, (usuario, email, password_hash, fk_rol))
             except mariadb.Error as e:
                 if not _es_error_columna_email_faltante(e):
                     raise
@@ -326,7 +344,7 @@ def register():
                     INSERT INTO Usuarios (usuario, password, fk_rol)
                     VALUES (%s, %s, %s)
                     RETURNING id_usuario
-                """, (usuario, contra, fk_rol))
+                """, (usuario, password_hash, fk_rol))
 
             # Obtener el ID del INSERT
             id_usuario = cursor.fetchone()[0]
