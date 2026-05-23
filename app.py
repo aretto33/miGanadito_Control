@@ -111,7 +111,16 @@ def normalizar_rol(rol):
     return roles.get(rol.strip().lower())
 
 
-def verificar_credenciales(usuario, password, rol_nombre):
+def _es_error_columna_email_faltante(error):
+    mensaje = str(error).lower()
+    return "email" in mensaje and (
+        "unknown column" in mensaje
+        or "does not exist" in mensaje
+        or "no existe" in mensaje
+    )
+
+
+def verificar_credenciales(identificador, password, rol_nombre):
     conn, cursor = conectar_bd()
     if not conn:
         return False, "Error de conexión"
@@ -124,11 +133,24 @@ def verificar_credenciales(usuario, password, rol_nombre):
                 FROM Usuarios u
                 JOIN Rol r ON r.id_rol = u.fk_rol
                 WHERE u.usuario=%s AND r.nombre=%s
-            """, (usuario, rol_nombre))
+            """, (identificador, rol_nombre))
             row = cursor.fetchone()
         except mariadb.Error:
             conn.rollback()
             row = None
+
+        if not row:
+            try:
+                cursor.execute("""
+                    SELECT u.id_usuario, u.usuario, u.password, r.nombre
+                    FROM Usuarios u
+                    JOIN Rol r ON r.id_rol = u.fk_rol
+                    WHERE u.email=%s AND r.nombre=%s
+                """, (identificador, rol_nombre))
+                row = cursor.fetchone()
+            except mariadb.Error:
+                conn.rollback()
+                row = None
 
         if row:
             id_usuario, db_user, db_pass, db_rol = row
@@ -149,15 +171,25 @@ def verificar_credenciales(usuario, password, rol_nombre):
                     conn.rollback()
                     fk_productor = None
 
-            return True, {"id_usuario": id_usuario, "rol": db_rol, "fk_productor": fk_productor}
+            return True, {"id_usuario": id_usuario, "usuario": db_user, "rol": db_rol, "fk_productor": fk_productor}
 
         # Esquema nuevo: usuarios con columna rol y fk_productor
-        cursor.execute("""
-            SELECT id_usuario, usuario, password, rol, fk_productor
-            FROM usuarios
-            WHERE usuario=%s AND rol=%s
-        """, (usuario, rol_nombre))
-        row = cursor.fetchone()
+        try:
+            cursor.execute("""
+                SELECT id_usuario, usuario, password, rol, fk_productor
+                FROM usuarios
+                WHERE (usuario=%s OR email=%s) AND rol=%s
+            """, (identificador, identificador, rol_nombre))
+            row = cursor.fetchone()
+        except mariadb.Error:
+            conn.rollback()
+            cursor.execute("""
+                SELECT id_usuario, usuario, password, rol, fk_productor
+                FROM usuarios
+                WHERE usuario=%s AND rol=%s
+            """, (identificador, rol_nombre))
+            row = cursor.fetchone()
+
         if not row:
             return False, "Usuario o rol no encontrado"
 
@@ -165,7 +197,7 @@ def verificar_credenciales(usuario, password, rol_nombre):
         if db_pass != password:
             return False, "Contraseña incorrecta"
 
-        return True, {"id_usuario": id_usuario, "rol": db_rol, "fk_productor": fk_productor}
+        return True, {"id_usuario": id_usuario, "usuario": db_user, "rol": db_rol, "fk_productor": fk_productor}
 
     except Exception as e:
         return False, f"Error: {e}"
@@ -193,7 +225,7 @@ def login():
                 productores = []
 
         if request.method == "POST":
-            usuario = request.form["usuario"]
+            usuario = request.form["usuario"].strip()
             contra = request.form["password"]
             rol = normalizar_rol(request.form.get("rol")) or "Productor"
             if rol not in ROLES_VALIDOS:
@@ -203,7 +235,7 @@ def login():
             exito, info = verificar_credenciales(usuario, contra, rol)
 
             if exito:
-                session["usuario"] = usuario
+                session["usuario"] = info.get("usuario", usuario) if isinstance(info, dict) else usuario
                 session["rol"] = rol
                 session.pop("fk_productor", None)
 
@@ -231,12 +263,22 @@ def register():
     if request.method == "POST":
         # Obtener datos de forma segura
         usuario = request.form.get("usuario", "").strip()
+        email = request.form.get("email", "").strip().lower()
         contra = request.form.get("password", "").strip()
+        confirmar_contra = request.form.get("confirm_password", "").strip()
         rol_nombre = normalizar_rol(request.form.get("rol")) or "Productor"
 
         # Validación básica
-        if not usuario or not contra or not rol_nombre:
+        if not usuario or not email or not contra or not confirmar_contra or not rol_nombre:
             flash("Todos los campos son obligatorios", "danger")
+            return redirect(url_for("register"))
+
+        if "@" not in email or "." not in email.split("@")[-1]:
+            flash("Ingresa un correo electrónico válido", "danger")
+            return redirect(url_for("register"))
+
+        if contra != confirmar_contra:
+            flash("Las contraseñas no coinciden", "danger")
             return redirect(url_for("register"))
 
         if rol_nombre not in ROLES_VALIDOS:
@@ -268,12 +310,23 @@ def register():
 
             fk_rol = row[0]
 
-            # Insertar usuario - SIN commit aún
-            cursor.execute("""
-                INSERT INTO Usuarios (usuario, password, fk_rol)
-                VALUES (%s, %s, %s)
-                RETURNING id_usuario
-            """, (usuario, contra, fk_rol))
+            # Insertar usuario - SIN commit aún. Si la base aún no tiene email,
+            # se mantiene compatibilidad con el esquema anterior.
+            try:
+                cursor.execute("""
+                    INSERT INTO Usuarios (usuario, email, password, fk_rol)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id_usuario
+                """, (usuario, email, contra, fk_rol))
+            except mariadb.Error as e:
+                if not _es_error_columna_email_faltante(e):
+                    raise
+                conn.rollback()
+                cursor.execute("""
+                    INSERT INTO Usuarios (usuario, password, fk_rol)
+                    VALUES (%s, %s, %s)
+                    RETURNING id_usuario
+                """, (usuario, contra, fk_rol))
 
             # Obtener el ID del INSERT
             id_usuario = cursor.fetchone()[0]
@@ -899,11 +952,22 @@ def mi_productor():
         return redirect(url_for("mi_productor"))
 
     # --- OBTENER DATOS ---
-    cursor.execute("""
-        SELECT pk_productor, nombre, apellido_pat, apellido_mat, RFC
-        FROM Productores
-        WHERE pk_productor=%s
-    """, (fk_productor,))
+    try:
+        cursor.execute("""
+            SELECT p.pk_productor, p.nombre, p.apellido_pat, p.apellido_mat, p.RFC, COALESCE(u.email, '')
+            FROM Productores p
+            LEFT JOIN Usuarios u ON u.id_usuario = p.fk_usuario
+            WHERE p.pk_productor=%s
+        """, (fk_productor,))
+    except mariadb.Error as e:
+        if not _es_error_columna_email_faltante(e):
+            raise
+        conn.rollback()
+        cursor.execute("""
+            SELECT pk_productor, nombre, apellido_pat, apellido_mat, RFC, ''
+            FROM Productores
+            WHERE pk_productor=%s
+        """, (fk_productor,))
 
     productor = cursor.fetchone()
     conn.close()

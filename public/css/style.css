@@ -709,6 +709,47 @@ body {
     box-shadow: 0 0 0 0.2rem rgba(176, 137, 104, 0.18);
 }
 
+.password-field {
+    position: relative;
+}
+
+.password-field .form-control {
+    padding-right: 3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.8rem;
+    transform: translateY(-50%);
+    width: 2rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--cafe-oscuro);
+    cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+    background: rgba(127, 85, 57, 0.1);
+    outline: none;
+}
+
+.password-toggle svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .auth-role-group {
     border: none;
     padding: 0;

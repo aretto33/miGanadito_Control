@@ -14,8 +14,30 @@
             <label>Usuario:</label>
             <input type="text" name="usuario" class="form-control mb-3" required>
 
+            <label>Email:</label>
+            <input type="email" name="email" class="form-control mb-3" autocomplete="email" required>
+
             <label>Contraseña:</label>
-            <input type="password" name="password" class="form-control mb-3" required>
+            <div class="password-field mb-3">
+                <input id="register-password" type="password" name="password" class="form-control" autocomplete="new-password" required>
+                <button class="password-toggle" type="button" data-password-toggle="register-password" aria-label="Ver contraseña" title="Ver contraseña">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
+
+            <label>Confirmar contraseña:</label>
+            <div class="password-field mb-3">
+                <input id="register-confirm-password" type="password" name="confirm_password" class="form-control" autocomplete="new-password" required>
+                <button class="password-toggle" type="button" data-password-toggle="register-confirm-password" aria-label="Ver contraseña" title="Ver contraseña">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
 
             <input type="hidden" name="rol" value="Productor">
             <div class="mb-3">
