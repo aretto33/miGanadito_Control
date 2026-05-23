@@ -145,6 +145,12 @@
     outline: none;
 }
 
+.form-box input[readonly] {
+    background: #f3eadf;
+    color: #6c5a47;
+    cursor: not-allowed;
+}
+
 .fierro-box {
     padding: 1rem;
     border-radius: 14px;

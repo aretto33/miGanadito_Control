@@ -44,6 +44,11 @@
                     <label for="RFC">RFC</label>
                     <input id="RFC" type="text" name="RFC" value="{{ productor[4] }}">
                 </div>
+
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input id="email" type="email" value="{{ productor[5] or 'Sin email registrado' }}" readonly aria-readonly="true">
+                </div>
             </div>
 
             <div class="fierro-box">
