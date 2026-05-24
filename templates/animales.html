@@ -336,10 +336,9 @@ img.animal-img {
     background: #e6d4bd;
     line-height: 1.1;
 }
-.estatus-badge.normal{ background:#d8f1df; color:#1e6b37; }
-.estatus-badge.leve{ background:#ffe9b5; color:#8c5a0d; }
-.estatus-badge.grave{ background:#ffd2d0; color:#a03533; }
-.estatus-badge.sin-estatus{ background:#e7dac9; color:#6f5139; }
+.estatus-badge.activo{ background:#d8f1df; color:#1e6b37; }
+.estatus-badge.vendido{ background:#dbeafe; color:#1d4f8f; }
+.estatus-badge.baja-muerto{ background:#ffd2d0; color:#a03533; }
 
 </style>
 <img src="{{ url_for('static', filename='img/3.png') }}" class="banner">
@@ -406,8 +405,10 @@ img.animal-img {
                 <td>{{ a[9] if a|length > 9 and a[9] else '—' }}</td>
 
                 <td>
-                    {% set estado = a[10] if a|length > 10 and a[10] else 'Sin estatus' %}
-                    <span class="estatus-badge {{ estado|lower|replace(' ', '-') }}">
+                    {% set estado = a[10] if a|length > 10 and a[10] else 'Activo' %}
+                    {% set estado_norm = estado|lower %}
+                    {% set estado_clase = 'vendido' if estado_norm == 'vendido' else ('baja-muerto' if estado_norm == 'baja (muerto)' else 'activo') %}
+                    <span class="estatus-badge {{ estado_clase }}">
                         {{ estado }}
                     </span>
                 </td>
@@ -420,7 +421,8 @@ img.animal-img {
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
                             "productor": a[4], "raza": a[5], "madre": a[15] if a|length > 15 else none,
-                                "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else none
+                                "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else none,
+                                "estatus": a[10] if a|length > 10 else "Activo"
                         } | tojson }})'>
                         Ver
                     </button>
@@ -432,7 +434,8 @@ img.animal-img {
                             "raza": a[5], "fk_raza": a[12] if a|length > 12 else none,
                             "madre": a[15] if a|length > 15 else none,
                             "fk_madre": a[14] if a|length > 14 else none,
-                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[11] if a|length > 11 else none
+                            "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[11] if a|length > 11 else none,
+                            "estatus": a[10] if a|length > 10 else "Activo"
                         } | tojson }})'>
                         Modificar
                     </button>
@@ -527,6 +530,13 @@ img.animal-img {
                 <option value="H">Hembra</option>
             </select>
 
+            <label for="f_estatus">Estatus:</label>
+            <select name="estatus" id="f_estatus" required>
+                <option value="Activo" selected>Activo</option>
+                <option value="Baja (Muerto)">Baja (Muerto)</option>
+                <option value="Vendido">Vendido</option>
+            </select>
+
             <!-- botón que envía la acción que tu backend espera (registrar/modificar) -->
             <button class="btn" type="submit" name="accion" id="f_accion" value="registrar">Guardar</button>
         </form>
@@ -562,6 +572,13 @@ img.animal-img {
             <label for="e_peso">Peso actual (kg):</label>
             <input type="number" step="0.1" name="peso_actual" id="e_peso" placeholder="Peso en kg">
 
+            <label for="e_estatus">Estatus:</label>
+            <select name="estatus" id="e_estatus" required>
+                <option value="Activo">Activo</option>
+                <option value="Baja (Muerto)">Baja (Muerto)</option>
+                <option value="Vendido">Vendido</option>
+            </select>
+
             <button class="btn" type="submit" name="accion" id="e_accion" value="modificar">Guardar cambios</button>
         </form>
     </div>
@@ -581,6 +598,7 @@ img.animal-img {
         <p><strong>Madre:</strong> <span id="v_madre"></span></p>
         <p><strong>Sexo:</strong> <span id="v_sexo"></span></p>
         <p><strong>Peso actual (kg):</strong> <span id="v_peso"></span></p>
+        <p><strong>Estatus:</strong> <span id="v_estatus"></span></p>
         <div class="modal-actions">
             <button class="btn" id="verToEditBtn">Modificar</button>
         </div>
@@ -609,6 +627,8 @@ document.getElementById('btnNuevo').addEventListener('click', function(){
     document.getElementById('f_pk').value = '';
     document.getElementById('f_accion').value = 'registrar';
     document.getElementById('form-titulo').innerText = 'Registrar Animal';
+    const estatusNuevoEl = document.getElementById('f_estatus');
+    if (estatusNuevoEl) estatusNuevoEl.value = 'Activo';
     const madreEl = document.getElementById('f_fk_madre');
     if (madreEl) {
         Array.from(madreEl.options).forEach(opt => opt.disabled = false);
@@ -628,6 +648,9 @@ function abrirFormEditar(obj) {
 
     const pesoEl = document.getElementById('e_peso');
     if (pesoEl) pesoEl.value = obj.peso || '';
+
+    const estatusEl = document.getElementById('e_estatus');
+    if (estatusEl) estatusEl.value = obj.estatus || 'Activo';
 
     // Reset file inputs (user may upload new files)
     const perfilFile = document.getElementById('e_foto_perfil');
@@ -653,6 +676,7 @@ function verAnimal(obj) {
     document.getElementById('v_madre').textContent = obj.madre || 'N/A';
     document.getElementById('v_sexo').textContent = obj.sexo || '';
     document.getElementById('v_peso').textContent = obj.peso || '';
+    document.getElementById('v_estatus').textContent = obj.estatus || 'Activo';
     mostrarModal('modal-ver');
 
     // botón dentro del modal ver -> abrir editar con mismos datos

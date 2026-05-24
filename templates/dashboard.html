@@ -186,8 +186,8 @@
                 <!-- DERECHA: Estatus -->
                <div class="estatus-box">
     <div class="estatus-info">
-        <h3>Estatus de Salud de los animales</h3>
-        <small>Resumen del estatus de salud de los animales registrados categorizado por gravedad y atención</small>
+        <h3>Estatus de los animales</h3>
+        <small>Resumen del estado actual de cada animal registrado</small>
 
         <div class="data-table-wrap">
         <table class="data-table estatus-table">
@@ -202,8 +202,10 @@
                 <tr>
                     <td class="animal-nombre">{{ a[0] }}</td>
                     <td>
-                        {% set estado = a[1] if a[1] else 'Sin estatus' %}
-                        <span class="estatus-badge {{ estado|lower|replace(' ', '-') }}">
+                        {% set estado = a[1] if a[1] else 'Activo' %}
+                        {% set estado_norm = estado|lower %}
+                        {% set estado_clase = 'vendido' if estado_norm == 'vendido' else ('baja-muerto' if estado_norm == 'baja (muerto)' else 'activo') %}
+                        <span class="estatus-badge {{ estado_clase }}">
                             {{ estado }}
                         </span>
                     </td>
