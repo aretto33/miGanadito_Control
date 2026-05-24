@@ -21,6 +21,7 @@ from ganacontrol.db import get_connection
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
+ESTATUS_ANIMAL_VALIDOS = {"Activo", "Baja (Muerto)", "Vendido"}
 PUBLIC_ASSET_FOLDER = "public"
 ASSET_FOLDERS = (PUBLIC_ASSET_FOLDER, "static")
 
@@ -110,6 +111,19 @@ def normalizar_rol(rol):
         "comprador": "Comprador",
     }
     return roles.get(rol.strip().lower())
+
+
+def normalizar_estatus_animal(estatus):
+    if not estatus:
+        return "Activo"
+    estatus_map = {
+        "activo": "Activo",
+        "baja (muerto)": "Baja (Muerto)",
+        "baja": "Baja (Muerto)",
+        "muerto": "Baja (Muerto)",
+        "vendido": "Vendido",
+    }
+    return estatus_map.get(estatus.strip().lower())
 
 
 def _es_error_columna_email_faltante(error):
@@ -472,14 +486,7 @@ def dashboard():
             cursor.execute("""
                 SELECT
                     a.nombre,
-                    COALESCE((
-                        SELECT t.impacto
-                        FROM Seguimiento_vet s
-                        JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
-                        WHERE s.fk_animal = a.pk_animal
-                        ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
-                        LIMIT 1
-                    ), 'Sin estatus') AS estatus_actual
+                    COALESCE(a.estatus, 'Activo') AS estatus_actual
                 FROM Animales a
                 WHERE a.fk_productor = %s
                 ORDER BY a.nombre
@@ -581,11 +588,16 @@ def animales():
 
             # -------- REGISTRAR --------
             if accion == "registrar":
+                estatus = normalizar_estatus_animal(request.form.get("estatus"))
+                if estatus not in ESTATUS_ANIMAL_VALIDOS:
+                    flash("Estatus inválido", "danger")
+                    return redirect(url_for("animales"))
+
                 cursor.execute("""
                     INSERT INTO Animales
                     (nombre, fecha_nacimiento, cruze, sexo, peso_actual,
-                     fk_productor, fk_raza, fk_predio, fk_animal, foto_perfil, foto_lateral)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                     fk_productor, fk_raza, fk_predio, fk_animal, estatus, foto_perfil, foto_lateral)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (
                     request.form.get("nombre"),
                     request.form.get("fecha"),
@@ -596,6 +608,7 @@ def animales():
                     request.form.get("fk_raza"),
                     request.form.get("fk_predio"),
                     request.form.get("fk_madre") or None,
+                    estatus,
                     perfil_bytes,
                     lateral_bytes
                 ))
@@ -624,12 +637,18 @@ def animales():
                         'fk_productor': 'fk_productor',
                         'fk_raza': 'fk_raza',
                         'fk_predio': 'fk_predio',
-                        'fk_madre': 'fk_animal'
+                        'fk_madre': 'fk_animal',
+                        'estatus': 'estatus'
                     }
 
                     for form_key, col_name in field_map.items():
                         if form_key in request.form:
                             val = request.form.get(form_key) or None
+                            if col_name == 'estatus':
+                                val = normalizar_estatus_animal(val)
+                                if val not in ESTATUS_ANIMAL_VALIDOS:
+                                    flash("Estatus inválido", "danger")
+                                    return redirect(url_for("animales"))
                             # si es fk_productor y el usuario es Productor, respetar la sesión
                             if col_name == 'fk_productor' and fk_prod_session:
                                 val = fk_prod_session
@@ -667,14 +686,7 @@ def animales():
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
                        rs.arete,
-                       COALESCE((
-                           SELECT t.impacto
-                           FROM Seguimiento_vet s
-                           JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
-                           WHERE s.fk_animal = a.pk_animal
-                           ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
-                           LIMIT 1
-                       ), 'Sin estatus') AS estatus_actual,
+                       COALESCE(a.estatus, 'Activo') AS estatus_actual,
                        a.fk_predio, r.pk_raza, a.fk_productor,
                        a.fk_animal AS fk_madre,
                        m.nombre AS madre_nombre
@@ -693,14 +705,7 @@ def animales():
                        p.nombre, r.nombre, a.sexo, a.peso_actual,
                        pr.nom_rancho,
                        rs.arete,
-                       COALESCE((
-                           SELECT t.impacto
-                           FROM Seguimiento_vet s
-                           JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
-                           WHERE s.fk_animal = a.pk_animal
-                           ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
-                           LIMIT 1
-                       ), 'Sin estatus') AS estatus_actual,
+                       COALESCE(a.estatus, 'Activo') AS estatus_actual,
                        a.fk_predio, r.pk_raza, a.fk_productor,
                        a.fk_animal AS fk_madre,
                        m.nombre AS madre_nombre
@@ -1388,12 +1393,21 @@ def ventas():
                     INSERT INTO Ventas (fk_animal, fk_pesaje, clave, precio, fecha_venta)
                     VALUES (%s, %s, %s, %s, %s)
                 """, (fk_animal, fk_pesaje, clave, precio, fecha_venta))
+                if fk_animal:
+                    cursor.execute(
+                        "UPDATE Animales SET estatus=%s WHERE pk_animal=%s",
+                        ("Vendido", fk_animal)
+                    )
                 conn.commit()
                 flash("Venta registrada correctamente", "success")
 
             # MODIFICAR
             elif accion == "modificar":
                 pk = request.form.get("pk")
+                cursor.execute("SELECT fk_animal FROM Ventas WHERE pk_venta=%s", (pk,))
+                venta_actual = cursor.fetchone()
+                fk_animal_anterior = venta_actual[0] if venta_actual else None
+
                 fk_animal = request.form.get("fk_animal") or None
                 fk_pesaje = request.form.get("fk_pesaje") or None
                 clave = request.form.get("clave")
@@ -1415,13 +1429,40 @@ def ventas():
                     SET fk_animal=%s, fk_pesaje=%s, clave=%s, precio=%s, fecha_venta=%s
                     WHERE pk_venta=%s
                 """, (fk_animal, fk_pesaje, clave, precio, fecha_venta, pk))
+                if fk_animal:
+                    cursor.execute(
+                        "UPDATE Animales SET estatus=%s WHERE pk_animal=%s",
+                        ("Vendido", fk_animal)
+                    )
+                if fk_animal_anterior and str(fk_animal_anterior) != str(fk_animal):
+                    cursor.execute("SELECT COUNT(*) FROM Ventas WHERE fk_animal=%s", (fk_animal_anterior,))
+                    ventas_restantes = cursor.fetchone()[0]
+                    if ventas_restantes == 0:
+                        cursor.execute("""
+                            UPDATE Animales
+                            SET estatus=%s
+                            WHERE pk_animal=%s AND estatus=%s
+                        """, ("Activo", fk_animal_anterior, "Vendido"))
                 conn.commit()
                 flash("Venta modificada correctamente", "info")
 
             # ELIMINAR
             elif accion == "eliminar":
                 pk = request.form.get("pk")
+                cursor.execute("SELECT fk_animal FROM Ventas WHERE pk_venta=%s", (pk,))
+                venta_actual = cursor.fetchone()
+                fk_animal_eliminado = venta_actual[0] if venta_actual else None
+
                 cursor.execute("DELETE FROM Ventas WHERE pk_venta=%s", (pk,))
+                if fk_animal_eliminado:
+                    cursor.execute("SELECT COUNT(*) FROM Ventas WHERE fk_animal=%s", (fk_animal_eliminado,))
+                    ventas_restantes = cursor.fetchone()[0]
+                    if ventas_restantes == 0:
+                        cursor.execute("""
+                            UPDATE Animales
+                            SET estatus=%s
+                            WHERE pk_animal=%s AND estatus=%s
+                        """, ("Activo", fk_animal_eliminado, "Vendido"))
                 conn.commit()
                 flash("Venta eliminada", "danger")
 
@@ -2005,14 +2046,7 @@ def obtener_animales_inventario(fecha_inicio=None, fecha_fin=None):
                    p.nombre AS productor, pr.nom_rancho AS predio,
                    r.nombre AS raza, m.nombre AS madre, a.sexo,
                    a.peso_actual, rs.arete,
-                   CASE
-                       WHEN EXISTS (
-                           SELECT 1
-                           FROM Ventas v
-                           WHERE v.fk_animal = a.pk_animal
-                       ) THEN 'VENDIDO'
-                       ELSE 'ACTIVO (VIVO)'
-                   END AS estado_animal
+                   COALESCE(a.estatus, 'Activo') AS estado_animal
             FROM Animales a
             LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
             LEFT JOIN Razas r ON a.fk_raza=r.pk_raza

@@ -543,24 +543,19 @@
     font-weight: 700;
 }
 
-.estatus-badge.normal {
+.estatus-badge.activo {
     background: #d8f1df;
     color: #1e6b37;
 }
 
-.estatus-badge.leve {
-    background: #ffe9b5;
-    color: #8c5a0d;
-}
-
-.estatus-badge.grave {
+.estatus-badge.baja-muerto {
     background: #ffd2d0;
     color: #a03533;
 }
 
-.estatus-badge.sin-estatus {
-    background: #e7dac9;
-    color: #6f5139;
+.estatus-badge.vendido {
+    background: #dbeafe;
+    color: #24538f;
 }
 
 .busqueda-overlay {
