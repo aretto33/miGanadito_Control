@@ -17,11 +17,30 @@
         </button>
         
         <nav class="sidebar-menu">
-            <a href="{{ url_for('mi_productor') }}" class="btn-3d btn-main">
-                <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d"> Mis Datos
-            </a>
+            {% if view == 'administrador' or rol == 'Administrador' %}
+                <a href="{{ url_for('admin_usuarios') }}" class="btn-3d btn-main">
+                    <img src="{{ url_for('static', filename='img/user.png') }}" class="icon-3d">Usuarios</a>
+                <a href="{{ url_for('animales') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vaca.png') }}" class="icon-3d">Animales</a>
+                <a href="{{ url_for('predios') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/predio.png') }}" class="icon-3d">Predios</a>
+                <a href="{{ url_for('pesajes') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/pesaje.png') }}" class="icon-3d">Pesaje</a>
+                <a href="{{ url_for('registro_siniga') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/siiniga.png') }}" class="icon-3d">Registro SINIGA</a>
+                <a href="{{ url_for('seguimiento') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vet.png') }}" class="icon-3d">Seguimiento Vet</a>
+                <a href="{{ url_for('ventas') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/ventas.png') }}" class="icon-3d">Ventas</a>
+                <a href="{{ url_for('razas') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/raza.png') }}" class="icon-3d">Razas</a>
+                <a href="{{ url_for('tabla_precio') }}" class="btn-3d">Tabla de Precios</a>
+                <a href="{{ url_for('album_razas') }}" class="btn-3d">Guía de Razas</a>
 
-            {% if view == 'veterinario' or rol == 'Veterinario' %}
+            {% elif view == 'veterinario' or rol == 'Veterinario' %}
+                <a href="{{ url_for('mi_productor') }}" class="btn-3d btn-main">
+                    <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d"> Mis Datos
+                </a>
                 <a href="{{ url_for('pesajes') }}" class="btn-3d">
                     <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d">Pesaje</a>
                 <a href="{{ url_for('seguimiento') }}" class="btn-3d">
@@ -36,6 +55,9 @@
                 <a href="{{ url_for('ventas') }}" class="btn-3d">Ventas</a>
 
             {% else %}
+                <a href="{{ url_for('mi_productor') }}" class="btn-3d btn-main">
+                    <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d"> Mis Datos
+                </a>
                 <a href="{{ url_for('animales') }}" class="btn-3d">
                      <img src="{{ url_for('static', filename='img/vaca.png') }}" class="icon-3d">Animales</a>
                 <a href="{{ url_for('predios') }}" class="btn-3d">
@@ -59,165 +81,246 @@
 
         <img src="{{ url_for('static', filename='img/banner.png') }}" class="banner">
 
-        {% if view == 'veterinario' or rol == 'Veterinario' %}
+        {% if view == 'administrador' or rol == 'Administrador' %}
+            <h3>Panel Administrador</h3>
+
+            <section class="admin-overview" aria-label="Resumen general del sistema">
+                <div class="widgets admin-widgets">
+                    <div class="card card-gradient">
+                        <div class="card-info">
+                            <h2>{{ admin_resumen.get('usuarios', 0) }}</h2>
+                            <p>Usuarios</p>
+                        </div>
+                    </div>
+                    <div class="card card-gradient">
+                        <div class="card-info">
+                            <h2>{{ admin_resumen.get('productores', 0) }}</h2>
+                            <p>Productores</p>
+                        </div>
+                    </div>
+                    <div class="card card-gradient">
+                        <div class="card-info">
+                            <h2>{{ admin_resumen.get('animales', 0) }}</h2>
+                            <p>Animales</p>
+                        </div>
+                    </div>
+                    <div class="card card-gradient">
+                        <div class="card-info">
+                            <h2>{{ admin_resumen.get('ventas', 0) }}</h2>
+                            <p>Ventas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-review-grid">
+                    <section class="admin-review-card">
+                        <p class="stats-eyebrow">Operación</p>
+                        <h3>Datos importantes</h3>
+                        <a href="{{ url_for('admin_usuarios') }}" class="btn-3d admin-users-link">Administrar usuarios</a>
+                        <div class="admin-check-list">
+                            <span><strong>{{ admin_resumen.get('predios', 0) }}</strong> predios registrados</span>
+                            <span><strong>{{ admin_resumen.get('pesajes', 0) }}</strong> pesajes capturados</span>
+                            <span><strong>{{ admin_resumen.get('seguimientos', 0) }}</strong> seguimientos veterinarios</span>
+                            <span><strong>{{ admin_resumen.get('registros_siniga', 0) }}</strong> aretes SINIGA</span>
+                            <span><strong>{{ admin_resumen.get('veterinarios', 0) }}</strong> veterinarios</span>
+                        </div>
+                    </section>
+
+                    <section class="birth-stats" aria-labelledby="admin-birth-stats-title">
+                        <div class="stats-header">
+                            <div>
+                                <p class="stats-eyebrow">Toda la base</p>
+                                <h3 id="admin-birth-stats-title">Nacimientos por mes</h3>
+                            </div>
+                            <div class="stats-total">
+                                <span>{{ estadistica_nacimientos.total }}</span>
+                                <small>Total</small>
+                            </div>
+                        </div>
+
+                        {% if estadistica_nacimientos["items"] %}
+                            <div class="birth-chart" role="img" aria-label="Nacimientos de animales agrupados por mes">
+                                {% for item in estadistica_nacimientos["items"] %}
+                                <div class="birth-chart-row">
+                                    <div class="birth-chart-label">
+                                        <span>{{ item.mes }}</span>
+                                        <strong>{{ item.nacimientos }}</strong>
+                                    </div>
+                                    <div class="birth-chart-track">
+                                        <span class="birth-chart-bar" style="width: {{ item.porcentaje }}%;"></span>
+                                    </div>
+                                    <span class="birth-chart-diff {{ 'up' if item.diferencia > 0 else 'down' if item.diferencia < 0 else 'flat' }}">
+                                        {{ '+' if item.diferencia > 0 else '' }}{{ item.diferencia }}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="birth-empty">Aun no hay animales con fecha de nacimiento registrada.</p>
+                        {% endif %}
+                    </section>
+                </div>
+            </section>
+
+        {% elif view == 'veterinario' or rol == 'Veterinario' %}
             <h3>Panel Veterinario</h3>
 
         {% elif view == 'comprador' or rol == 'Comprador' %}
             <h3>Panel Comprador</h3>
 
         {% else %}
-            <h3>Panel Productor</h3>
+            {% set activos = namespace(total=0) %}
+            {% set vendidos = namespace(total=0) %}
+            {% set bajas = namespace(total=0) %}
+            {% for a in estados_animales %}
+                {% set estado = a[1] if a[1] else 'Activo' %}
+                {% set estado_norm = estado|lower %}
+                {% if estado_norm == 'vendido' %}
+                    {% set vendidos.total = vendidos.total + 1 %}
+                {% elif estado_norm == 'baja (muerto)' %}
+                    {% set bajas.total = bajas.total + 1 %}
+                {% else %}
+                    {% set activos.total = activos.total + 1 %}
+                {% endif %}
+            {% endfor %}
 
-            <!-- WIDGETS -->
-            <div class="widgets">
-
-                <!-- CARD 1 -->
-                <div class="card card-gradient">
-                    <div class="card-info">
-                        <h2>{{ total_animales }}</h2>
-                        <p>Animales registrados</p>
-                    </div>
-                    <div class="card-icon">
-                        <img src="{{ url_for('static', filename='img/vacawidgets.png') }}">
-                    </div>
-                </div>
-
-                <!-- CARD 2 -->
-                <div class="card card-gradient">
-                    <div class="card-info">
-                        <h2>{{ total_predios }}</h2>
-                        <p>Predios registrados</p>
-                    </div>
-                    <div class="card-icon">
-                        <img src="{{ url_for('static', filename='img/widgets2.png') }}">
-                    </div>
-                </div>
-
-            </div>
-
-            {% set vacas_demo = [
-                {"label": "En producción", "value": 18, "bar_class": "bar-90"},
-                {"label": "Gestantes", "value": 9, "bar_class": "bar-45"},
-                {"label": "Crías registradas", "value": 7, "bar_class": "bar-35"},
-                {"label": "Revisión vet.", "value": 3, "bar_class": "bar-15"}
-            ] %}
-            <section class="demo-stats" aria-labelledby="demo-stats-title">
-                <div class="demo-stats-header">
+            <section class="producer-panel">
+                <div class="producer-panel-header">
                     <div>
-                        <p class="demo-eyebrow">Modo demo</p>
-                        <h3 id="demo-stats-title">Estadísticas de vacas</h3>
+                        <p class="stats-eyebrow">Panel Productor</p>
+                        <h3>{{ productor or usuario }}</h3>
                     </div>
-                    <div class="demo-total">
-                        <span>37</span>
-                        <small>Total demo</small>
+                    <div class="producer-header-actions">
+                        <a href="{{ url_for('animales') }}" class="btn-3d">Registrar animal</a>
+                        <a href="{{ url_for('predios') }}" class="btn-3d">Predios</a>
                     </div>
                 </div>
 
-                <div class="cow-chart" role="img" aria-label="Gráfica demo de vacas por estado">
-                    {% for item in vacas_demo %}
-                    <div class="cow-chart-row">
-                        <div class="cow-chart-label">
-                            <span>{{ item.label }}</span>
-                            <strong>{{ item.value }}</strong>
+                <div class="producer-metrics" aria-label="Resumen del productor">
+                    <div class="producer-metric-card primary">
+                        <span>{{ total_animales }}</span>
+                        <small>Animales</small>
+                    </div>
+                    <div class="producer-metric-card">
+                        <span>{{ total_predios }}</span>
+                        <small>Predios</small>
+                    </div>
+                    <div class="producer-metric-card active">
+                        <span>{{ activos.total }}</span>
+                        <small>Activos</small>
+                    </div>
+                    <div class="producer-metric-card sold">
+                        <span>{{ vendidos.total }}</span>
+                        <small>Vendidos</small>
+                    </div>
+                    <div class="producer-metric-card low">
+                        <span>{{ bajas.total }}</span>
+                        <small>Bajas</small>
+                    </div>
+                </div>
+
+                <div class="producer-action-grid">
+                    <a href="{{ url_for('animales') }}" class="producer-action-card">
+                        <img src="{{ url_for('static', filename='img/vaca.png') }}" alt="">
+                        <span>Animales</span>
+                        <small>Alta, consulta y control</small>
+                    </a>
+                    <a href="{{ url_for('pesajes') }}" class="producer-action-card">
+                        <img src="{{ url_for('static', filename='img/pesaje.png') }}" alt="">
+                        <span>Pesaje</span>
+                        <small>Registro de peso</small>
+                    </a>
+                    <a href="{{ url_for('registro_siniga') }}" class="producer-action-card">
+                        <img src="{{ url_for('static', filename='img/siiniga.png') }}" alt="">
+                        <span>SINIGA</span>
+                        <small>Aretes y trazabilidad</small>
+                    </a>
+                    <a href="{{ url_for('ventas') }}" class="producer-action-card">
+                        <img src="{{ url_for('static', filename='img/ventas.png') }}" alt="">
+                        <span>Ventas</span>
+                        <small>Salida de animales</small>
+                    </a>
+                </div>
+
+                <div class="producer-main-grid">
+                    <section class="producer-card producer-tramites">
+                        <div class="producer-section-heading">
+                            <div>
+                                <p class="stats-eyebrow">Documentos</p>
+                                <h3>Trámites</h3>
+                            </div>
                         </div>
-                        <div class="cow-chart-track">
-                            <span class="cow-chart-bar {{ item.bar_class }}"></span>
+                        <div class="producer-link-list">
+                            <a href="{{ url_for('upp') }}" class="btn-3d">Descargar UPP</a>
+                            <a href="{{ url_for('rearetado') }}" class="btn-3d">Rearetado</a>
+                            <a href="{{ url_for('inventario') }}" class="btn-3d">Inventario</a>
+                            <a href="#" class="btn-3d" onclick="abrirDatosAnimal()">Datos del Animal</a>
                         </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </section>
+                    </section>
 
-            {% set nacimientos_demo = [
-                {"mes": "Ene", "nacimientos": 4, "diferencia": "+1", "point_class": "point-4", "trend": "up"},
-                {"mes": "Feb", "nacimientos": 3, "diferencia": "-1", "point_class": "point-3", "trend": "down"},
-                {"mes": "Mar", "nacimientos": 6, "diferencia": "+3", "point_class": "point-6", "trend": "up"},
-                {"mes": "Abr", "nacimientos": 5, "diferencia": "-1", "point_class": "point-5", "trend": "down"},
-                {"mes": "May", "nacimientos": 8, "diferencia": "+3", "point_class": "point-8", "trend": "up"},
-                {"mes": "Jun", "nacimientos": 7, "diferencia": "-1", "point_class": "point-7", "trend": "down"}
-            ] %}
-            <section class="birth-finance-demo" aria-labelledby="birth-finance-title">
-                <div class="demo-stats-header">
-                    <div>
-                        <p class="demo-eyebrow">Finanzas demo</p>
-                        <h3 id="birth-finance-title">Nacimientos por mes</h3>
-                    </div>
-                    <div class="demo-total">
-                        <span>33</span>
-                        <small>Nacimientos</small>
-                    </div>
-                </div>
+                    <section class="producer-card producer-status-card">
+                        <div class="producer-section-heading">
+                            <div>
+                                <p class="stats-eyebrow">Estatus</p>
+                                <h3>Animales registrados</h3>
+                            </div>
+                        </div>
 
-                <div id="my-chart" role="img" aria-label="Line chart demo de nacimientos de vacas por mes y diferencia mensual">
-                    <table class="charts-css line">
-                        <caption>Nacimientos de vacas por mes</caption>
-                        <tbody>
-                            {% for item in nacimientos_demo %}
-                            <tr class="{{ item.point_class }}">
-                                <th scope="row">{{ item.mes }}</th>
-                                <td>
-                                    <span class="chart-value">{{ item.nacimientos }}</span>
-                                    <span class="chart-diff {{ item.trend }}">{{ item.diferencia }}</span>
-                                </td>
-                            </tr>
+                        <div class="estatus-list compact" aria-label="Estatus de los animales">
+                            {% for a in estados_animales %}
+                                {% set estado = a[1] if a[1] else 'Activo' %}
+                                {% set estado_norm = estado|lower %}
+                                {% set estado_clase = 'vendido' if estado_norm == 'vendido' else ('baja-muerto' if estado_norm == 'baja (muerto)' else 'activo') %}
+                                <article class="estatus-animal">
+                                    <div>
+                                        <span class="animal-nombre">{{ a[0] }}</span>
+                                        <small>Animal registrado</small>
+                                    </div>
+                                    <span class="estatus-badge {{ estado_clase }}">
+                                        {{ estado }}
+                                    </span>
+                                </article>
+                            {% else %}
+                                <p class="estatus-empty">Aun no hay animales registrados.</p>
                             {% endfor %}
-                        </tbody>
-                    </table>
-
-                    <ul class="charts-css legend">
-                        <li>Nacimientos</li>
-                        <li>Diferencia mensual</li>
-                    </ul>
+                        </div>
+                    </section>
                 </div>
+
+                <section class="birth-stats producer-birth-stats" aria-labelledby="birth-stats-title">
+                    <div class="stats-header">
+                        <div>
+                            <p class="stats-eyebrow">Datos de la base</p>
+                            <h3 id="birth-stats-title">Nacimientos por mes</h3>
+                        </div>
+                        <div class="stats-total">
+                            <span>{{ estadistica_nacimientos.total }}</span>
+                            <small>Total</small>
+                        </div>
+                    </div>
+
+                    {% if estadistica_nacimientos["items"] %}
+                        <div class="birth-chart" role="img" aria-label="Nacimientos de animales agrupados por mes">
+                            {% for item in estadistica_nacimientos["items"] %}
+                            <div class="birth-chart-row">
+                                <div class="birth-chart-label">
+                                    <span>{{ item.mes }}</span>
+                                    <strong>{{ item.nacimientos }}</strong>
+                                </div>
+                                <div class="birth-chart-track">
+                                    <span class="birth-chart-bar" style="width: {{ item.porcentaje }}%;"></span>
+                                </div>
+                                <span class="birth-chart-diff {{ 'up' if item.diferencia > 0 else 'down' if item.diferencia < 0 else 'flat' }}">
+                                    {{ '+' if item.diferencia > 0 else '' }}{{ item.diferencia }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="birth-empty">Aun no hay animales con fecha de nacimiento registrada.</p>
+                    {% endif %}
+                </section>
             </section>
-
-            <!-- CENTER BOX -->
-            <div class="center-box">
-
-                <!-- IZQUIERDA: Trámites -->
-                <div class="tramites">
-                    <h3>Trámites</h3>
-                    <a href="{{ url_for('upp') }}" class="btn-3d">Descargar UPP</a>
-                    <a href="{{ url_for('rearetado') }}" class="btn-3d">Rearetado</a>
-                    <a href="{{ url_for('inventario') }}" class="btn-3d">Inventario</a>
-                    <a href="#" class="btn-3d" onclick="abrirDatosAnimal()">Datos del Animal</a>
-                </div>
-
-                <!-- DERECHA: Estatus -->
-               <div class="estatus-box">
-    <div class="estatus-info">
-        <h3>Estatus de los animales</h3>
-        <small>Resumen del estado actual de cada animal registrado</small>
-
-        <div class="data-table-wrap">
-        <table class="data-table estatus-table">
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Estatus</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for a in estados_animales %}
-                <tr>
-                    <td class="animal-nombre">{{ a[0] }}</td>
-                    <td>
-                        {% set estado = a[1] if a[1] else 'Activo' %}
-                        {% set estado_norm = estado|lower %}
-                        {% set estado_clase = 'vendido' if estado_norm == 'vendido' else ('baja-muerto' if estado_norm == 'baja (muerto)' else 'activo') %}
-                        <span class="estatus-badge {{ estado_clase }}">
-                            {{ estado }}
-                        </span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        </div>
-    </div>
-</div>
-
-            </div>
         {% endif %} 
 
         <!-- MODAL DATOS ANIMAL -->

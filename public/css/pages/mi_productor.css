@@ -76,7 +76,7 @@
 }
 
 .form-box {
-    width: min(100%, 760px);
+    width: min(100%, 880px);
     margin: 0 auto;
     padding: 1.6rem;
     border-radius: 18px;
@@ -112,7 +112,7 @@
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1rem;
 }
 
@@ -137,6 +137,7 @@
     background: #fffdf9;
     color: var(--cafe-extra-oscuro);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    box-sizing: border-box;
 }
 
 .form-box input:focus {

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/admin_usuarios.css') }}">
+{% endblock %}
+{% block content %}
+
+<section class="admin-users-shell">
+    <div class="admin-users-header">
+        <div>
+            <p class="admin-users-kicker">Administración</p>
+            <h1>Usuarios del sistema</h1>
+        </div>
+        <a class="btn-cafe btn-cafe-soft" href="{{ url_for('dashboard') }}">Volver al panel</a>
+    </div>
+
+    <div class="admin-users-grid">
+        <section class="admin-users-form-card">
+            <h2 id="formTitle">Crear usuario</h2>
+            <p>Gestiona accesos y cambia roles sin salir del panel administrador.</p>
+
+            <form method="POST" id="usuarioForm" class="admin-users-form">
+                <input type="hidden" name="id_usuario" id="id_usuario">
+
+                <label for="usuario">Usuario</label>
+                <input type="text" name="usuario" id="usuario" class="form-control" required>
+
+                {% if tiene_email %}
+                    <label for="email">Email</label>
+                    <input type="email" name="email" id="email" class="form-control" autocomplete="email">
+                {% endif %}
+
+                <label for="rol">Rol</label>
+                <select name="rol" id="rol" class="form-control" required>
+                    {% for rol in roles %}
+                        <option value="{{ rol[1] }}">{{ rol[1] }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="password">Contraseña</label>
+                <div class="password-field">
+                    <input type="password" name="password" id="password" class="form-control" autocomplete="new-password">
+                    <button class="password-toggle" type="button" data-password-toggle="password" aria-label="Ver contraseña" title="Ver contraseña">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <small id="passwordHelp">Obligatoria al crear. En edición puedes dejarla vacía para conservarla.</small>
+
+                <div class="admin-users-actions">
+                    <button class="btn-cafe btn-cafe-primary" name="accion" value="crear" id="submitButton">Crear usuario</button>
+                    <button class="btn-cafe btn-cafe-soft" type="button" onclick="limpiarFormulario()">Limpiar</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="data-card admin-users-table-card">
+            <div class="data-card-header">
+                <h3>Usuarios registrados</h3>
+                <span class="data-card-count">{{ usuarios|length }}</span>
+            </div>
+            <div class="data-card-body">
+                <div class="data-table-wrap">
+                    <table class="data-table admin-users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario</th>
+                                {% if tiene_email %}<th>Email</th>{% endif %}
+                                <th>Rol</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td>{{ usuario[0] }}</td>
+                                <td>{{ usuario[1] }}</td>
+                                {% if tiene_email %}<td>{{ usuario[2] or 'Sin email' }}</td>{% endif %}
+                                <td><span class="role-badge">{{ usuario[3] }}</span></td>
+                                <td>
+                                    <div class="actions-row">
+                                        <button
+                                            class="btn btn-small"
+                                            type="button"
+                                            onclick='editarUsuario({{ {
+                                                "id": usuario[0],
+                                                "usuario": usuario[1],
+                                                "email": usuario[2],
+                                                "rol": usuario[3]
+                                            } | tojson }})'>
+                                            Modificar
+                                        </button>
+                                        <form method="POST" onsubmit="return confirm('¿Eliminar este usuario? Esta acción puede fallar si tiene datos relacionados.');">
+                                            <input type="hidden" name="id_usuario" value="{{ usuario[0] }}">
+                                            <button class="btn btn-small btn-danger" name="accion" value="eliminar">Eliminar</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</section>
+
+<script>
+function editarUsuario(usuario) {
+    document.getElementById("id_usuario").value = usuario.id;
+    document.getElementById("usuario").value = usuario.usuario || "";
+    const emailInput = document.getElementById("email");
+    if (emailInput) emailInput.value = usuario.email || "";
+    document.getElementById("rol").value = usuario.rol || "Productor";
+    document.getElementById("password").value = "";
+    document.getElementById("formTitle").innerText = "Modificar usuario";
+    document.getElementById("submitButton").value = "modificar";
+    document.getElementById("submitButton").innerText = "Guardar cambios";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function limpiarFormulario() {
+    document.getElementById("usuarioForm").reset();
+    document.getElementById("id_usuario").value = "";
+    document.getElementById("formTitle").innerText = "Crear usuario";
+    document.getElementById("submitButton").value = "crear";
+    document.getElementById("submitButton").innerText = "Crear usuario";
+}
+</script>
+
+{% endblock %}

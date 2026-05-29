@@ -34,13 +34,18 @@ td{
     justify-content:center;
     align-items:center;
     z-index:9999;
+    padding:20px;
+    overflow-y:auto;
 }
 .modal-card{
     background:#f5e8d8;
-    padding:20px;
+    padding:24px;
     border-radius:12px;
-    max-width:600px;
+    max-width:620px;
     width:100%;
+    max-height:86vh;
+    overflow-y:auto;
+    box-shadow:0 10px 26px rgba(0,0,0,.28);
 }
 .close-btn{
     float:right;
@@ -51,11 +56,14 @@ td{
 }
 input,select{
     width:100%;
-    padding:8px;
+    min-height:42px;
+    padding:10px 12px;
     border-radius:6px;
     border:1px solid #bca58b;
     margin-bottom:10px;
     box-sizing: border-box;
+    background:#fffaf3;
+    color:#4a2f1a;
 }
 
 @media (max-width: 768px) {
@@ -63,6 +71,30 @@ input,select{
     table { font-size: 0.85rem; }
     th, td { padding: 6px; }
     .modal-card { max-width: 90%; width: 100%; }
+}
+
+@media (max-width: 576px) {
+    .modal-overlay {
+        align-items:flex-start;
+        padding:12px;
+    }
+
+    .modal-card {
+        max-width:100%;
+        max-height:88vh;
+        padding:16px;
+        border-radius:10px;
+    }
+
+    input,
+    select {
+        min-height:44px;
+        font-size:1rem;
+    }
+
+    .modal-card .btn {
+        width:100%;
+    }
 }
 .banner{
     width:100%;
@@ -73,13 +105,48 @@ input,select{
 }
 
 /* ===== ESTATUS ===== */
-.estatus-badge {
-    padding:6px 14px;
-    border-radius:14px;
-    font-size:13px;
-    font-weight:600;
-    color:white;
+.estatus-stack {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
 }
-.estatus-badge.normal{ background:#4CAF50; }
-.estatus-badge.leve{ background:#FFC107; color:#3b2f1d; }
-.estatus-badge.grave{ background:#E53935; }
+
+.estatus-badge {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:86px;
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:700;
+    line-height:1.1;
+}
+.estatus-badge.normal{ background:#d8f1df; color:#1e6b37; }
+.estatus-badge.leve{ background:#fff0bf; color:#6a4a00; }
+.estatus-badge.grave{ background:#ffd2d0; color:#a03533; }
+.estatus-badge.pendiente{ background:#e6d4bd; color:#4b3621; }
+
+.seguimiento-badge {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:96px;
+    padding:5px 10px;
+    border-radius:999px;
+    border:1px solid rgba(91, 63, 38, 0.14);
+    font-size:12px;
+    font-weight:700;
+    line-height:1.1;
+}
+.seguimiento-badge.programado{ background:#dbeafe; color:#1d4f8f; }
+.seguimiento-badge.hoy{ background:#fce7c8; color:#8a4a13; }
+.seguimiento-badge.vencido{ background:#f8d7da; color:#8f1d2c; }
+.seguimiento-badge.sin-fecha{ background:#efe3d3; color:#6f5a46; }
+
+@media (max-width: 576px) {
+    .estatus-stack {
+        align-items:flex-start;
+    }
+}

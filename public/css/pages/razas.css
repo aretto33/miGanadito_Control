@@ -8,6 +8,10 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
+.form-box {
+    width: min(100%, 680px);
+}
+
 /* ===== FORMULARIOS ===== */
 label {
     font-weight: 600;
@@ -16,12 +20,15 @@ label {
 
 input, select {
     width: 100%;
+    min-height: 42px;
     padding: 10px 12px;
     border-radius: 8px;
     border: 1px solid #bca58b;
     margin-bottom: 14px;
     font-size: 0.95rem;
     box-sizing: border-box;
+    background: #fffaf3;
+    color: #4a2f1a;
 }
 
 table {
@@ -150,6 +157,18 @@ tr:hover {
     .btn {
         width: 100%;
         margin-top: 6px;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-box {
+        border-radius: 10px;
+    }
+
+    input,
+    select {
+        min-height: 44px;
+        font-size: 1rem;
     }
 }
 

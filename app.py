@@ -5,12 +5,14 @@ from flask import (
 )
 from fpdf import FPDF
 from datetime import datetime
+from functools import wraps
 import io
 import csv
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PIL import Image
 import os
+import hmac
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ganacontrol.config import Config
@@ -20,7 +22,7 @@ from ganacontrol.db import get_connection
 
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.config.from_object(Config)
-ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador"}
+ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador", "Administrador"}
 ESTATUS_ANIMAL_VALIDOS = {"Activo", "Baja (Muerto)", "Vendido"}
 PUBLIC_ASSET_FOLDER = "public"
 ASSET_FOLDERS = (PUBLIC_ASSET_FOLDER, "static")
@@ -109,6 +111,8 @@ def normalizar_rol(rol):
         "productor": "Productor",
         "veterinario": "Veterinario",
         "comprador": "Comprador",
+        "administrador": "Administrador",
+        "admin": "Administrador",
     }
     return roles.get(rol.strip().lower())
 
@@ -144,11 +148,115 @@ def verificar_contrasena(password_guardada, password_ingresada):
     if not password_guardada:
         return False
 
+    password_guardada = str(password_guardada)
+
+    if password_guardada.startswith(("pbkdf2:", "scrypt:")) and password_guardada.count("$") >= 2:
+        try:
+            return check_password_hash(password_guardada, password_ingresada)
+        except ValueError:
+            return False
+
+    # Compatibilidad con usuarios creados antes de guardar contraseñas con hash.
+    return hmac.compare_digest(password_guardada, password_ingresada)
+
+
+def _fecha_animal_a_mes(fecha):
+    if not fecha:
+        return None
+
+    if hasattr(fecha, "year") and hasattr(fecha, "month"):
+        return fecha.year, fecha.month
+
+    fecha_texto = str(fecha).strip()
+    for valor, formato in (
+        (fecha_texto[:10], "%Y-%m-%d"),
+        (fecha_texto[:19], "%Y-%m-%d %H:%M:%S"),
+        (fecha_texto[:10], "%d/%m/%Y"),
+    ):
+        try:
+            fecha_dt = datetime.strptime(valor, formato)
+            return fecha_dt.year, fecha_dt.month
+        except ValueError:
+            continue
+
+    return None
+
+
+def construir_estadistica_nacimientos(fechas):
+    meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    conteos = {}
+
+    for row in fechas:
+        fecha = row[0] if isinstance(row, (list, tuple)) else row
+        mes_key = _fecha_animal_a_mes(fecha)
+        if mes_key:
+            conteos[mes_key] = conteos.get(mes_key, 0) + 1
+
+    if not conteos:
+        return {"items": [], "total": 0, "maximo": 0}
+
+    meses_ordenados = sorted(conteos.keys())[-12:]
+    maximo = max(conteos.values())
+    items = []
+    anterior = None
+
+    for year, month in meses_ordenados:
+        cantidad = conteos[(year, month)]
+        diferencia = 0 if anterior is None else cantidad - anterior
+        items.append({
+            "mes": f"{meses[month - 1]} {year}",
+            "nacimientos": cantidad,
+            "porcentaje": round((cantidad / maximo) * 100) if maximo else 0,
+            "diferencia": diferencia,
+        })
+        anterior = cantidad
+
+    return {
+        "items": items,
+        "total": sum(conteos.values()),
+        "maximo": maximo,
+    }
+
+
+def contar_registros(conn, cursor, tabla):
     try:
-        return check_password_hash(password_guardada, password_ingresada)
-    except ValueError:
-        # Compatibilidad temporal con usuarios creados antes del hash.
-        return password_guardada == password_ingresada
+        cursor.execute(f"SELECT COUNT(*) FROM {tabla}")
+        row = cursor.fetchone()
+        return row[0] if row else 0
+    except Exception:
+        conn.rollback()
+        return 0
+
+
+def requiere_admin(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if session.get("rol") != "Administrador":
+            flash("Necesitas una sesión de Administrador para acceder a esa sección.", "warning")
+            return redirect(url_for("login"))
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def usuarios_tienen_email(conn, cursor):
+    try:
+        cursor.execute("SELECT email FROM Usuarios LIMIT 1")
+        return True
+    except Exception:
+        conn.rollback()
+        return False
+
+
+def obtener_roles(cursor):
+    cursor.execute("SELECT id_rol, nombre FROM Rol ORDER BY nombre")
+    return cursor.fetchall()
+
+
+def obtener_id_rol(cursor, rol_nombre):
+    cursor.execute("SELECT id_rol FROM Rol WHERE nombre=%s", (rol_nombre,))
+    row = cursor.fetchone()
+    return row[0] if row else None
 
 
 def verificar_credenciales(identificador, password, rol_nombre):
@@ -266,6 +374,8 @@ def login():
             exito, info = verificar_credenciales(usuario, contra, rol)
 
             if exito:
+                if isinstance(info, dict) and info.get("id_usuario"):
+                    session["id_usuario"] = info.get("id_usuario")
                 session["usuario"] = info.get("usuario", usuario) if isinstance(info, dict) else usuario
                 session["rol"] = rol
                 session.pop("fk_productor", None)
@@ -409,6 +519,146 @@ def register():
     # Si es GET
     return render_template("register.html")
 
+
+@app.route("/admin/usuarios", methods=["GET", "POST"])
+@requiere_admin
+def admin_usuarios():
+    conn, cursor = conectar_bd()
+    if not conn:
+        flash("No se pudo conectar con la base de datos.", "danger")
+        return redirect(url_for("dashboard"))
+
+    tiene_email = False
+    try:
+        tiene_email = usuarios_tienen_email(conn, cursor)
+        roles = obtener_roles(cursor)
+
+        if request.method == "POST":
+            accion = request.form.get("accion")
+            id_usuario = request.form.get("id_usuario")
+            usuario = request.form.get("usuario", "").strip()
+            email = request.form.get("email", "").strip().lower()
+            password = request.form.get("password", "").strip()
+            rol_nombre = normalizar_rol(request.form.get("rol"))
+
+            if accion in {"crear", "modificar"}:
+                if not usuario or not rol_nombre:
+                    flash("Usuario y rol son obligatorios.", "danger")
+                    return redirect(url_for("admin_usuarios"))
+
+                if rol_nombre not in ROLES_VALIDOS:
+                    flash("Rol inválido.", "danger")
+                    return redirect(url_for("admin_usuarios"))
+
+                fk_rol = obtener_id_rol(cursor, rol_nombre)
+                if not fk_rol:
+                    flash("Ese rol no existe en la tabla Rol.", "danger")
+                    return redirect(url_for("admin_usuarios"))
+
+                if accion == "crear":
+                    if not password:
+                        flash("La contraseña es obligatoria para crear usuarios.", "danger")
+                        return redirect(url_for("admin_usuarios"))
+
+                    password_hash = crear_hash_contrasena(password)
+                    if tiene_email:
+                        cursor.execute(
+                            """
+                            INSERT INTO Usuarios (usuario, email, password, fk_rol)
+                            VALUES (%s, %s, %s, %s)
+                            """,
+                            (usuario, email or None, password_hash, fk_rol),
+                        )
+                    else:
+                        cursor.execute(
+                            """
+                            INSERT INTO Usuarios (usuario, password, fk_rol)
+                            VALUES (%s, %s, %s)
+                            """,
+                            (usuario, password_hash, fk_rol),
+                        )
+                    conn.commit()
+                    flash("Usuario creado correctamente.", "success")
+
+                elif accion == "modificar":
+                    if not id_usuario:
+                        flash("Selecciona un usuario para modificar.", "danger")
+                        return redirect(url_for("admin_usuarios"))
+
+                    valores = []
+                    asignaciones = ["usuario=%s", "fk_rol=%s"]
+                    valores.extend([usuario, fk_rol])
+
+                    if tiene_email:
+                        asignaciones.insert(1, "email=%s")
+                        valores.insert(1, email or None)
+
+                    if password:
+                        asignaciones.append("password=%s")
+                        valores.append(crear_hash_contrasena(password))
+
+                    valores.append(id_usuario)
+                    cursor.execute(
+                        f"UPDATE Usuarios SET {', '.join(asignaciones)} WHERE id_usuario=%s",
+                        tuple(valores),
+                    )
+                    conn.commit()
+
+                    if str(session.get("id_usuario")) == str(id_usuario):
+                        session["usuario"] = usuario
+                        session["rol"] = rol_nombre
+
+                    flash("Usuario actualizado correctamente.", "success")
+
+            elif accion == "eliminar":
+                if not id_usuario:
+                    flash("Selecciona un usuario para eliminar.", "danger")
+                    return redirect(url_for("admin_usuarios"))
+
+                if str(session.get("id_usuario")) == str(id_usuario):
+                    flash("No puedes eliminar tu propio usuario administrador mientras lo estás usando.", "warning")
+                    return redirect(url_for("admin_usuarios"))
+
+                cursor.execute("SELECT usuario FROM Usuarios WHERE id_usuario=%s", (id_usuario,))
+                row = cursor.fetchone()
+                nombre_usuario = row[0] if row else "usuario"
+                cursor.execute("DELETE FROM Usuarios WHERE id_usuario=%s", (id_usuario,))
+                conn.commit()
+                flash(f"Usuario {nombre_usuario} eliminado.", "success")
+
+            return redirect(url_for("admin_usuarios"))
+
+        if tiene_email:
+            cursor.execute("""
+                SELECT u.id_usuario, u.usuario, u.email, r.nombre
+                FROM Usuarios u
+                JOIN Rol r ON r.id_rol = u.fk_rol
+                ORDER BY u.id_usuario
+            """)
+        else:
+            cursor.execute("""
+                SELECT u.id_usuario, u.usuario, NULL AS email, r.nombre
+                FROM Usuarios u
+                JOIN Rol r ON r.id_rol = u.fk_rol
+                ORDER BY u.id_usuario
+            """)
+
+        usuarios = cursor.fetchall()
+        return render_template(
+            "admin_usuarios.html",
+            usuarios=usuarios,
+            roles=roles,
+            tiene_email=tiene_email,
+        )
+
+    except Exception as e:
+        conn.rollback()
+        flash(f"No se pudo administrar usuarios: {e}", "danger")
+        return redirect(url_for("dashboard"))
+    finally:
+        cursor.close()
+        conn.close()
+
 #----------------- Dashboard -----------------
 @app.route("/dashboard")
 def dashboard():
@@ -422,8 +672,10 @@ def dashboard():
     aretes = []
     predios = []
     estados_animales = []
+    estadistica_nacimientos = {"items": [], "total": 0, "maximo": 0}
     total_animales = 0
     total_predios = 0
+    admin_resumen = {}
     view = None
 
     fk_productor = session.get("fk_productor")
@@ -432,7 +684,9 @@ def dashboard():
     # =========================
     # DEFINIR VIEW SEGÚN ROL
     # =========================
-    if rol == "Veterinario":
+    if rol == "Administrador":
+        view = "administrador"
+    elif rol == "Veterinario":
         view = "veterinario"
     elif rol == "Comprador":
         view = "comprador"
@@ -445,7 +699,39 @@ def dashboard():
         if not conn:
             raise RuntimeError("No se pudo establecer la conexión con la base de datos.")
 
-        if fk_productor:
+        if view == "administrador":
+            admin_resumen = {
+                "usuarios": contar_registros(conn, cursor, "Usuarios"),
+                "productores": contar_registros(conn, cursor, "Productores"),
+                "veterinarios": contar_registros(conn, cursor, "Veterinario"),
+                "animales": contar_registros(conn, cursor, "Animales"),
+                "predios": contar_registros(conn, cursor, "Predios"),
+                "pesajes": contar_registros(conn, cursor, "Pesajes"),
+                "ventas": contar_registros(conn, cursor, "Ventas"),
+                "seguimientos": contar_registros(conn, cursor, "Seguimiento_vet"),
+                "registros_siniga": contar_registros(conn, cursor, "Registro_SINIGA"),
+            }
+
+            cursor.execute("""
+                SELECT
+                    a.nombre,
+                    COALESCE(a.estatus, 'Activo') AS estatus_actual
+                FROM Animales a
+                ORDER BY a.nombre
+            """)
+            estados_animales = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT fecha_nacimiento
+                FROM Animales
+                WHERE fecha_nacimiento IS NOT NULL
+                ORDER BY fecha_nacimiento
+            """)
+            estadistica_nacimientos = construir_estadistica_nacimientos(cursor.fetchall())
+            total_animales = admin_resumen["animales"]
+            total_predios = admin_resumen["predios"]
+
+        elif fk_productor:
             cursor.execute(
                 "SELECT nombre FROM Productores WHERE pk_productor=%s",
                 (fk_productor,)
@@ -492,6 +778,15 @@ def dashboard():
                 ORDER BY a.nombre
             """, (fk_productor,))
             estados_animales = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT fecha_nacimiento
+                FROM Animales
+                WHERE fk_productor = %s
+                  AND fecha_nacimiento IS NOT NULL
+                ORDER BY fecha_nacimiento
+            """, (fk_productor,))
+            estadistica_nacimientos = construir_estadistica_nacimientos(cursor.fetchall())
     except Exception as e:
         print("Error en dashboard:", e)
         flash("Se cargó el panel, pero faltan datos o tablas por configurar en la base.", "warning")
@@ -509,7 +804,9 @@ def dashboard():
         predios=predios,
         total_animales=total_animales,
         total_predios=total_predios,
-        estados_animales=estados_animales
+        estados_animales=estados_animales,
+        estadistica_nacimientos=estadistica_nacimientos,
+        admin_resumen=admin_resumen
     )
 
 @app.route("/dashboard_vet")
@@ -1342,7 +1639,8 @@ def seguimiento():
             "seguimiento.html",
             seguimientos=seguimientos,
             animales=animales,
-            tratamientos=tratamientos
+            tratamientos=tratamientos,
+            fecha_hoy=datetime.now().strftime("%Y-%m-%d")
         )
 
     except Exception as e:

@@ -37,13 +37,18 @@ td{ border:1px solid #c4ab92; padding:8px; text-align:center; }
     justify-content:center;
     align-items:center;
     z-index:9999;
+    padding:20px;
+    overflow-y:auto;
 }
 .modal-card{
     background:#f5e8d8;
-    padding:20px;
+    padding:24px;
     border-radius:12px;
-    max-width:600px;
+    max-width:620px;
     width:100%;
+    max-height:86vh;
+    overflow-y:auto;
+    box-shadow:0 10px 26px rgba(0,0,0,.28);
 }
 .close-btn{
     float:right;
@@ -54,10 +59,14 @@ td{ border:1px solid #c4ab92; padding:8px; text-align:center; }
 }
 input,select{
     width:100%;
-    padding:8px;
+    min-height:42px;
+    padding:10px 12px;
     border-radius:6px;
     border:1px solid #bca58b;
     margin-bottom:10px;
+    box-sizing:border-box;
+    background:#fffaf3;
+    color:#4a2f1a;
 }
 .banner {
         width: 100%;
@@ -67,3 +76,27 @@ input,select{
         margin: 20px auto;
         border-radius: 12px;
     }
+
+@media (max-width: 576px) {
+    .modal-overlay {
+        align-items:flex-start;
+        padding:12px;
+    }
+
+    .modal-card {
+        max-width:100%;
+        max-height:88vh;
+        padding:16px;
+        border-radius:10px;
+    }
+
+    input,
+    select {
+        min-height:44px;
+        font-size:1rem;
+    }
+
+    .modal-card .btn {
+        width:100%;
+    }
+}
