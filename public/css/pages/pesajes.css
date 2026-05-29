@@ -56,7 +56,8 @@
 .pesajes-module input,
 .pesajes-module select{
     width:100%;
-    padding:8px;
+    min-height:42px;
+    padding:10px 12px;
     border-radius:6px;
     border:1px solid #bca58b;
     margin-bottom:10px;
@@ -85,12 +86,17 @@
     justify-content:center;
     align-items:center;
     z-index:9999;
+    padding:20px;
+    overflow-y:auto;
 }
 .pesajes-module .card{
     background:#f5e8d8;          /* ← mismo color que cajas */
-    padding:20px;
+    padding:24px;
     border-radius:12px;
-    min-width:380px;
+    width:100%;
+    max-width:520px;
+    max-height:86vh;
+    overflow-y:auto;
     box-shadow:0 10px 26px rgba(0,0,0,.35);
 }
 .pesajes-module .card p,
@@ -113,3 +119,27 @@
         margin: 20px auto;
         border-radius: 12px;
     }
+
+@media (max-width: 576px) {
+    .pesajes-module .overlay {
+        align-items:flex-start;
+        padding:12px;
+    }
+
+    .pesajes-module .card {
+        max-width:100%;
+        max-height:88vh;
+        padding:16px;
+        border-radius:10px;
+    }
+
+    .pesajes-module input,
+    .pesajes-module select {
+        min-height:44px;
+        font-size:1rem;
+    }
+
+    .pesajes-module .card .btn {
+        width:100%;
+    }
+}

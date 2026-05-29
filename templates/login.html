@@ -38,10 +38,27 @@
                     </button>
                 </div>
 
-                <input type="hidden" name="rol" value="Productor">
-                <div class="auth-notice">
-                    Estás ingresando al sistema como <strong>Productor</strong>.
-                </div>
+                <fieldset class="auth-role-group">
+                    <legend>Perfil de acceso</legend>
+                    <div class="auth-role-options">
+                        <label class="auth-role-option">
+                            <input type="radio" name="rol" value="Productor" checked>
+                            Productor
+                        </label>
+                        <label class="auth-role-option">
+                            <input type="radio" name="rol" value="Veterinario">
+                            Veterinario
+                        </label>
+                        <label class="auth-role-option">
+                            <input type="radio" name="rol" value="Comprador">
+                            Comprador
+                        </label>
+                        <label class="auth-role-option">
+                            <input type="radio" name="rol" value="Administrador">
+                            Administrador
+                        </label>
+                    </div>
+                </fieldset>
 
                 <button class="btn-cafe btn-cafe-primary auth-submit" type="submit">Ingresar</button>
             </form>

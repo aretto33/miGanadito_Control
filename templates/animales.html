@@ -15,11 +15,14 @@
 
 input, select, textarea {
     width: 100%;
-    padding: 10px;
+    min-height: 42px;
+    padding: 10px 12px;
     border-radius: 6px;
     border: 1px solid #bca58b;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     box-sizing: border-box;
+    background: #fffaf3;
+    color: #4a2f1a;
 }
 
 .btn {
@@ -164,13 +167,16 @@ img.animal-img {
     align-items: center;
     z-index: 9999;
     padding: 20px;
+    overflow-y: auto;
 }
 .modal-card {
     background: #f5e8d8;
-    padding: 20px;
+    padding: 24px;
     border-radius: 12px;
     width: 100%;
-    max-width: 720px;
+    max-width: 680px;
+    max-height: min(86vh, 780px);
+    overflow-y: auto;
     box-shadow: 0 10px 25px rgba(0,0,0,0.25);
     position: relative;
 }
@@ -308,8 +314,11 @@ img.animal-img {
     }
     .modal-card,
     .card-contenido {
-        width: min(100%, 100%);
-        margin: 0 12px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 18px;
+        max-height: 88vh;
     }
     .animal-table .animals-data-table {
         min-width: 1040px;
@@ -318,6 +327,29 @@ img.animal-img {
     table td {
         padding: 8px;
         font-size: 0.95rem;
+    }
+}
+
+@media(max-width: 576px) {
+    input,
+    select,
+    textarea {
+        min-height: 44px;
+        font-size: 1rem;
+    }
+
+    .modal-overlay {
+        align-items: flex-start;
+        padding: 12px;
+    }
+
+    .modal-card {
+        border-radius: 10px;
+        padding: 16px;
+    }
+
+    .modal-card .btn {
+        width: 100%;
     }
 }
 

@@ -49,9 +49,20 @@
             <td>{{ s[4] }}</td>
 
             <td>
-                <span class="estatus-badge {{ s[5]|lower }}">
-                    {{ s[5] }}
-                </span>
+                {% set impacto = s[5] or 'Sin estatus' %}
+                {% set impacto_norm = impacto|lower %}
+                {% set impacto_clase = 'grave' if 'grave' in impacto_norm else ('leve' if 'leve' in impacto_norm else ('normal' if 'normal' in impacto_norm else 'pendiente')) %}
+                {% set prox_fecha = s[8]|string if s[8] else '' %}
+                {% set prox_clase = 'sin-fecha' if not prox_fecha else ('vencido' if prox_fecha < fecha_hoy else ('hoy' if prox_fecha == fecha_hoy else 'programado')) %}
+                {% set prox_texto = 'Sin próxima fecha' if not prox_fecha else ('Vencido' if prox_fecha < fecha_hoy else ('Hoy' if prox_fecha == fecha_hoy else 'Programado')) %}
+                <div class="estatus-stack">
+                    <span class="estatus-badge {{ impacto_clase }}">
+                        {{ impacto }}
+                    </span>
+                    <span class="seguimiento-badge {{ prox_clase }}">
+                        {{ prox_texto }}
+                    </span>
+                </div>
             </td>
 
             <td>{{ s[6] or "-" }}</td>
