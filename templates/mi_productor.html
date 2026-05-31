@@ -9,6 +9,58 @@
         <a href="{{ url_for('dashboard') }}" class="back-panel-link">Regresar al panel</a>
     </nav>
 
+    {% if perfil_tipo == 'veterinario' %}
+    <header class="producer-hero">
+        <div class="producer-hero-copy">
+            <p class="producer-kicker">Perfil veterinario</p>
+            <h1>Mis datos</h1>
+            <p>Actualiza tu cedula profesional, contacto y consultorio para mantener completo tu perfil de atencion.</p>
+        </div>
+    </header>
+
+    <div class="form-box">
+        <div class="form-heading">
+            <h2>Modificar perfil veterinario</h2>
+            <p>Estos datos se usan para identificar al responsable de los seguimientos y servicios medicos.</p>
+        </div>
+
+        <form method="POST" class="producer-form">
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="nombre">Nombre</label>
+                    <input id="nombre" type="text" name="nombre" value="{{ veterinario[1] if veterinario else '' }}" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="apellidos">Apellidos</label>
+                    <input id="apellidos" type="text" name="apellidos" value="{{ veterinario[2] if veterinario else '' }}" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="cedula">Cedula profesional</label>
+                    <input id="cedula" type="text" name="cedula" value="{{ veterinario[3] if veterinario else '' }}" required>
+                </div>
+
+                <div class="form-field">
+                    <label for="telefono">Telefono</label>
+                    <input id="telefono" type="tel" name="telefono" value="{{ veterinario[5] if veterinario else '' }}" required>
+                </div>
+
+                <div class="form-field form-field-wide">
+                    <label for="direccion_consultorio">Direccion del consultorio</label>
+                    <input id="direccion_consultorio" type="text" name="direccion_consultorio" value="{{ veterinario[4] if veterinario else 'Consultas a domicilio' }}">
+                </div>
+
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input id="email" type="email" value="{{ veterinario[6] if veterinario and veterinario[6] else 'Sin email registrado' }}" readonly aria-readonly="true">
+                </div>
+            </div>
+
+            <button class="btn-guardar" type="submit">Guardar cambios</button>
+        </form>
+    </div>
+    {% else %}
     <header class="producer-hero">
         <div class="producer-hero-copy">
             <p class="producer-kicker">Perfil del productor</p>
@@ -68,6 +120,7 @@
             <button class="btn-guardar" type="submit">Guardar cambios</button>
         </form>
     </div>
+    {% endif %}
 </section>
 
 {% endblock %}

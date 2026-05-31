@@ -13,6 +13,36 @@
         <a class="btn-cafe btn-cafe-soft" href="{{ url_for('dashboard') }}">Volver al panel</a>
     </div>
 
+    {% if solicitudes_veterinario %}
+    <section class="vet-requests-card">
+        <div class="data-card-header">
+            <h3>Peticiones de veterinarios</h3>
+            <span class="data-card-count">{{ solicitudes_veterinario|length }}</span>
+        </div>
+        <div class="vet-request-list">
+            {% for s in solicitudes_veterinario %}
+            <article class="vet-request-item">
+                <div>
+                    <strong>{{ (s[3] ~ ' ' ~ s[4])|trim or s[2] }}</strong>
+                    <span>Solicita acceso a productor: {{ s[6] }}</span>
+                    <p>{{ s[7] }}</p>
+                </div>
+                <div class="vet-request-actions">
+                    <form method="POST">
+                        <input type="hidden" name="id_solicitud" value="{{ s[0] }}">
+                        <button class="btn btn-small btn-success" name="accion" value="aprobar_solicitud_vet">Aprobar</button>
+                    </form>
+                    <form method="POST">
+                        <input type="hidden" name="id_solicitud" value="{{ s[0] }}">
+                        <button class="btn btn-small btn-warning" name="accion" value="rechazar_solicitud_vet">Rechazar</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <div class="admin-users-grid">
         <section class="admin-users-form-card">
             <h2 id="formTitle">Crear usuario</h2>
@@ -35,6 +65,14 @@
                         <option value="{{ rol[1] }}">{{ rol[1] }}</option>
                     {% endfor %}
                 </select>
+
+                <label class="permission-toggle" id="permisoVetBox">
+                    <input type="checkbox" name="permiso_datos_completos" id="permiso_datos_completos" value="1">
+                    <span>
+                        <strong>Permitir datos completos</strong>
+                        <small>Solo para Veterinario: animales, predios, SINIGA y ventas.</small>
+                    </span>
+                </label>
 
                 <label for="password">Contraseña</label>
                 <div class="password-field">
@@ -69,6 +107,7 @@
                                 <th>Usuario</th>
                                 {% if tiene_email %}<th>Email</th>{% endif %}
                                 <th>Rol</th>
+                                <th>Permiso</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -80,6 +119,17 @@
                                 {% if tiene_email %}<td>{{ usuario[2] or 'Sin email' }}</td>{% endif %}
                                 <td><span class="role-badge">{{ usuario[3] }}</span></td>
                                 <td>
+                                    {% if usuario[3] == 'Veterinario' and usuario[4] %}
+                                        <span class="permission-badge active">Datos completos</span>
+                                    {% elif usuario[3] == 'Veterinario' and usuario[5] %}
+                                        <span class="permission-badge pending">Petición pendiente</span>
+                                    {% elif usuario[3] == 'Veterinario' %}
+                                        <span class="permission-badge">Limitado</span>
+                                    {% else %}
+                                        <span class="permission-badge muted">No aplica</span>
+                                    {% endif %}
+                                </td>
+                                <td>
                                     <div class="actions-row">
                                         <button
                                             class="btn btn-small"
@@ -88,7 +138,9 @@
                                                 "id": usuario[0],
                                                 "usuario": usuario[1],
                                                 "email": usuario[2],
-                                                "rol": usuario[3]
+                                                "rol": usuario[3],
+                                                "permiso_datos_completos": usuario[4],
+                                                "solicitud_permiso_datos": usuario[5]
                                             } | tojson }})'>
                                             Modificar
                                         </button>
@@ -115,6 +167,8 @@ function editarUsuario(usuario) {
     const emailInput = document.getElementById("email");
     if (emailInput) emailInput.value = usuario.email || "";
     document.getElementById("rol").value = usuario.rol || "Productor";
+    document.getElementById("permiso_datos_completos").checked = Boolean(usuario.permiso_datos_completos);
+    actualizarPermisoVet();
     document.getElementById("password").value = "";
     document.getElementById("formTitle").innerText = "Modificar usuario";
     document.getElementById("submitButton").value = "modificar";
@@ -125,10 +179,25 @@ function editarUsuario(usuario) {
 function limpiarFormulario() {
     document.getElementById("usuarioForm").reset();
     document.getElementById("id_usuario").value = "";
+    document.getElementById("permiso_datos_completos").checked = false;
+    actualizarPermisoVet();
     document.getElementById("formTitle").innerText = "Crear usuario";
     document.getElementById("submitButton").value = "crear";
     document.getElementById("submitButton").innerText = "Crear usuario";
 }
+
+function actualizarPermisoVet() {
+    const rol = document.getElementById("rol").value;
+    const permiso = document.getElementById("permiso_datos_completos");
+    const box = document.getElementById("permisoVetBox");
+    const esVet = rol === "Veterinario";
+    box.classList.toggle("is-disabled", !esVet);
+    permiso.disabled = !esVet;
+    if (!esVet) permiso.checked = false;
+}
+
+document.getElementById("rol").addEventListener("change", actualizarPermisoVet);
+actualizarPermisoVet();
 </script>
 
 {% endblock %}

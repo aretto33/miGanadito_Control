@@ -122,6 +122,10 @@
     gap: 0.45rem;
 }
 
+.form-field-wide {
+    grid-column: span 2;
+}
+
 .form-box label {
     margin: 0;
     color: #5a4632;
@@ -198,6 +202,10 @@
 
     .form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .form-field-wide {
+        grid-column: auto;
     }
 
     .producer-hero,

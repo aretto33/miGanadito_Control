@@ -104,6 +104,41 @@ input,select{
     border-radius:12px;
 }
 
+.medicine-catalog {
+    margin: 14px 0 18px;
+}
+
+.medicine-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    padding: 14px;
+}
+
+.medicine-card {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fffaf3;
+    border: 1px solid rgba(139, 94, 60, 0.18);
+    color: #4a2f1a;
+}
+
+.medicine-card strong {
+    font-size: 0.98rem;
+}
+
+.medicine-card span {
+    color: #6f452c;
+    font-weight: 700;
+}
+
+.medicine-card small {
+    color: #765f49;
+    line-height: 1.35;
+}
+
 /* ===== ESTATUS ===== */
 .estatus-stack {
     display:flex;
