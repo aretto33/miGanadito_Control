@@ -84,7 +84,7 @@
         <button class="close" onclick="cerrar()">✕</button>
         <h3 id="titulo">Registrar Pesaje</h3>
 
-        <form method="POST">
+        <form method="POST" id="formPesaje">
             <input type="hidden" name="pk" id="f_pk">
 
             <label>Peso (kg)</label>
@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function abrirForm(){
-    document.querySelector("form").reset();
+    document.getElementById("formPesaje").reset();
     f_pk.value="";
     accion.value="registrar";
     titulo.innerText="Registrar Pesaje";
