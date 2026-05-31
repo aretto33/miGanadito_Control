@@ -337,6 +337,34 @@ def obtener_productores_autorizados_veterinario(conn, cursor, id_usuario):
         return []
 
 
+def actualizar_estado_permiso_veterinario(cursor, id_usuario):
+    if not id_usuario:
+        return
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM solicitudes_veterinario_productor
+        WHERE fk_usuario_veterinario=%s
+          AND estado='pendiente'
+    """, (id_usuario,))
+    pendientes = cursor.fetchone()[0]
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM solicitudes_veterinario_productor
+        WHERE fk_usuario_veterinario=%s
+          AND estado='aprobada'
+    """, (id_usuario,))
+    aprobadas = cursor.fetchone()[0]
+
+    cursor.execute("""
+        UPDATE Usuarios
+        SET solicitud_permiso_datos=%s,
+            permiso_datos_completos=%s
+        WHERE id_usuario=%s
+    """, (pendientes > 0, aprobadas > 0, id_usuario))
+
+
 def ids_productores_autorizados_veterinario(conn, cursor):
     if session.get("rol") != "Veterinario":
         return None
@@ -746,18 +774,16 @@ def admin_usuarios():
             email = request.form.get("email", "").strip().lower()
             password = request.form.get("password", "").strip()
             rol_nombre = normalizar_rol(request.form.get("rol"))
-            permiso_datos_completos = (
-                rol_nombre == "Veterinario"
-                and request.form.get("permiso_datos_completos") == "1"
-            )
+            permiso_datos_completos = False
 
-            if accion in {"aprobar_solicitud_vet", "rechazar_solicitud_vet"}:
+            if accion in {"aprobar_solicitud_vet", "rechazar_solicitud_vet", "revocar_productor_vet"}:
                 id_solicitud = request.form.get("id_solicitud")
                 if not id_solicitud:
                     flash("Selecciona un veterinario para gestionar la petición.", "danger")
                     return redirect(url_for("admin_usuarios"))
 
                 aprobar = accion == "aprobar_solicitud_vet"
+                revocar = accion == "revocar_productor_vet"
                 cursor.execute("""
                     UPDATE solicitudes_veterinario_productor
                     SET estado=%s,
@@ -774,32 +800,15 @@ def admin_usuarios():
                 id_vet = row[0] if row else None
 
                 if id_vet:
-                    cursor.execute("""
-                        SELECT COUNT(*)
-                        FROM solicitudes_veterinario_productor
-                        WHERE fk_usuario_veterinario=%s
-                          AND estado='pendiente'
-                    """, (id_vet,))
-                    pendientes = cursor.fetchone()[0]
-                    cursor.execute("""
-                        SELECT COUNT(*)
-                        FROM solicitudes_veterinario_productor
-                        WHERE fk_usuario_veterinario=%s
-                          AND estado='aprobada'
-                    """, (id_vet,))
-                    aprobadas = cursor.fetchone()[0]
-                    cursor.execute("""
-                        UPDATE Usuarios
-                        SET solicitud_permiso_datos=%s,
-                            permiso_datos_completos=%s
-                        WHERE id_usuario=%s
-                    """, (pendientes > 0, aprobadas > 0, id_vet))
+                    actualizar_estado_permiso_veterinario(cursor, id_vet)
 
                 conn.commit()
-                flash(
-                    "Petición veterinaria aprobada para ese productor." if aprobar else "Petición veterinaria rechazada.",
-                    "success" if aprobar else "info"
-                )
+                if aprobar:
+                    flash("Petición veterinaria aprobada para ese productor.", "success")
+                elif revocar:
+                    flash("Productor retirado del veterinario.", "info")
+                else:
+                    flash("Petición veterinaria rechazada.", "info")
 
             if accion in {"crear", "modificar"}:
                 if not usuario or not rol_nombre:
@@ -844,6 +853,16 @@ def admin_usuarios():
                     if not id_usuario:
                         flash("Selecciona un usuario para modificar.", "danger")
                         return redirect(url_for("admin_usuarios"))
+
+                    if rol_nombre == "Veterinario":
+                        cursor.execute("""
+                            SELECT COUNT(*)
+                            FROM solicitudes_veterinario_productor
+                            WHERE fk_usuario_veterinario=%s
+                              AND estado='aprobada'
+                        """, (id_usuario,))
+                        row = cursor.fetchone()
+                        permiso_datos_completos = bool(row and row[0])
 
                     valores = []
                     asignaciones = ["usuario=%s", "fk_rol=%s", "permiso_datos_completos=%s"]
@@ -934,12 +953,33 @@ def admin_usuarios():
             ORDER BY s.fecha_solicitud ASC, s.id_solicitud ASC
         """)
         solicitudes_veterinario = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT
+                s.id_solicitud,
+                u.id_usuario,
+                u.usuario,
+                COALESCE(v.nombre, ''),
+                COALESCE(v.apellidos, ''),
+                p.pk_productor,
+                p.nombre,
+                s.fecha_respuesta
+            FROM solicitudes_veterinario_productor s
+            JOIN Usuarios u ON u.id_usuario = s.fk_usuario_veterinario
+            LEFT JOIN Veterinario v ON v.fk_usuario = u.id_usuario
+            JOIN Productores p ON p.pk_productor = s.fk_productor
+            WHERE s.estado='aprobada'
+            ORDER BY u.usuario, p.nombre
+        """)
+        productores_veterinario = cursor.fetchall()
+
         return render_template(
             "admin_usuarios.html",
             usuarios=usuarios,
             roles=roles,
             tiene_email=tiene_email,
             solicitudes_veterinario=solicitudes_veterinario,
+            productores_veterinario=productores_veterinario,
         )
 
     except Exception as e:
@@ -1049,6 +1089,7 @@ def dashboard():
             veterinario_perfil = cursor.fetchone()
             vet_productores = obtener_productores_autorizados_veterinario(conn, cursor, session.get("id_usuario"))
             session["permiso_datos_completos"] = bool(vet_productores)
+            ids_vet = [p[0] for p in vet_productores]
 
             cursor.execute("""
                 SELECT s.id_solicitud, s.fk_productor, p.nombre, s.nota, s.estado, s.fecha_solicitud
@@ -1067,41 +1108,58 @@ def dashboard():
             """)
             productores_para_solicitud = cursor.fetchall()
 
-            total_seguimientos = contar_registros(conn, cursor, "Seguimiento_vet")
-            total_animales = contar_registros(conn, cursor, "Animales")
             total_medicamentos = contar_registros(conn, cursor, "insumos_medicos")
 
-            cursor.execute("""
-                SELECT COUNT(*)
-                FROM Seguimiento_vet
-                WHERE prox_fecha IS NOT NULL
-                  AND prox_fecha >= CURRENT_DATE
-            """)
-            row = cursor.fetchone()
-            proximas_citas = row[0] if row else 0
+            total_seguimientos = 0
+            proximas_citas = 0
+            if ids_vet:
+                filtro = placeholders(ids_vet)
+                cursor.execute(f"""
+                    SELECT COUNT(*)
+                    FROM Seguimiento_vet s
+                    JOIN Animales a ON a.pk_animal = s.fk_animal
+                    WHERE a.fk_productor IN ({filtro})
+                """, tuple(ids_vet))
+                row = cursor.fetchone()
+                total_seguimientos = row[0] if row else 0
+
+                cursor.execute(f"""
+                    SELECT COUNT(*)
+                    FROM Seguimiento_vet s
+                    JOIN Animales a ON a.pk_animal = s.fk_animal
+                    WHERE a.fk_productor IN ({filtro})
+                      AND s.prox_fecha IS NOT NULL
+                      AND s.prox_fecha >= CURRENT_DATE
+                """, tuple(ids_vet))
+                row = cursor.fetchone()
+                proximas_citas = row[0] if row else 0
 
             vet_resumen = {
                 "seguimientos": total_seguimientos,
-                "animales": total_animales,
+                "productores": len(vet_productores),
                 "medicamentos": total_medicamentos,
                 "proximas_citas": proximas_citas,
             }
 
-            cursor.execute("""
-                SELECT
-                    a.nombre,
-                    t.nombre,
-                    COALESCE(s.medicamento, ''),
-                    s.fecha_actual,
-                    s.prox_fecha
-                FROM Seguimiento_vet s
-                JOIN Animales a ON a.pk_animal = s.fk_animal
-                LEFT JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
-                WHERE s.prox_fecha IS NOT NULL
-                ORDER BY s.prox_fecha ASC
-                LIMIT 5
-            """)
-            vet_proximos = cursor.fetchall()
+            if ids_vet:
+                filtro = placeholders(ids_vet)
+                cursor.execute(f"""
+                    SELECT
+                        p.nombre,
+                        t.nombre,
+                        COALESCE(s.medicamento, ''),
+                        s.fecha_actual,
+                        s.prox_fecha
+                    FROM Seguimiento_vet s
+                    JOIN Animales a ON a.pk_animal = s.fk_animal
+                    JOIN Productores p ON p.pk_productor = a.fk_productor
+                    LEFT JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+                    WHERE a.fk_productor IN ({filtro})
+                      AND s.prox_fecha IS NOT NULL
+                    ORDER BY s.prox_fecha ASC
+                    LIMIT 5
+                """, tuple(ids_vet))
+                vet_proximos = cursor.fetchall()
 
         elif fk_productor:
             cursor.execute(
@@ -1192,22 +1250,7 @@ def dashboard_vet():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    productor_nombre = None
-    if session.get("fk_productor"):
-        conn, cursor = conectar_bd()
-        cursor.execute("SELECT nombre FROM Productores WHERE pk_productor=%s", (session["fk_productor"],))
-        row = cursor.fetchone()
-        conn.close()
-        if row:
-            productor_nombre = row[0]
-
-    return render_template(
-        "dashboard.html",
-        usuario=session.get("usuario"),
-        rol=session.get("rol"),
-        productor=productor_nombre,
-        view="veterinario"
-    )
+    return redirect(url_for("dashboard"))
 
 @app.route("/solicitar_permiso_veterinario", methods=["POST"])
 def solicitar_permiso_veterinario():
@@ -1307,6 +1350,10 @@ def animales():
     if "usuario" not in session:
         flash("Debes iniciar sesión", "warning")
         return redirect(url_for("login"))
+
+    if session.get("rol") == "Veterinario":
+        flash("El veterinario no tiene acceso a la tabla de animales.", "warning")
+        return redirect(url_for("dashboard"))
 
     conn = None
     cursor = None
@@ -1616,6 +1663,10 @@ def predios():
     if "usuario" not in session:
         flash("Inicia sesión para acceder a Predios.", "warning")
         return redirect(url_for("login"))
+
+    if session.get("rol") == "Veterinario":
+        flash("El veterinario no tiene acceso a la tabla de predios.", "warning")
+        return redirect(url_for("dashboard"))
 
     fk_productor = session.get("fk_productor")
     conn, cursor = conectar_bd()

@@ -43,6 +43,32 @@
     </section>
     {% endif %}
 
+    {% if productores_veterinario %}
+    <section class="vet-requests-card">
+        <div class="data-card-header">
+            <h3>Productores asignados a veterinarios</h3>
+            <span class="data-card-count">{{ productores_veterinario|length }}</span>
+        </div>
+        <div class="vet-request-list">
+            {% for s in productores_veterinario %}
+            <article class="vet-request-item">
+                <div>
+                    <strong>{{ (s[3] ~ ' ' ~ s[4])|trim or s[2] }}</strong>
+                    <span>Trabaja con productor: {{ s[6] }}</span>
+                    <p>Relación activa aprobada por administración.</p>
+                </div>
+                <div class="vet-request-actions">
+                    <form method="POST" onsubmit="return confirm('¿Quitar este productor del veterinario?');">
+                        <input type="hidden" name="id_solicitud" value="{{ s[0] }}">
+                        <button class="btn btn-small btn-danger" name="accion" value="revocar_productor_vet">Quitar productor</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <div class="admin-users-grid">
         <section class="admin-users-form-card">
             <h2 id="formTitle">Crear usuario</h2>
@@ -69,8 +95,8 @@
                 <label class="permission-toggle" id="permisoVetBox">
                     <input type="checkbox" name="permiso_datos_completos" id="permiso_datos_completos" value="1">
                     <span>
-                        <strong>Permitir datos completos</strong>
-                        <small>Solo para Veterinario: animales, predios, SINIGA y ventas.</small>
+                        <strong>Permiso de productor activo</strong>
+                        <small>Solo para Veterinario: se controla aprobando o quitando productores.</small>
                     </span>
                 </label>
 
@@ -120,7 +146,7 @@
                                 <td><span class="role-badge">{{ usuario[3] }}</span></td>
                                 <td>
                                     {% if usuario[3] == 'Veterinario' and usuario[4] %}
-                                        <span class="permission-badge active">Datos completos</span>
+                                        <span class="permission-badge active">Con productor</span>
                                     {% elif usuario[3] == 'Veterinario' and usuario[5] %}
                                         <span class="permission-badge pending">Petición pendiente</span>
                                     {% elif usuario[3] == 'Veterinario' %}
@@ -192,7 +218,7 @@ function actualizarPermisoVet() {
     const box = document.getElementById("permisoVetBox");
     const esVet = rol === "Veterinario";
     box.classList.toggle("is-disabled", !esVet);
-    permiso.disabled = !esVet;
+    permiso.disabled = true;
     if (!esVet) permiso.checked = false;
 }
 
