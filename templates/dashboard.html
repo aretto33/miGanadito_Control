@@ -41,22 +41,10 @@
                 <a href="{{ url_for('mi_productor') }}" class="btn-3d btn-main">
                     <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d"> Mis Datos
                 </a>
-                {% if session.get('permiso_datos_completos') %}
-                <a href="{{ url_for('animales') }}" class="btn-3d">
-                    <img src="{{ url_for('static', filename='img/vaca.png') }}" class="icon-3d">Animales</a>
-                <a href="{{ url_for('predios') }}" class="btn-3d">
-                    <img src="{{ url_for('static', filename='img/predio.png') }}" class="icon-3d">Predios</a>
-                <a href="{{ url_for('registro_siniga') }}" class="btn-3d">
-                    <img src="{{ url_for('static', filename='img/siiniga.png') }}" class="icon-3d">Registro SINIGA</a>
-                {% endif %}
                 <a href="{{ url_for('pesajes') }}" class="btn-3d">
                     <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d">Pesaje</a>
                 <a href="{{ url_for('seguimiento') }}" class="btn-3d">
                     <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d">Seguimiento Vet</a>
-                {% if session.get('permiso_datos_completos') %}
-                <a href="{{ url_for('ventas') }}" class="btn-3d">
-                    <img src="{{ url_for('static', filename='img/ventas.png') }}" class="icon-3d">Ventas</a>
-                {% endif %}
                 <a href="{{ url_for('razas') }}" class="btn-3d">
                 <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d">Razas</a>
 
@@ -183,9 +171,6 @@
                     <div class="producer-header-actions">
                         <a href="{{ url_for('mi_productor') }}" class="btn-3d">Mis datos</a>
                         <a href="{{ url_for('seguimiento') }}" class="btn-3d">Nuevo seguimiento</a>
-                        {% if session.get('permiso_datos_completos') %}
-                        <a href="{{ url_for('animales') }}" class="btn-3d">Datos completos</a>
-                        {% endif %}
                     </div>
                 </div>
 
@@ -199,8 +184,8 @@
                         <small>Proximas citas</small>
                     </div>
                     <div class="producer-metric-card">
-                        <span>{{ vet_resumen.get('animales', 0) }}</span>
-                        <small>Animales</small>
+                        <span>{{ vet_resumen.get('productores', 0) }}</span>
+                        <small>Productores</small>
                     </div>
                     <div class="producer-metric-card sold">
                         <span>{{ vet_resumen.get('medicamentos', 0) }}</span>
