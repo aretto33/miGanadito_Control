@@ -2047,7 +2047,9 @@ def pesajes():
                 SELECT pk_animal, nombre
                 FROM Animales
                 WHERE fk_productor = %s
+                ORDER BY nombre
             """, (session.get("fk_productor"),))
+            animales = cursor.fetchall()
         elif ids_vet is not None:
             if ids_vet:
                 filtro = placeholders(ids_vet)
