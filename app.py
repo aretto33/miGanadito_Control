@@ -2312,6 +2312,58 @@ def seguimiento():
         conn, cursor = conectar_bd()
         ids_vet = ids_productores_autorizados_veterinario(conn, cursor)
 
+        def animal_permitido(fk_animal):
+            if not fk_animal:
+                return False
+
+            if session.get("rol") == "Productor":
+                cursor.execute(
+                    "SELECT 1 FROM Animales WHERE pk_animal=%s AND fk_productor=%s",
+                    (fk_animal, session.get("fk_productor"))
+                )
+                return bool(cursor.fetchone())
+
+            if ids_vet is not None:
+                if not ids_vet:
+                    return False
+
+                filtro = placeholders(ids_vet)
+                cursor.execute(
+                    f"SELECT 1 FROM Animales WHERE pk_animal=%s AND fk_productor IN ({filtro})",
+                    tuple([fk_animal] + ids_vet)
+                )
+                return bool(cursor.fetchone())
+
+            return True
+
+        def seguimiento_permitido(pk):
+            if not pk:
+                return False
+
+            if session.get("rol") == "Productor":
+                cursor.execute("""
+                    SELECT 1
+                    FROM Seguimiento_vet s
+                    JOIN Animales a ON a.pk_animal = s.fk_animal
+                    WHERE s.pk_segui_vet=%s AND a.fk_productor=%s
+                """, (pk, session.get("fk_productor")))
+                return bool(cursor.fetchone())
+
+            if ids_vet is not None:
+                if not ids_vet:
+                    return False
+
+                filtro = placeholders(ids_vet)
+                cursor.execute(f"""
+                    SELECT 1
+                    FROM Seguimiento_vet s
+                    JOIN Animales a ON a.pk_animal = s.fk_animal
+                    WHERE s.pk_segui_vet=%s AND a.fk_productor IN ({filtro})
+                """, tuple([pk] + ids_vet))
+                return bool(cursor.fetchone())
+
+            return True
+
         # ===== POST =====
         if request.method == "POST":
             accion = request.form.get("accion")
@@ -2323,17 +2375,12 @@ def seguimiento():
             medicamento = medicamento_manual or medicamento_catalogo
             fecha_actual = request.form.get("fecha_actual")
             prox_fecha = request.form.get("prox_fecha")
-            if ids_vet is not None and fk_animal:
-                if not ids_vet:
-                    flash("El administrador debe aprobarte un productor antes de registrar seguimientos.", "warning")
-                    return redirect(url_for("seguimiento"))
-                filtro = placeholders(ids_vet)
-                cursor.execute(f"SELECT 1 FROM Animales WHERE pk_animal=%s AND fk_productor IN ({filtro})", tuple([fk_animal] + ids_vet))
-                if not cursor.fetchone():
-                    flash("Solo puedes usar animales de productores aprobados.", "warning")
-                    return redirect(url_for("seguimiento"))
 
             if accion == "registrar":
+                if not animal_permitido(fk_animal):
+                    flash("Solo puedes usar animales permitidos para tu usuario.", "warning")
+                    return redirect(url_for("seguimiento"))
+
                 cursor.execute("""
                     INSERT INTO Seguimiento_vet
                     (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha)
@@ -2343,6 +2390,10 @@ def seguimiento():
                 flash("Seguimiento registrado", "success")
 
             elif accion == "modificar":
+                if not seguimiento_permitido(pk) or not animal_permitido(fk_animal):
+                    flash("Solo puedes modificar seguimientos permitidos para tu usuario.", "warning")
+                    return redirect(url_for("seguimiento"))
+
                 cursor.execute("""
                     UPDATE Seguimiento_vet SET
                         fk_animal=%s,
@@ -2356,6 +2407,10 @@ def seguimiento():
                 flash("Seguimiento actualizado", "info")
 
             elif accion == "eliminar":
+                if not seguimiento_permitido(pk):
+                    flash("Solo puedes eliminar seguimientos permitidos para tu usuario.", "warning")
+                    return redirect(url_for("seguimiento"))
+
                 cursor.execute(
                     "DELETE FROM Seguimiento_vet WHERE pk_segui_vet=%s",
                     (pk,)
@@ -2387,6 +2442,25 @@ def seguimiento():
                 seguimientos = cursor.fetchall()
             else:
                 seguimientos = []
+        elif session.get("rol") == "Productor":
+            cursor.execute("""
+                SELECT
+                    s.pk_segui_vet,
+                    s.fk_animal,
+                    a.nombre,
+                    t.pk_tratamiento,
+                    t.nombre,
+                    t.impacto,
+                    s.medicamento,
+                    s.fecha_actual,
+                    s.prox_fecha
+                FROM Seguimiento_vet s
+                JOIN Animales a ON a.pk_animal = s.fk_animal
+                JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+                WHERE a.fk_productor=%s
+                ORDER BY s.pk_segui_vet DESC
+            """, (session.get("fk_productor"),))
+            seguimientos = cursor.fetchall()
         else:
             cursor.execute("""
             SELECT
@@ -2412,7 +2486,9 @@ def seguimiento():
                 SELECT pk_animal, nombre
                 FROM Animales
                 WHERE fk_productor=%s
+                ORDER BY nombre
             """, (session.get("fk_productor"),))
+            animales = cursor.fetchall()
         elif ids_vet is not None:
             if ids_vet:
                 filtro = placeholders(ids_vet)
@@ -2451,7 +2527,14 @@ def seguimiento():
         if conn:
             conn.rollback()
         flash(f"Error: {e}", "danger")
-        return redirect(url_for("seguimiento"))
+        return render_template(
+            "seguimiento.html",
+            seguimientos=[],
+            animales=[],
+            tratamientos=[],
+            medicamentos=[],
+            fecha_hoy=datetime.now().strftime("%Y-%m-%d")
+        )
 
     finally:
         if cursor: cursor.close()
