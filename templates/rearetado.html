@@ -108,7 +108,20 @@
             <div class="form-grid">
                 <div class="form-field">
                     <label for="upp">Clave UPP</label>
-                    <input type="text" id="upp" name="upp" value="{{ productor_upp }}" placeholder="Clave UPP">
+                    <select id="upp" name="upp">
+                        <option value="">Selecciona UPP</option>
+                        {% for predio in predios %}
+                            {% if predio[2] %}
+                                <option value="{{ predio[2] }}"
+                                        data-direccion="{{ predio[3] or productor_direccion }}"
+                                        data-estado="{{ predio[4] if predio|length > 4 else '' }}"
+                                        {% if predio[2] == productor_upp %}selected{% endif %}>
+                                    {{ predio[2] }}{% if predio[1] %} - {{ predio[1] }}{% endif %}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <small class="field-note">Si tienes varios predios, elige la UPP correspondiente.</small>
                 </div>
                 <div class="form-field">
                     <label for="psg">Clave PSG</label>
@@ -322,6 +335,16 @@ document.querySelectorAll('input[name="clave_id"]').forEach((input) => {
         especieCodigoInput.value = input.dataset.especie || '';
         dispositivoNombreInput.value = input.dataset.dispositivo || '';
     });
+});
+
+uppInput.addEventListener('change', () => {
+    const option = uppInput.selectedOptions[0];
+    if (!option) return;
+
+    if (option.dataset.direccion) direccionInput.value = option.dataset.direccion;
+    if (option.dataset.estado && !estadoInput.value) {
+        estadoInput.value = String(option.dataset.estado).padStart(2, '0');
+    }
 });
 </script>
 

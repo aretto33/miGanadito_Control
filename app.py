@@ -2141,9 +2141,18 @@ def obtener_datos_rearetado():
             datos["productor"] = cursor.fetchone()
 
             cursor.execute("""
+                SELECT pk_predio, COALESCE(nom_rancho, ''), COALESCE(upp, ''),
+                       COALESCE(direccion, ''), COALESCE(CAST(fk_estado AS TEXT), '')
+                FROM Predios
+                WHERE fk_productor=%s
+                ORDER BY nom_rancho, pk_predio
+            """, (session.get("fk_productor"),))
+            datos["predios"] = cursor.fetchall()
+
+            cursor.execute("""
                 SELECT a.pk_animal, a.nombre, COALESCE(rs.arete, ''),
                        COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
-                       COALESCE(p.nom_rancho, ''), COALESCE(p.fk_estado, '')
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
                 FROM Animales a
                 LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
                 LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
@@ -2155,7 +2164,7 @@ def obtener_datos_rearetado():
             cursor.execute("""
                 SELECT r.id, r.fk_animal, r.arete, a.nombre,
                        COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
-                       COALESCE(p.nom_rancho, ''), COALESCE(p.fk_estado, '')
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
                 FROM Registro_SINIGA r
                 INNER JOIN Animales a ON r.fk_animal = a.pk_animal
                 LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
@@ -2166,7 +2175,7 @@ def obtener_datos_rearetado():
             cursor.execute("""
                 SELECT a.pk_animal, a.nombre, COALESCE(rs.arete, ''),
                        COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
-                       COALESCE(p.nom_rancho, ''), COALESCE(p.fk_estado, '')
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
                 FROM Animales a
                 LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
                 LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
@@ -2175,9 +2184,17 @@ def obtener_datos_rearetado():
             datos["animales"] = cursor.fetchall()
 
             cursor.execute("""
+                SELECT pk_predio, COALESCE(nom_rancho, ''), COALESCE(upp, ''),
+                       COALESCE(direccion, ''), COALESCE(CAST(fk_estado AS TEXT), '')
+                FROM Predios
+                ORDER BY nom_rancho, pk_predio
+            """)
+            datos["predios"] = cursor.fetchall()
+
+            cursor.execute("""
                 SELECT r.id, r.fk_animal, r.arete, a.nombre,
                        COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
-                       COALESCE(p.nom_rancho, ''), COALESCE(p.fk_estado, '')
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
                 FROM Registro_SINIGA r
                 INNER JOIN Animales a ON r.fk_animal = a.pk_animal
                 LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
@@ -2186,6 +2203,11 @@ def obtener_datos_rearetado():
 
         datos["aretes"] = cursor.fetchall()
 
+    except Exception:
+        datos["animales"] = []
+        datos["aretes"] = []
+
+    try:
         cursor.execute("SELECT pk_estado, Nombre FROM Estados ORDER BY Nombre")
         estados = cursor.fetchall()
         datos["estados"] = [
@@ -2193,8 +2215,11 @@ def obtener_datos_rearetado():
             for estado in estados
         ]
     except Exception:
-        datos["animales"] = []
-        datos["aretes"] = []
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        datos["estados"] = []
     finally:
         conn.close()
 
@@ -2213,6 +2238,7 @@ def rearetado():
         productor=datos["productor"],
         animales=datos["animales"],
         aretes=datos["aretes"],
+        predios=datos["predios"],
         estados=datos["estados"],
         dispositivos_reposicion=DISPOSITIVOS_REPOSICION,
         fecha_actual=datetime.now().strftime('%Y-%m-%d')
