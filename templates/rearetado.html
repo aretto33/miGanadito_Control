@@ -19,7 +19,6 @@
                 UPP y arete anterior. Los datos faltantes se llenan manualmente.
             </p>
         </div>
-        <img src="{{ asset_url('maxresdefault (2).jpg') }}" alt="Formato de solicitud SINIIGA" class="hero-reference">
     </div>
 
     <form action="{{ url_for('generar_pdf_rearetado') }}" method="POST" target="_blank" class="rearetado-form" id="formRearetado">
@@ -39,7 +38,8 @@
                                     data-arete="{{ a[2] or '' }}"
                                     data-upp="{{ a[3] or productor_upp }}"
                                     data-direccion="{{ a[4] or productor_direccion }}"
-                                    data-rancho="{{ a[5] or '' }}">
+                                    data-rancho="{{ a[5] or '' }}"
+                                    data-estado="{{ a[6] if a|length > 6 else '' }}">
                                 {{ a[1] }}{% if a[2] %} - {{ a[2] }}{% endif %}
                             </option>
                         {% endfor %}
@@ -107,7 +107,20 @@
             <div class="form-grid">
                 <div class="form-field">
                     <label for="upp">Clave UPP</label>
-                    <input type="text" id="upp" name="upp" value="{{ productor_upp }}" placeholder="Clave UPP">
+                    <select id="upp" name="upp">
+                        <option value="">Selecciona UPP</option>
+                        {% for predio in predios %}
+                            {% if predio[2] %}
+                                <option value="{{ predio[2] }}"
+                                        data-direccion="{{ predio[3] or productor_direccion }}"
+                                        data-estado="{{ predio[4] if predio|length > 4 else '' }}"
+                                        {% if predio[2] == productor_upp %}selected{% endif %}>
+                                    {{ predio[2] }}{% if predio[1] %} - {{ predio[1] }}{% endif %}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <small class="field-note">Si tienes varios predios, elige la UPP correspondiente.</small>
                 </div>
                 <div class="form-field">
                     <label for="psg">Clave PSG</label>
@@ -123,33 +136,50 @@
         <div class="form-section">
             <div class="section-title">
                 <span>3</span>
-                <h3>Dispositivo y aretes</h3>
+                <h3>Dispositivo y código SINIIGA</h3>
+            </div>
+
+            <p class="section-help">
+                Marca el identificador que necesitas reponer. La clave elegida es la que se coloca en la tabla inferior del formato.
+                Si el arete está como MX-28-09178345, se toma 28 como estado y 09178345 como número individual.
+            </p>
+
+            <div class="device-table">
+                <div class="device-row">
+                    <strong>Bovino</strong>
+                    <label><input type="radio" name="clave_id" value="A" data-especie="BO" data-dispositivo="BOTON" checked> A) Botón</label>
+                    <label><input type="radio" name="clave_id" value="B" data-especie="BO" data-dispositivo="BANDERA"> B) Bandera</label>
+                    <label><input type="radio" name="clave_id" value="C" data-especie="BO" data-dispositivo="RADIOFRECUENCIA"> C) Radiofrecuencia</label>
+                </div>
+                <div class="device-row">
+                    <strong>Ovino</strong>
+                    <label><input type="radio" name="clave_id" value="D" data-especie="OV" data-dispositivo="BANDERA PEQ."> D) Bandera peq.</label>
+                    <label><input type="radio" name="clave_id" value="E" data-especie="OV" data-dispositivo="BANDERA GDE."> E) Bandera gde.</label>
+                    <label><input type="radio" name="clave_id" value="F" data-especie="OV" data-dispositivo="RADIOFRECUENCIA"> F) Radiofrecuencia</label>
+                </div>
+                <div class="device-row">
+                    <strong>Caprino</strong>
+                    <label><input type="radio" name="clave_id" value="G" data-especie="CA" data-dispositivo="BANDERA PEQ."> G) Bandera peq.</label>
+                    <label><input type="radio" name="clave_id" value="H" data-especie="CA" data-dispositivo="GRAPA"> H) Grapa</label>
+                    <label><input type="radio" name="clave_id" value="I" data-especie="CA" data-dispositivo="RADIOFRECUENCIA"> I) Radiofrecuencia</label>
+                </div>
+                <div class="device-row">
+                    <strong>Colmenas</strong>
+                    <label><input type="radio" name="clave_id" value="J" data-especie="CO" data-dispositivo="DISCO PEQ."> J) Disco peq.</label>
+                    <label><input type="radio" name="clave_id" value="K" data-especie="CO" data-dispositivo="DISCO GDE."> K) Disco gde.</label>
+                    <label><input type="radio" name="clave_id" value="L" data-especie="CO" data-dispositivo="TARJETAS"> L) Tarjetas</label>
+                </div>
             </div>
 
             <div class="form-grid">
                 <div class="form-field">
-                    <label for="especie">Especie</label>
-                    <select id="especie" name="especie">
-                        <option value="BOVINO" selected>Bovino</option>
-                        <option value="OVINO">Ovino</option>
-                        <option value="CAPRINO">Caprino</option>
-                        <option value="COLMENAS">Colmenas</option>
-                    </select>
+                    <label for="especie_codigo">Especie</label>
+                    <input type="text" id="especie_codigo" name="especie_codigo" value="BO" readonly>
                 </div>
 
                 <div class="form-field">
-                    <label for="dispositivo">Dispositivo necesario</label>
-                    <select id="dispositivo" name="dispositivo">
-                        <option value="BOTON" selected>Botón</option>
-                        <option value="BANDERA">Bandera</option>
-                        <option value="RADIOFRECUENCIA">Radiofrecuencia</option>
-                        <option value="BANDERA PEQ.">Bandera pequeña</option>
-                        <option value="BANDERA GDE.">Bandera grande</option>
-                        <option value="GRAPA">Grapa</option>
-                        <option value="DISCO PEQ.">Disco pequeño</option>
-                        <option value="DISCO GDE.">Disco grande</option>
-                        <option value="TARJETAS">Tarjetas</option>
-                    </select>
+                    <label for="dispositivo_nombre">Dispositivo seleccionado</label>
+                    <input type="text" id="dispositivo_nombre" value="BOTON" readonly>
                 </div>
 
                 <div class="form-field">
@@ -157,14 +187,45 @@
                     <input type="number" id="cantidad" name="cantidad" min="1" value="1">
                 </div>
 
-                <div class="form-field">
-                    <label for="arete_anterior">Número anterior</label>
-                    <input type="text" id="arete_anterior" name="arete_anterior" placeholder="Arete actual o extraviado">
+                <div class="form-field span-2">
+                    <label>Aretes registrados del productor</label>
+                    <div class="arete-checklist" id="arete_checklist">
+                        {% for arete in aretes %}
+                            <label class="arete-option">
+                                <input type="checkbox"
+                                       name="aretes_solicitados"
+                                       value="{{ arete[2] }}"
+                                       data-registro="{{ arete[0] }}"
+                                       data-animal="{{ arete[1] }}"
+                                       data-upp="{{ arete[4] or productor_upp }}"
+                                       data-direccion="{{ arete[5] or productor_direccion }}"
+                                       data-estado="{{ arete[7] if arete|length > 7 else '' }}">
+                                <span>
+                                    <strong>{{ arete[2] }}</strong>
+                                    <small>{{ arete[3] }}</small>
+                                </span>
+                            </label>
+                        {% else %}
+                            <p class="arete-empty">No hay aretes en Registro SINIIGA para este productor.</p>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" id="arete_anterior" name="arete_anterior">
+                    <small class="field-note">Puedes marcar uno o más aretes. El PDF llenará un renglón por arete.</small>
                 </div>
 
                 <div class="form-field">
-                    <label for="arete_nuevo">Número nuevo</label>
-                    <input type="text" id="arete_nuevo" name="arete_nuevo" placeholder="Nuevo identificador">
+                    <label for="estado_codigo">Estado</label>
+                    <select id="estado_codigo" name="estado_codigo">
+                        <option value="">Selecciona estado</option>
+                        {% for estado in estados %}
+                            <option value="{{ estado[2] }}">{{ estado[2] }} - {{ estado[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="numero_individual">Número individual del animal</label>
+                    <input type="text" id="numero_individual" name="numero_individual" maxlength="8" placeholder="Ej. 07579621">
                 </div>
 
                 <div class="form-field">
@@ -174,7 +235,7 @@
 
                 <div class="form-field span-2">
                     <label for="observaciones">Observaciones</label>
-                    <textarea id="observaciones" name="observaciones" rows="3" placeholder="Detalles adicionales, si hacen falta"></textarea>
+                    <textarea id="observaciones" name="observaciones" rows="3" placeholder="Ej. Perdió bandera bovina; se solicita clave B."></textarea>
                 </div>
             </div>
         </div>
@@ -186,8 +247,45 @@
 <script>
 const animalSelect = document.getElementById('animal_select');
 const areteAnterior = document.getElementById('arete_anterior');
+const areteChecks = Array.from(document.querySelectorAll('input[name="aretes_solicitados"]'));
 const uppInput = document.getElementById('upp');
 const direccionInput = document.getElementById('direccion');
+const estadoInput = document.getElementById('estado_codigo');
+const numeroIndividualInput = document.getElementById('numero_individual');
+const especieCodigoInput = document.getElementById('especie_codigo');
+const dispositivoNombreInput = document.getElementById('dispositivo_nombre');
+
+function limpiarDigitos(valor) {
+    return (valor || '').replace(/\D/g, '');
+}
+
+function completarCodigoDesdeArete(arete, estadoPredio) {
+    const limpio = (arete || '').trim().toUpperCase().replace(/\s+/g, '');
+    const partes = limpio.split('-');
+
+    if (partes.length >= 3 && partes[0] === 'MX') {
+        estadoInput.value = (partes[1] || '').padStart(2, '0').slice(0, 2);
+        numeroIndividualInput.value = partes.slice(2).join('').replace(/\D/g, '').slice(0, 8);
+        return;
+    }
+
+    const digitos = limpiarDigitos(arete);
+    if (digitos.length >= 10) {
+        estadoInput.value = digitos.slice(0, 2);
+        numeroIndividualInput.value = digitos.slice(-8);
+        return;
+    }
+
+    if (estadoPredio) {
+        estadoInput.value = String(estadoPredio).padStart(2, '0');
+    }
+
+    if (digitos.length >= 8) {
+        numeroIndividualInput.value = digitos.slice(-8);
+    } else {
+        numeroIndividualInput.value = digitos;
+    }
+}
 
 animalSelect.addEventListener('change', () => {
     const option = animalSelect.selectedOptions[0];
@@ -196,10 +294,56 @@ animalSelect.addEventListener('change', () => {
     const arete = option.dataset.arete || '';
     const upp = option.dataset.upp || '';
     const direccion = option.dataset.direccion || '';
+    const estado = option.dataset.estado || '';
 
-    if (arete) areteAnterior.value = arete;
+    if (arete) {
+        areteChecks.forEach((check) => {
+            check.checked = check.value === arete;
+        });
+        areteAnterior.value = arete;
+        completarCodigoDesdeArete(arete, estado);
+    }
     if (upp) uppInput.value = upp;
     if (direccion) direccionInput.value = direccion;
+});
+
+function actualizarPrimerAreteSeleccionado() {
+    const seleccionados = areteChecks.filter((check) => check.checked);
+    const primero = seleccionados[0];
+
+    if (!primero) {
+        areteAnterior.value = '';
+        numeroIndividualInput.value = '';
+        return;
+    }
+
+    areteAnterior.value = primero.value;
+    completarCodigoDesdeArete(primero.value, primero.dataset.estado || '');
+    if (primero.dataset.upp) uppInput.value = primero.dataset.upp;
+    if (primero.dataset.direccion) direccionInput.value = primero.dataset.direccion;
+    document.getElementById('cantidad').value = seleccionados.length;
+}
+
+areteChecks.forEach((check) => {
+    check.addEventListener('change', actualizarPrimerAreteSeleccionado);
+});
+
+document.querySelectorAll('input[name="clave_id"]').forEach((input) => {
+    input.addEventListener('change', () => {
+        if (!input.checked) return;
+        especieCodigoInput.value = input.dataset.especie || '';
+        dispositivoNombreInput.value = input.dataset.dispositivo || '';
+    });
+});
+
+uppInput.addEventListener('change', () => {
+    const option = uppInput.selectedOptions[0];
+    if (!option) return;
+
+    if (option.dataset.direccion) direccionInput.value = option.dataset.direccion;
+    if (option.dataset.estado && !estadoInput.value) {
+        estadoInput.value = String(option.dataset.estado).padStart(2, '0');
+    }
 });
 </script>
 

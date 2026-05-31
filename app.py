@@ -9,6 +9,7 @@ from functools import wraps
 import io
 import csv
 from reportlab.lib.pagesizes import letter
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 from PIL import Image
 import os
@@ -890,6 +891,13 @@ def animales():
                     flash("Estatus inválido", "danger")
                     return redirect(url_for("animales"))
 
+                cruzes_seleccionados = [
+                    cruze.strip()
+                    for cruze in request.form.getlist("cruze_razas")
+                    if cruze and cruze.strip()
+                ]
+                cruze = " / ".join(cruzes_seleccionados) if cruzes_seleccionados else "Sin conocer"
+
                 cursor.execute("""
                     INSERT INTO Animales
                     (nombre, fecha_nacimiento, cruze, sexo, peso_actual,
@@ -898,7 +906,7 @@ def animales():
                 """, (
                     request.form.get("nombre"),
                     request.form.get("fecha"),
-                    request.form.get("cruze") or "Sin conocer",
+                    cruze,
                     request.form.get("sexo"),
                     request.form.get("peso_actual"),
                     fk_prod_session or request.form.get("fk_productor"),
@@ -2074,8 +2082,40 @@ def dibujar_cajas_codigo(pdf, x, y, valor, total_cajas=12, caja=6):
             pdf.cell(caja - 0.8, 4, valor[i], 0, 0, 'C')
 
 
+def separar_codigo_siniiga(arete):
+    partes = str(arete or "").strip().upper().replace(" ", "").split("-")
+    if len(partes) >= 3 and partes[0] == "MX":
+        return {
+            "pais": partes[0],
+            "estado": partes[1].zfill(2)[:2],
+            "numero": "".join(partes[2:]).replace("-", "")[:8],
+        }
+
+    digitos = "".join(ch for ch in str(arete or "") if ch.isdigit())
+    if len(digitos) >= 10:
+        return {"pais": "MX", "estado": digitos[:2], "numero": digitos[-8:]}
+
+    return {"pais": "MX", "estado": "", "numero": digitos[-8:] if digitos else ""}
+
+
+DISPOSITIVOS_REPOSICION = {
+    "A": {"especie": "BOVINO", "codigo_especie": "BO", "dispositivo": "BOTON"},
+    "B": {"especie": "BOVINO", "codigo_especie": "BO", "dispositivo": "BANDERA"},
+    "C": {"especie": "BOVINO", "codigo_especie": "BO", "dispositivo": "RADIOFRECUENCIA"},
+    "D": {"especie": "OVINO", "codigo_especie": "OV", "dispositivo": "BANDERA PEQ."},
+    "E": {"especie": "OVINO", "codigo_especie": "OV", "dispositivo": "BANDERA GDE."},
+    "F": {"especie": "OVINO", "codigo_especie": "OV", "dispositivo": "RADIOFRECUENCIA"},
+    "G": {"especie": "CAPRINO", "codigo_especie": "CA", "dispositivo": "BANDERA PEQ."},
+    "H": {"especie": "CAPRINO", "codigo_especie": "CA", "dispositivo": "GRAPA"},
+    "I": {"especie": "CAPRINO", "codigo_especie": "CA", "dispositivo": "RADIOFRECUENCIA"},
+    "J": {"especie": "COLMENAS", "codigo_especie": "CO", "dispositivo": "DISCO PEQ."},
+    "K": {"especie": "COLMENAS", "codigo_especie": "CO", "dispositivo": "DISCO GDE."},
+    "L": {"especie": "COLMENAS", "codigo_especie": "CO", "dispositivo": "TARJETAS"},
+}
+
+
 def obtener_datos_rearetado():
-    datos = {"productor": None, "animales": [], "predios": []}
+    datos = {"productor": None, "animales": [], "aretes": [], "predios": [], "estados": []}
 
     if "usuario" not in session:
         return datos
@@ -2101,29 +2141,85 @@ def obtener_datos_rearetado():
             datos["productor"] = cursor.fetchone()
 
             cursor.execute("""
+                SELECT pk_predio, COALESCE(nom_rancho, ''), COALESCE(upp, ''),
+                       COALESCE(direccion, ''), COALESCE(CAST(fk_estado AS TEXT), '')
+                FROM Predios
+                WHERE fk_productor=%s
+                ORDER BY nom_rancho, pk_predio
+            """, (session.get("fk_productor"),))
+            datos["predios"] = cursor.fetchall()
+
+            cursor.execute("""
                 SELECT a.pk_animal, a.nombre, COALESCE(rs.arete, ''),
                        COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
-                       COALESCE(p.nom_rancho, '')
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
                 FROM Animales a
                 LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
                 LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
                 WHERE a.fk_productor=%s
                 ORDER BY a.nombre
             """, (session.get("fk_productor"),))
+            datos["animales"] = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT r.id, r.fk_animal, r.arete, a.nombre,
+                       COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
+                FROM Registro_SINIGA r
+                INNER JOIN Animales a ON r.fk_animal = a.pk_animal
+                LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
+                WHERE a.fk_productor=%s
+                ORDER BY a.nombre, r.arete
+            """, (session.get("fk_productor"),))
         else:
             cursor.execute("""
                 SELECT a.pk_animal, a.nombre, COALESCE(rs.arete, ''),
                        COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
-                       COALESCE(p.nom_rancho, '')
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
                 FROM Animales a
                 LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
                 LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
                 ORDER BY a.nombre
             """)
+            datos["animales"] = cursor.fetchall()
 
-        datos["animales"] = cursor.fetchall()
+            cursor.execute("""
+                SELECT pk_predio, COALESCE(nom_rancho, ''), COALESCE(upp, ''),
+                       COALESCE(direccion, ''), COALESCE(CAST(fk_estado AS TEXT), '')
+                FROM Predios
+                ORDER BY nom_rancho, pk_predio
+            """)
+            datos["predios"] = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT r.id, r.fk_animal, r.arete, a.nombre,
+                       COALESCE(p.upp, ''), COALESCE(p.direccion, ''),
+                       COALESCE(p.nom_rancho, ''), COALESCE(CAST(p.fk_estado AS TEXT), '')
+                FROM Registro_SINIGA r
+                INNER JOIN Animales a ON r.fk_animal = a.pk_animal
+                LEFT JOIN Predios p ON p.pk_predio = a.fk_predio
+                ORDER BY a.nombre, r.arete
+            """)
+
+        datos["aretes"] = cursor.fetchall()
+
     except Exception:
         datos["animales"] = []
+        datos["aretes"] = []
+
+    try:
+        cursor.execute("SELECT pk_estado, Nombre FROM Estados ORDER BY Nombre")
+        estados = cursor.fetchall()
+        datos["estados"] = [
+            (estado[0], estado[1], str(estado[0]).zfill(2))
+            for estado in estados
+        ]
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        datos["estados"] = []
     finally:
         conn.close()
 
@@ -2141,6 +2237,10 @@ def rearetado():
         'rearetado.html',
         productor=datos["productor"],
         animales=datos["animales"],
+        aretes=datos["aretes"],
+        predios=datos["predios"],
+        estados=datos["estados"],
+        dispositivos_reposicion=DISPOSITIVOS_REPOSICION,
         fecha_actual=datetime.now().strftime('%Y-%m-%d')
     )
 
@@ -2157,11 +2257,40 @@ def generar_pdf_rearetado():
         upp = request.form.get('upp', '')
         psg = request.form.get('psg', '')
         clave_pg = request.form.get('clave_pg', '')
-        especie = request.form.get('especie', 'BOVINO')
-        dispositivo = request.form.get('dispositivo', 'BOTON')
+        clave_id = request.form.get('clave_id', 'A').upper()
+        dispositivo_info = DISPOSITIVOS_REPOSICION.get(clave_id, DISPOSITIVOS_REPOSICION["A"])
+        especie = dispositivo_info["especie"]
+        especie_codigo = request.form.get('especie_codigo') or dispositivo_info["codigo_especie"]
+        dispositivo = dispositivo_info["dispositivo"]
         cantidad = request.form.get('cantidad', '1')
+        aretes_solicitados = [
+            arete.strip()
+            for arete in request.form.getlist('aretes_solicitados')
+            if arete and arete.strip()
+        ]
         arete_ant = request.form.get('arete_anterior', '')
-        arete_nue = request.form.get('arete_nuevo', '')
+        if not aretes_solicitados and arete_ant:
+            aretes_solicitados = [arete_ant]
+        estado_codigo = request.form.get('estado_codigo', '')
+        numero_individual = request.form.get('numero_individual', '')
+        codigo_arete = separar_codigo_siniiga(arete_ant)
+        estado_codigo = estado_codigo or codigo_arete["estado"]
+        numero_individual = numero_individual or codigo_arete["numero"]
+        codigos_siniiga = []
+        for arete in aretes_solicitados:
+            codigo = separar_codigo_siniiga(arete)
+            codigos_siniiga.append({
+                "arete": arete,
+                "estado": codigo["estado"] or estado_codigo,
+                "numero": codigo["numero"] or numero_individual,
+            })
+        if not codigos_siniiga:
+            codigos_siniiga.append({
+                "arete": arete_ant,
+                "estado": estado_codigo,
+                "numero": numero_individual,
+            })
+        cantidad = str(len(codigos_siniiga) if len(codigos_siniiga) > 1 else (cantidad or 1))
         responsable = request.form.get('responsable', '').upper()
         observaciones = request.form.get('observaciones', '')
 
@@ -2241,17 +2370,17 @@ def generar_pdf_rearetado():
         pdf.set_font('Arial', 'B', 8)
         pdf.cell(0, 7, 'CODIGO DE IDENTIFICACION SINIIGA', 1, 1, 'C')
         pdf.set_font('Arial', 'B', 7)
-        pdf.cell(28, 7, 'CLAVE DISTR.', 1, 0, 'C')
+        pdf.cell(28, 7, 'CLAVE DEL ID', 1, 0, 'C')
         pdf.cell(24, 7, 'ESPECIE', 1, 0, 'C')
         pdf.cell(24, 7, 'ESTADO', 1, 0, 'C')
         pdf.cell(110, 7, 'NUMERO DE IDENTIFICACION INDIVIDUAL DEL ANIMAL', 1, 1, 'C')
         pdf.set_font('Arial', '', 8)
         for i in range(6):
-            valor_arete = arete_nue if i == 0 else ""
-            pdf.cell(28, 8, "", 1, 0)
-            pdf.cell(24, 8, especie if i == 0 else "", 1, 0, 'C')
-            pdf.cell(24, 8, "", 1, 0)
-            pdf.cell(110, 8, texto_pdf(valor_arete), 1, 1)
+            codigo = codigos_siniiga[i] if i < len(codigos_siniiga) else None
+            pdf.cell(28, 8, clave_id if codigo else "", 1, 0, 'C')
+            pdf.cell(24, 8, especie_codigo if codigo else "", 1, 0, 'C')
+            pdf.cell(24, 8, codigo["estado"] if codigo else "", 1, 0, 'C')
+            pdf.cell(110, 8, texto_pdf(codigo["numero"] if codigo else ""), 1, 1)
 
         if observaciones:
             pdf.set_y(242)
@@ -2287,7 +2416,7 @@ def generar_pdf_rearetado():
         else:
             response = make_response(pdf_data.encode('latin-1')) 
         response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'inline; filename=Solicitud_Rearetado_{arete_nue or arete_ant}.pdf'
+        response.headers['Content-Disposition'] = f'inline; filename=Solicitud_Rearetado_{arete_ant or numero_individual}.pdf'
         return response
 
     except Exception as e:
@@ -2476,13 +2605,18 @@ def pdf_animal():
 def generar_pdf_animal(animal):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
+    page_width, page_height = letter
 
-    y = 750
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(50, y, "DATOS DEL ANIMAL")
-    y -= 30
+    c.setTitle("Datos del Animal")
+    margen_x = 45
+    y = page_height - 54
 
-    c.setFont("Helvetica", 10)
+    c.setFont("Times-Bold", 24)
+    c.drawCentredString(page_width / 2, y, "DATOS DEL ANIMAL")
+    y -= 14
+    c.setLineWidth(1.2)
+    c.line(margen_x, y, page_width - margen_x, y)
+    y -= 34
 
     campos = [
         ("Arete", animal.get("arete")),
@@ -2499,23 +2633,47 @@ def generar_pdf_animal(animal):
         ("Municipio", animal.get("municipio"))
     ]
 
+    c.setFont("Times-Bold", 16)
+    c.drawString(margen_x, y, "Información general")
+    y -= 28
+
     for campo, valor in campos:
-        c.drawString(50, y, f"{campo}: {valor if valor else '---'}")
-        y -= 15
+        valor_texto = str(valor) if valor not in (None, "") else "---"
+        c.setFont("Times-Bold", 13)
+        c.drawString(margen_x, y, f"{campo}:")
+        c.setFont("Times-Roman", 13)
+        c.drawString(margen_x + 105, y, valor_texto[:58])
+        y -= 24
+
+    def dibujar_foto(imagen_bytes, titulo, x, y_img, ancho=215, alto=175):
+        if not imagen_bytes:
+            return
+        try:
+            imagen = Image.open(io.BytesIO(imagen_bytes))
+            imagen.thumbnail((ancho, alto))
+            reader = ImageReader(imagen)
+            img_w, img_h = imagen.size
+            x_centrada = x + (ancho - img_w) / 2
+            y_centrada = y_img + (alto - img_h) / 2
+
+            c.setFont("Times-Bold", 14)
+            c.drawCentredString(x + ancho / 2, y_img + alto + 12, titulo)
+            c.roundRect(x, y_img, ancho, alto, 8, stroke=1, fill=0)
+            c.drawImage(reader, x_centrada, y_centrada, width=img_w, height=img_h)
+        except Exception:
+            c.setFont("Times-Roman", 12)
+            c.drawString(x, y_img + alto / 2, f"{titulo}: imagen no disponible")
 
     # Imagen perfil
-    if animal.get("foto_perfil"):
-        img = Image.open(io.BytesIO(animal["foto_perfil"]))
-        img_path = "/tmp/perfil.png"
-        img.save(img_path)
-        c.drawImage(img_path, 380, 600, width=150, height=150)
+    dibujar_foto(animal.get("foto_perfil"), "Foto de perfil", 355, 500)
 
     # Imagen lateral
-    if animal.get("foto_lateral"):
-        img = Image.open(io.BytesIO(animal["foto_lateral"]))
-        img_path = "/tmp/lateral.png"
-        img.save(img_path)
-        c.drawImage(img_path, 380, 420, width=150, height=150)
+    dibujar_foto(animal.get("foto_lateral"), "Foto lateral", 355, 275)
+
+    c.setLineWidth(0.7)
+    c.line(margen_x, 58, page_width - margen_x, 58)
+    c.setFont("Times-Italic", 11)
+    c.drawCentredString(page_width / 2, 40, "MiGanadito Control - Ficha de identificación animal")
 
     c.showPage()
     c.save()

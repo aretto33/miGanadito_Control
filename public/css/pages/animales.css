@@ -15,6 +15,71 @@ input, select, textarea {
     color: #4a2f1a;
 }
 
+.cruze-checklist {
+    margin: 0 0 14px;
+    padding: 12px;
+    border: 1px solid rgba(127, 85, 57, 0.2);
+    border-radius: 10px;
+    background: #fffaf3;
+}
+
+.cruze-checklist legend {
+    float: none;
+    width: auto;
+    margin: 0 0 4px;
+    padding: 0;
+    color: #4a2f1a;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.cruze-help {
+    display: block;
+    margin-bottom: 10px;
+    color: #72533a;
+    font-size: 0.88rem;
+}
+
+.cruze-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    max-height: 190px;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.cruze-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    margin: 0;
+    padding: 9px 10px;
+    border-radius: 8px;
+    background: rgba(236, 217, 195, 0.45);
+    border: 1px solid rgba(127, 85, 57, 0.12);
+    color: #4a2f1a;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cruze-option input {
+    width: 18px;
+    min-height: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    accent-color: #8b5e3c;
+}
+
+.cruze-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #72533a;
+    font-weight: 600;
+}
+
 .btn {
     background: #8b5e3c;
     color: white;
@@ -262,6 +327,44 @@ img.animal-img {
     display: inline;
 }
 
+.animal-searchbar {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.85rem 1rem 0;
+}
+
+.animal-searchbar label {
+    color: #4a2f1a;
+    font-weight: 800;
+}
+
+.animal-search-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    align-items: center;
+}
+
+.animal-search-controls input {
+    margin: 0;
+    border-radius: 10px;
+    background: #fffaf3;
+}
+
+.animal-search-controls .btn {
+    min-height: 42px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.animal-search-empty td {
+    padding: 1.1rem;
+    color: #806854;
+    font-weight: 800;
+    text-align: center;
+    background: #fffaf3;
+}
+
 .form-field {
     margin-top: 8px;
     margin-bottom: 8px;
@@ -368,6 +471,15 @@ table td {
 
     .modal-card .btn {
         width: 100%;
+    }
+
+    .cruze-options {
+        grid-template-columns: 1fr;
+        max-height: none;
+    }
+
+    .animal-search-controls {
+        grid-template-columns: 1fr;
     }
 }
 

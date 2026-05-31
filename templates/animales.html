@@ -385,7 +385,18 @@ img.animal-img {
 <div class="animal-table data-card">
     <div class="data-card-header">
         <h3>Animales Registrados</h3>
-        <span class="data-card-count">{{ animales|length }}</span>
+        <span class="data-card-count" id="animal-count">{{ animales|length }}</span>
+    </div>
+    <div class="animal-searchbar" role="search">
+        <label for="animal-search">Buscar animal</label>
+        <div class="animal-search-controls">
+            <input
+                type="search"
+                id="animal-search"
+                placeholder="Nombre, arete, raza, predio, productor, estatus..."
+                autocomplete="off">
+            <button type="button" class="btn btn-small" id="animal-search-clear">Limpiar</button>
+        </div>
     </div>
     <div class="data-card-body">
     <div class="animals-table-shell">
@@ -409,9 +420,22 @@ img.animal-img {
                 <th class="col-actions">Acciones</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="animals-table-body">
             {% for a in animales %}
-            <tr>
+            {% set estado = a[10] if a|length > 10 and a[10] else 'Activo' %}
+            <tr data-search="{{ [
+                a[1],
+                a[2],
+                a[3],
+                a[4],
+                a[5],
+                a[6],
+                a[7],
+                a[8] if a|length > 8 else '',
+                a[9] if a|length > 9 else '',
+                estado,
+                a[15] if a|length > 15 else ''
+            ] | join(' ') | lower }}">
                 <td>{{ loop.index}}</td>
                 <td class="animal-name">{{ a[1] }}</td>
                 <td>{{ a[2] }}</td>
@@ -437,7 +461,6 @@ img.animal-img {
                 <td>{{ a[9] if a|length > 9 and a[9] else '—' }}</td>
 
                 <td>
-                    {% set estado = a[10] if a|length > 10 and a[10] else 'Activo' %}
                     {% set estado_norm = estado|lower %}
                     {% set estado_clase = 'vendido' if estado_norm == 'vendido' else ('baja-muerto' if estado_norm == 'baja (muerto)' else 'activo') %}
                     <span class="estatus-badge {{ estado_clase }}">
@@ -484,6 +507,9 @@ img.animal-img {
                 </td>
             </tr>
             {% endfor %}
+            <tr id="animal-search-empty" class="animal-search-empty" hidden>
+                <td colspan="15">No se encontró ningún animal con esa búsqueda.</td>
+            </tr>
         </tbody>
     </table>
     </div>
@@ -506,8 +532,20 @@ img.animal-img {
             <label for="f_fecha">Fecha de nacimiento:</label>
             <input type="date" name="fecha" id="f_fecha" required>
 
-            <label for="f_cruze">Cruze:</label>
-            <input type="text" name="cruze" id="f_cruze">
+            <fieldset class="cruze-checklist">
+                <legend>Cruzes:</legend>
+                <span class="cruze-help">Marca todas las razas que tiene el animal.</span>
+                <div class="cruze-options">
+                    {% for r in razas %}
+                        <label class="cruze-option">
+                            <input type="checkbox" name="cruze_razas" value="{{ r[1] }}">
+                            <span>{{ r[1] }}</span>
+                        </label>
+                    {% else %}
+                        <p class="cruze-empty">Primero registra razas para poder seleccionarlas.</p>
+                    {% endfor %}
+                </div>
+            </fieldset>
 
             <!-- productor: si el rol es Productor, mantenlo oculto y con su value -->
             <label for="f_fk_productor">Productor:</label>
@@ -745,6 +783,48 @@ document.addEventListener('keydown', function(e){
         ocultarModal('modal-ver');
     }
 });
+
+const animalSearchInput = document.getElementById('animal-search');
+const animalSearchClear = document.getElementById('animal-search-clear');
+const animalRows = Array.from(document.querySelectorAll('#animals-table-body tr[data-search]'));
+const animalSearchEmpty = document.getElementById('animal-search-empty');
+const animalCount = document.getElementById('animal-count');
+const totalAnimalRows = animalRows.length;
+
+function normalizarBusqueda(valor) {
+    return (valor || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+function filtrarAnimales() {
+    const termino = normalizarBusqueda(animalSearchInput.value);
+    let visibles = 0;
+
+    animalRows.forEach((row) => {
+        const texto = normalizarBusqueda(row.dataset.search);
+        const coincide = !termino || texto.includes(termino);
+        row.hidden = !coincide;
+        if (coincide) visibles += 1;
+    });
+
+    if (animalSearchEmpty) animalSearchEmpty.hidden = visibles !== 0;
+    if (animalCount) animalCount.textContent = termino ? `${visibles}/${totalAnimalRows}` : totalAnimalRows;
+}
+
+if (animalSearchInput) {
+    animalSearchInput.addEventListener('input', filtrarAnimales);
+}
+
+if (animalSearchClear) {
+    animalSearchClear.addEventListener('click', function () {
+        animalSearchInput.value = '';
+        filtrarAnimales();
+        animalSearchInput.focus();
+    });
+}
 
 /* ================= mejora: impedir doble submit (opcional) ================= */
 document.getElementById('form-animal').addEventListener('submit', function(e){
