@@ -41,10 +41,22 @@
                 <a href="{{ url_for('mi_productor') }}" class="btn-3d btn-main">
                     <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d"> Mis Datos
                 </a>
+                {% if session.get('permiso_datos_completos') %}
+                <a href="{{ url_for('animales') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vaca.png') }}" class="icon-3d">Animales</a>
+                <a href="{{ url_for('predios') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/predio.png') }}" class="icon-3d">Predios</a>
+                <a href="{{ url_for('registro_siniga') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/siiniga.png') }}" class="icon-3d">Registro SINIGA</a>
+                {% endif %}
                 <a href="{{ url_for('pesajes') }}" class="btn-3d">
                     <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d">Pesaje</a>
                 <a href="{{ url_for('seguimiento') }}" class="btn-3d">
                     <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d">Seguimiento Vet</a>
+                {% if session.get('permiso_datos_completos') %}
+                <a href="{{ url_for('ventas') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/ventas.png') }}" class="icon-3d">Ventas</a>
+                {% endif %}
                 <a href="{{ url_for('razas') }}" class="btn-3d">
                 <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d">Razas</a>
 
@@ -123,6 +135,7 @@
                             <span><strong>{{ admin_resumen.get('seguimientos', 0) }}</strong> seguimientos veterinarios</span>
                             <span><strong>{{ admin_resumen.get('registros_siniga', 0) }}</strong> aretes SINIGA</span>
                             <span><strong>{{ admin_resumen.get('veterinarios', 0) }}</strong> veterinarios</span>
+                            <span><strong>{{ admin_resumen.get('peticiones_veterinario', 0) }}</strong> peticiones de permiso</span>
                         </div>
                     </section>
 
@@ -163,7 +176,112 @@
             </section>
 
         {% elif view == 'veterinario' or rol == 'Veterinario' %}
-            <h3>Panel Veterinario</h3>
+            <section class="vet-panel">
+                <div class="vet-panel-header">
+                    <div>
+                        <p class="stats-eyebrow">Panel Veterinario</p>
+                        <h3>{{ veterinario_perfil[1] ~ ' ' ~ veterinario_perfil[2] if veterinario_perfil else usuario }}</h3>
+                    </div>
+                    <div class="producer-header-actions">
+                        <a href="{{ url_for('mi_productor') }}" class="btn-3d">Mis datos</a>
+                        <a href="{{ url_for('seguimiento') }}" class="btn-3d">Nuevo seguimiento</a>
+                        {% if session.get('permiso_datos_completos') %}
+                        <a href="{{ url_for('animales') }}" class="btn-3d">Datos completos</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="producer-metrics" aria-label="Resumen veterinario">
+                    <div class="producer-metric-card primary">
+                        <span>{{ vet_resumen.get('seguimientos', 0) }}</span>
+                        <small>Seguimientos</small>
+                    </div>
+                    <div class="producer-metric-card active">
+                        <span>{{ vet_resumen.get('proximas_citas', 0) }}</span>
+                        <small>Proximas citas</small>
+                    </div>
+                    <div class="producer-metric-card">
+                        <span>{{ vet_resumen.get('animales', 0) }}</span>
+                        <small>Animales</small>
+                    </div>
+                    <div class="producer-metric-card sold">
+                        <span>{{ vet_resumen.get('medicamentos', 0) }}</span>
+                        <small>Medicinas</small>
+                    </div>
+                </div>
+
+                <section class="vet-permission-card">
+                    <div>
+                        <p class="stats-eyebrow">Permiso por productor</p>
+                        {% if vet_productores %}
+                            <h3>Productores autorizados</h3>
+                            <p>{{ vet_productores|length }} productor(es) aprobados. Puedes pedir acceso a otro productor cuando lo necesites.</p>
+                        {% else %}
+                            <h3>Solicitar acceso</h3>
+                            <p>Elige el productor y escribe una nota para que el administrador pueda revisar tu petición.</p>
+                        {% endif %}
+                    </div>
+                    <form method="POST" action="{{ url_for('solicitar_permiso_veterinario') }}" class="vet-request-form">
+                        <select name="fk_productor" required>
+                            <option value="">Seleccione productor…</option>
+                            {% for p in productores_para_solicitud %}
+                            <option value="{{ p[0] }}">{{ p[1] }}</option>
+                            {% endfor %}
+                        </select>
+                        <textarea name="nota" rows="2" placeholder="Escribe para qué necesitas consultar ese productor" required></textarea>
+                        <button class="btn-3d" type="submit">Enviar petición</button>
+                    </form>
+                </section>
+
+                {% if vet_solicitudes %}
+                <section class="producer-card">
+                    <div class="producer-section-heading">
+                        <h3>Mis peticiones</h3>
+                    </div>
+                    <div class="vet-request-status-list">
+                        {% for s in vet_solicitudes %}
+                        <div class="vet-request-status">
+                            <strong>{{ s[2] }}</strong>
+                            <span class="permission-badge {{ 'active' if s[4] == 'aprobada' else 'pending' if s[4] == 'pendiente' else '' }}">{{ s[4]|capitalize }}</span>
+                            <small>{{ s[3] }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+
+                <div class="vet-main-grid">
+                    <section class="producer-card">
+                        <div class="producer-section-heading">
+                            <h3>Perfil</h3>
+                        </div>
+                        <div class="vet-profile-list">
+                            <span><strong>Cedula</strong>{{ veterinario_perfil[3] if veterinario_perfil else '-' }}</span>
+                            <span><strong>Telefono</strong>{{ veterinario_perfil[5] if veterinario_perfil else '-' }}</span>
+                            <span><strong>Consultorio</strong>{{ veterinario_perfil[4] if veterinario_perfil else 'Consultas a domicilio' }}</span>
+                        </div>
+                    </section>
+
+                    <section class="producer-card">
+                        <div class="producer-section-heading">
+                            <h3>Proximas atenciones</h3>
+                        </div>
+                        {% if vet_proximos %}
+                            <div class="vet-next-list">
+                                {% for item in vet_proximos %}
+                                <div class="vet-next-item">
+                                    <strong>{{ item[0] }}</strong>
+                                    <span>{{ item[1] or 'Seguimiento' }}{% if item[2] %} · {{ item[2] }}{% endif %}</span>
+                                    <small>{{ item[4] or item[3] }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="birth-empty">Aun no hay proximas atenciones programadas.</p>
+                        {% endif %}
+                    </section>
+                </div>
+            </section>
 
         {% elif view == 'comprador' or rol == 'Comprador' %}
             <h3>Panel Comprador</h3>

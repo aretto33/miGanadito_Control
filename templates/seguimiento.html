@@ -11,6 +11,25 @@
 
 <button class="btn" onclick="abrirForm()">➕ Registrar Seguimiento</button>
 
+<section class="medicine-catalog data-card" aria-label="Catalogo de medicinas">
+    <div class="data-card-header">
+        <h3>Medicinas</h3>
+        <span class="data-card-count">{{ medicamentos|length }}</span>
+    </div>
+    <div class="medicine-grid">
+        {% for m in medicamentos %}
+        <article class="medicine-card">
+            <strong>{{ m[1] }}</strong>
+            <span>{{ m[2] or 'Sin categoria' }}</span>
+            <small>
+                {% if m[3] %}{{ m[3] }} mg/ml{% else %}Concentracion no definida{% endif %}
+                · Retiro {{ m[6] or 0 }} dias
+            </small>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
 <div class="table-box data-card">
     <div class="data-card-header">
         <h3>Registros</h3>
@@ -121,7 +140,15 @@
             </select>
 
             <label>Medicamento</label>
-            <input type="text" name="medicamento" id="f_medicamento">
+            <select name="medicamento_catalogo" id="f_medicamento_catalogo">
+                <option value="">Seleccione del catalogo…</option>
+                {% for m in medicamentos %}
+                <option value="{{ m[1] }}">{{ m[1] }} - {{ m[2] or 'General' }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Otro medicamento</label>
+            <input type="text" name="medicamento" id="f_medicamento" placeholder="Captura manual si no aparece en el catalogo">
 
             <label>Fecha Actual</label>
             <input type="date" name="fecha_actual" id="f_fechaA" required>
@@ -142,6 +169,7 @@ const segForm = document.getElementById("segForm");
 const f_pk = document.getElementById("f_pk");
 const f_animal = document.getElementById("f_animal");
 const f_trat = document.getElementById("f_trat");
+const f_medicamento_catalogo = document.getElementById("f_medicamento_catalogo");
 const f_medicamento = document.getElementById("f_medicamento");
 const f_fechaA = document.getElementById("f_fechaA");
 const f_fechaP = document.getElementById("f_fechaP");
@@ -160,7 +188,15 @@ function editar(o){
     f_pk.value = o.id;
     f_animal.value = o.animal;
     f_trat.value = o.fk_tratamiento;
+    f_medicamento_catalogo.value = "";
     f_medicamento.value = o.medicamento || "";
+    if (o.medicamento) {
+        const opcion = [...f_medicamento_catalogo.options].find(opt => opt.value === o.medicamento);
+        if (opcion) {
+            f_medicamento_catalogo.value = o.medicamento;
+            f_medicamento.value = "";
+        }
+    }
     f_fechaA.value = o.fechaA || "";
     f_fechaP.value = o.fechaP || "";
 

@@ -154,7 +154,13 @@
     gap: 1rem;
 }
 
-.producer-panel-header {
+.vet-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.producer-panel-header,
+.vet-panel-header {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
@@ -166,7 +172,8 @@
     box-shadow: 0 12px 24px rgba(92, 62, 34, 0.1);
 }
 
-.producer-panel-header h3 {
+.producer-panel-header h3,
+.vet-panel-header h3 {
     margin: 0;
     font-family: "Fraunces", serif;
     font-size: clamp(1.7rem, 2.8vw, 2.35rem);
@@ -285,6 +292,98 @@
     align-items: stretch;
 }
 
+.vet-main-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1.22fr);
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.vet-permission-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 18px;
+    background: #fff7e8;
+    border: 1px solid rgba(164, 107, 24, 0.22);
+    box-shadow: 0 12px 22px rgba(92, 62, 34, 0.1);
+}
+
+.vet-permission-card h3 {
+    margin: 0;
+    font-family: "Fraunces", serif;
+    color: #3a2a1d;
+}
+
+.vet-permission-card p {
+    margin: 0.35rem 0 0;
+    color: #6f5a46;
+}
+
+.vet-request-form {
+    display: grid;
+    grid-template-columns: minmax(170px, 0.75fr) minmax(220px, 1fr) auto;
+    gap: 0.65rem;
+    align-items: center;
+    min-width: min(100%, 640px);
+}
+
+.vet-request-form select,
+.vet-request-form textarea {
+    width: 100%;
+    min-height: 2.75rem;
+    border-radius: 12px;
+    border: 1px solid rgba(127, 85, 57, 0.2);
+    padding: 0.7rem 0.85rem;
+    background: #fffaf5;
+    color: #3a2a1d;
+}
+
+.vet-request-status-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.vet-request-status {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem 0.75rem;
+    align-items: start;
+    padding: 0.72rem 0.78rem;
+    border-radius: 12px;
+    background: rgba(247, 239, 229, 0.86);
+}
+
+.vet-request-status small {
+    grid-column: 1 / -1;
+    color: #6f5a46;
+}
+
+.permission-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: #efe3d3;
+    color: #6f5139;
+    font-weight: 800;
+    font-size: 0.75rem;
+}
+
+.permission-badge.active {
+    background: #d8f1df;
+    color: #1e6b37;
+}
+
+.permission-badge.pending {
+    background: #fff0bf;
+    color: #6a4a00;
+}
+
 .producer-card {
     padding: 1rem;
     border-radius: 18px;
@@ -310,6 +409,37 @@
 .producer-link-list {
     display: grid;
     gap: 0.65rem;
+}
+
+.vet-profile-list,
+.vet-next-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.vet-profile-list span,
+.vet-next-item {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.72rem 0.78rem;
+    border-radius: 12px;
+    background: rgba(247, 239, 229, 0.86);
+    color: #5d4330;
+}
+
+.vet-profile-list strong,
+.vet-next-item strong {
+    color: #3a2a1d;
+    font-weight: 800;
+}
+
+.vet-next-item span {
+    color: #5d4330;
+}
+
+.vet-next-item small {
+    color: #8a6848;
+    font-weight: 800;
 }
 
 .producer-status-card .estatus-list {
@@ -785,6 +915,7 @@
 
     .producer-overview,
     .producer-main-grid,
+    .vet-main-grid,
     .admin-review-grid,
     .dashboard-content .widgets,
     .center-box {
@@ -831,7 +962,9 @@
         font-size: 1.65rem;
     }
 
-    .producer-panel-header {
+    .producer-panel-header,
+    .vet-panel-header,
+    .vet-permission-card {
         align-items: stretch;
         flex-direction: column;
     }
@@ -846,7 +979,8 @@
     }
 
     .producer-metrics,
-    .producer-action-grid {
+    .producer-action-grid,
+    .vet-request-form {
         grid-template-columns: 1fr;
     }
 
