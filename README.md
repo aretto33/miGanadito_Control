@@ -1,7 +1,5 @@
 # miGanadito_Control
 
-<img width="1920" height="350" alt="image" src="https://github.com/aretto33/miGanadito_Control/blob/main/static/banner.png?raw=true" />
-
 Sistema web de gestion ganadera construido con Flask y plantillas Jinja. El proyecto mantiene compatibilidad local con MySQL/MariaDB y esta preparado para deploy en Vercel con Supabase Postgres.
 
 ## Estructura actual
