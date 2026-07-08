@@ -193,6 +193,67 @@
                     </div>
                 </div>
 
+                <section class="alerts-panel" aria-label="Alertas veterinarias">
+                    <div class="alerts-header">
+                        <div>
+                            <p class="stats-eyebrow">Alertas</p>
+                            <h3>Recordatorios importantes</h3>
+                        </div>
+                        <span class="alerts-count" aria-label="{{ alertas_usuario.total }} recordatorios">
+                            <svg class="alerts-bell" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span>{{ alertas_usuario.total }}</span>
+                        </span>
+                    </div>
+
+                    {% if alertas_usuario.total %}
+                        <div class="alerts-grid">
+                            <article class="alert-group warning">
+                                <h4>Tratamientos pendientes</h4>
+                                {% for alerta in alertas_usuario.tratamientos %}
+                                <a href="{{ url_for('seguimiento') }}" class="alert-item">
+                                    <strong>{{ alerta.animal }}</strong>
+                                    <span>{{ alerta.detalle }}</span>
+                                    <small>{{ alerta.productor }} · {{ 'Vencido' if alerta.estado == 'vencido' else 'Proximo' }}: {{ alerta.fecha }}</small>
+                                </a>
+                                {% else %}
+                                <p class="alert-empty">Sin tratamientos pendientes.</p>
+                                {% endfor %}
+                            </article>
+
+                            <article class="alert-group danger">
+                                <h4>Animales graves</h4>
+                                {% for alerta in alertas_usuario.graves %}
+                                <a href="{{ url_for('seguimiento') }}" class="alert-item">
+                                    <strong>{{ alerta.animal }}</strong>
+                                    <span>{{ alerta.detalle }}</span>
+                                    <small>{{ alerta.productor }} · Revision: {{ alerta.fecha }}</small>
+                                </a>
+                                {% else %}
+                                <p class="alert-empty">Sin casos graves registrados.</p>
+                                {% endfor %}
+                            </article>
+
+                            <article class="alert-group market">
+                                <h4>Revisar venta</h4>
+                                {% for alerta in alertas_usuario.venta %}
+                                <a href="{{ url_for('ventas') }}" class="alert-item">
+                                    <strong>{{ alerta.animal }}</strong>
+                                    <span>{{ alerta.detalle }}</span>
+                                    <small>{{ alerta.productor }}</small>
+                                </a>
+                                {% else %}
+                                <p class="alert-empty">Sin animales mayores por revisar.</p>
+                                {% endfor %}
+                            </article>
+                        </div>
+                    {% else %}
+                        <p class="alerts-empty">No hay alertas pendientes por ahora.</p>
+                    {% endif %}
+                </section>
+
                 <section class="vet-permission-card">
                     <div>
                         <p class="stats-eyebrow">Permiso por productor</p>
@@ -319,6 +380,67 @@
                         <small>Bajas</small>
                     </div>
                 </div>
+
+                <section class="alerts-panel" aria-label="Alertas del productor">
+                    <div class="alerts-header">
+                        <div>
+                            <p class="stats-eyebrow">Alertas</p>
+                            <h3>Recordatorios importantes</h3>
+                        </div>
+                        <span class="alerts-count" aria-label="{{ alertas_usuario.total }} recordatorios">
+                            <svg class="alerts-bell" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span>{{ alertas_usuario.total }}</span>
+                        </span>
+                    </div>
+
+                    {% if alertas_usuario.total %}
+                        <div class="alerts-grid">
+                            <article class="alert-group warning">
+                                <h4>Tratamientos pendientes</h4>
+                                {% for alerta in alertas_usuario.tratamientos %}
+                                <a href="{{ url_for('seguimiento') }}" class="alert-item">
+                                    <strong>{{ alerta.animal }}</strong>
+                                    <span>{{ alerta.detalle }}</span>
+                                    <small>{{ 'Vencido' if alerta.estado == 'vencido' else 'Proximo' }}: {{ alerta.fecha }}</small>
+                                </a>
+                                {% else %}
+                                <p class="alert-empty">Sin tratamientos pendientes.</p>
+                                {% endfor %}
+                            </article>
+
+                            <article class="alert-group danger">
+                                <h4>Animales graves</h4>
+                                {% for alerta in alertas_usuario.graves %}
+                                <a href="{{ url_for('seguimiento') }}" class="alert-item">
+                                    <strong>{{ alerta.animal }}</strong>
+                                    <span>{{ alerta.detalle }}</span>
+                                    <small>Revision: {{ alerta.fecha }}</small>
+                                </a>
+                                {% else %}
+                                <p class="alert-empty">Sin casos graves registrados.</p>
+                                {% endfor %}
+                            </article>
+
+                            <article class="alert-group market">
+                                <h4>Revisar venta</h4>
+                                {% for alerta in alertas_usuario.venta %}
+                                <a href="{{ url_for('ventas') }}" class="alert-item">
+                                    <strong>{{ alerta.animal }}</strong>
+                                    <span>{{ alerta.detalle }}</span>
+                                    <small>Edad alta para revisar salida</small>
+                                </a>
+                                {% else %}
+                                <p class="alert-empty">Sin animales mayores por revisar.</p>
+                                {% endfor %}
+                            </article>
+                        </div>
+                    {% else %}
+                        <p class="alerts-empty">No hay alertas pendientes por ahora.</p>
+                    {% endif %}
+                </section>
 
                 <div class="producer-action-grid">
                     <a href="{{ url_for('animales') }}" class="producer-action-card">
@@ -452,6 +574,29 @@
     </main>
 </div>
 
+{% if alertas_usuario.total %}
+<div
+    class="reminder-toast"
+    id="reminderToast"
+    role="status"
+    aria-live="polite"
+    data-total="{{ alertas_usuario.total }}"
+    data-url="{{ url_for('seguimiento') }}"
+>
+    <div class="reminder-toast-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+    </div>
+    <a class="reminder-toast-body" href="{{ url_for('seguimiento') }}">
+        <strong>Recordatorio</strong>
+        <span>Tienes {{ alertas_usuario.total }} pendiente{{ '' if alertas_usuario.total == 1 else 's' }} por revisar.</span>
+    </a>
+    <button type="button" class="reminder-toast-close" aria-label="Cerrar recordatorio">×</button>
+</div>
+{% endif %}
+
 <script>
 function abrirDatosAnimal() {
     document.getElementById("datos-animal").style.display = "flex";
@@ -489,6 +634,29 @@ if (btnPDF) {
 
 function toggleSidebar() {
     document.querySelector('.sidebar-3d').classList.toggle('active');
+}
+
+const reminderToast = document.getElementById("reminderToast");
+if (reminderToast) {
+    const closeToast = reminderToast.querySelector(".reminder-toast-close");
+    const repeatEveryTenMinutes = 10 * 60 * 1000;
+    let hideTimer = null;
+
+    function showReminderToast() {
+        window.clearTimeout(hideTimer);
+        reminderToast.classList.add("is-visible");
+        hideTimer = window.setTimeout(() => {
+            reminderToast.classList.remove("is-visible");
+        }, 9000);
+    }
+
+    closeToast.addEventListener("click", () => {
+        window.clearTimeout(hideTimer);
+        reminderToast.classList.remove("is-visible");
+    });
+
+    window.setTimeout(showReminderToast, 1200);
+    window.setInterval(showReminderToast, repeatEveryTenMinutes);
 }
 
 </script>

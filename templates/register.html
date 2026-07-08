@@ -1,75 +1,251 @@
 {% extends "base.html" %}
+
+{% block page_css %}
+    <link rel="stylesheet" href="{{ asset_url('css/pages/register.css') }}">
+{% endblock %}
+
 {% block content %}
+<section class="register-shell">
+    <div class="register-panel-copy">
+        <p class="register-kicker">Nueva cuenta</p>
+        <h1 class="register-title">Registro</h1>
+        <p class="register-text">Crea tu acceso y completa tu perfil ganadero con el rol que usarás dentro del sistema.</p>
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-
-        <h3 class="text-center mb-3">Registrar usuario</h3>
-
-        <form method="POST" class="card p-4 shadow">
-
-            <img src="{{ url_for('static', filename='img/new.png') }}" class="img-fluid mb-3">
-
-            <!-- DATOS DE USUARIO -->
-            <label>Usuario:</label>
-            <input type="text" name="usuario" class="form-control mb-3" required>
-
-            <label>Email:</label>
-            <input type="email" name="email" class="form-control mb-3" autocomplete="email" required>
-
-            <label>Contraseña:</label>
-            <div class="password-field mb-3">
-                <input id="register-password" type="password" name="password" class="form-control" autocomplete="new-password" required>
-                <button class="password-toggle" type="button" data-password-toggle="register-password" aria-label="Ver contraseña" title="Ver contraseña">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                </button>
+        <div class="register-visual-card">
+            <img src="{{ url_for('static', filename='img/new.png') }}" alt="Registro miGanadito" class="register-visual-image">
+            <div class="register-visual-copy">
+                <strong>miGanadito Control</strong>
+                <span>Usuarios, predios, animales y seguimiento en un solo lugar.</span>
             </div>
-
-            <label>Confirmar contraseña:</label>
-            <div class="password-field mb-3">
-                <input id="register-confirm-password" type="password" name="confirm_password" class="form-control" autocomplete="new-password" required>
-                <button class="password-toggle" type="button" data-password-toggle="register-confirm-password" aria-label="Ver contraseña" title="Ver contraseña">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                </button>
-            </div>
-
-            <input type="hidden" name="rol" value="Productor">
-            <div class="mb-3">
-                <small>Se registrará automáticamente como <strong>Productor</strong>.</small>
-            </div>
-
-            <!-- DATOS EXTRA PARA PRODUCTOR -->
-            <div id="formProductor" class="border rounded p-3 mb-3" style="display:block; background:#f9f9f9;">
-                <h5>Datos del Productor</h5>
-
-                <label>Nombre:</label>
-                <input type="text" name="prod_nombre" class="form-control mb-2" required>
-
-                <label>Apellido paterno:</label>
-                <input type="text" name="prod_apellido_pat" class="form-control mb-2" required>
-
-                <label>Apellido materno:</label>
-                <input type="text" name="prod_apellido_mat" class="form-control mb-2">
-
-                <label>RFC:</label>
-                <input type="text" name="prod_rfc" class="form-control mb-2">
-            </div>
-
-            <button class="btn btn-success w-100">Registrar</button>
-        </form>
-
+        </div>
     </div>
-</div>
+
+    <div class="register-panel-form">
+        <form method="POST" class="register-card" id="registerWizard" novalidate>
+            <ol class="register-steps" aria-label="Progreso de registro">
+                <li class="register-step-dot is-active" data-step-indicator="1">Correo</li>
+                <li class="register-step-dot" data-step-indicator="2">Contraseña</li>
+                <li class="register-step-dot" data-step-indicator="3">Perfil</li>
+            </ol>
+
+            <section class="register-step-panel is-active" data-step-panel="1">
+                <h2 class="register-form-title">Correo electrónico</h2>
+                <p class="register-form-text">Será tu acceso principal para iniciar sesión.</p>
+
+                <label class="register-label" for="register-email">Correo electrónico</label>
+                <input
+                    id="register-email"
+                    type="email"
+                    name="email"
+                    class="form-control register-input"
+                    autocomplete="email"
+                    value="{{ email_verificado or '' }}"
+                    {% if email_verificado %}readonly aria-readonly="true"{% endif %}
+                    required>
+
+                <button type="button" class="btn-cafe register-next" data-next-step="2">Continuar</button>
+            </section>
+
+            <section class="register-step-panel" data-step-panel="2">
+                <h2 class="register-form-title">Contraseña</h2>
+                <p class="register-form-text">Elige una contraseña para proteger tu cuenta.</p>
+
+                <label class="register-label" for="register-password">Contraseña</label>
+                <div class="password-field register-password-field">
+                    <input id="register-password" type="password" name="password" class="form-control register-input" autocomplete="new-password" minlength="8" required>
+                    <button class="password-toggle" type="button" data-password-toggle="register-password" aria-label="Ver contraseña" title="Ver contraseña">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+
+                <label class="register-label" for="register-confirm-password">Confirmar contraseña</label>
+                <div class="password-field register-password-field">
+                    <input id="register-confirm-password" type="password" name="confirm_password" class="form-control register-input" autocomplete="new-password" minlength="8" required>
+                    <button class="password-toggle" type="button" data-password-toggle="register-confirm-password" aria-label="Ver contraseña" title="Ver contraseña">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="register-actions">
+                    <button type="button" class="btn-cafe btn-cafe-soft" data-prev-step="1">Atrás</button>
+                    <button type="button" class="btn-cafe register-next" data-next-step="3">Continuar</button>
+                </div>
+            </section>
+
+            <section class="register-step-panel" data-step-panel="3">
+                <h2 class="register-form-title">Perfil</h2>
+                <p class="register-form-text">Selecciona el tipo de usuario y completa los datos requeridos.</p>
+
+                <fieldset class="register-role-group">
+                    <legend class="register-label">Tipo de usuario</legend>
+                    <div class="register-role-options">
+                        <label class="register-role-option">
+                            <input type="radio" name="rol" value="Productor" checked>
+                            <span>Productor</span>
+                        </label>
+                        <label class="register-role-option">
+                            <input type="radio" name="rol" value="Veterinario">
+                            <span>Veterinario</span>
+                        </label>
+                        <label class="register-role-option">
+                            <input type="radio" name="rol" value="Comprador">
+                            <span>Comprador</span>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <div class="register-extra-card" data-role-fields="Productor">
+                    <h3>Datos del productor</h3>
+
+                    <label class="register-label" for="prod-nombre">Nombre</label>
+                    <input id="prod-nombre" type="text" name="prod_nombre" class="form-control register-input" data-required-for="Productor">
+
+                    <label class="register-label" for="prod-apellido-pat">Apellido paterno</label>
+                    <input id="prod-apellido-pat" type="text" name="prod_apellido_pat" class="form-control register-input" data-required-for="Productor">
+
+                    <label class="register-label" for="prod-apellido-mat">Apellido materno</label>
+                    <input id="prod-apellido-mat" type="text" name="prod_apellido_mat" class="form-control register-input">
+
+                    <label class="register-label" for="prod-rfc">RFC</label>
+                    <input id="prod-rfc" type="text" name="prod_rfc" class="form-control register-input">
+                </div>
+
+                <div class="register-extra-card" data-role-fields="Veterinario" hidden>
+                    <h3>Datos del veterinario</h3>
+
+                    <label class="register-label" for="vet-nombre">Nombre</label>
+                    <input id="vet-nombre" type="text" name="vet_nombre" class="form-control register-input" data-required-for="Veterinario">
+
+                    <label class="register-label" for="vet-apellidos">Apellidos</label>
+                    <input id="vet-apellidos" type="text" name="vet_apellidos" class="form-control register-input">
+
+                    <label class="register-label" for="vet-cedula">Cédula profesional</label>
+                    <input id="vet-cedula" type="text" name="vet_cedula" class="form-control register-input" data-required-for="Veterinario">
+
+                    <label class="register-label" for="vet-telefono">Teléfono</label>
+                    <input id="vet-telefono" type="tel" name="vet_telefono" class="form-control register-input" data-required-for="Veterinario">
+
+                    <label class="register-label" for="vet-direccion">Dirección del consultorio</label>
+                    <input id="vet-direccion" type="text" name="vet_direccion" class="form-control register-input">
+                </div>
+
+                <div class="register-extra-card" data-role-fields="Comprador" hidden>
+                    <h3>Datos del comprador</h3>
+                    <p class="register-form-text">Tu cuenta quedará lista para consultar información disponible y registrar operaciones permitidas.</p>
+                </div>
+
+                <div class="register-actions">
+                    <button type="button" class="btn-cafe btn-cafe-soft" data-prev-step="2">Atrás</button>
+                    <button type="submit" class="btn-cafe register-submit">Crear cuenta</button>
+                </div>
+            </section>
+        </form>
+    </div>
+</section>
 
 <script>
-    // El registro siempre se realiza como Productor.
-    // El formulario muestra directamente los campos necesarios para Productor.
-</script>
+    (function () {
+        var form = document.getElementById("registerWizard");
+        if (!form) return;
 
+        var currentStep = 1;
+        var panels = Array.prototype.slice.call(form.querySelectorAll("[data-step-panel]"));
+        var indicators = Array.prototype.slice.call(form.querySelectorAll("[data-step-indicator]"));
+        var roleInputs = Array.prototype.slice.call(form.querySelectorAll("input[name='rol']"));
+        var roleFields = Array.prototype.slice.call(form.querySelectorAll("[data-role-fields]"));
+        var roleRequiredInputs = Array.prototype.slice.call(form.querySelectorAll("[data-required-for]"));
+
+        function setStep(step) {
+            currentStep = step;
+            panels.forEach(function (panel) {
+                panel.classList.toggle("is-active", Number(panel.dataset.stepPanel) === step);
+            });
+            indicators.forEach(function (indicator) {
+                indicator.classList.toggle("is-active", Number(indicator.dataset.stepIndicator) === step);
+                indicator.classList.toggle("is-complete", Number(indicator.dataset.stepIndicator) < step);
+            });
+        }
+
+        function fieldsForStep(step) {
+            return Array.prototype.slice.call(form.querySelectorAll("[data-step-panel='" + step + "'] input, [data-step-panel='" + step + "'] select, [data-step-panel='" + step + "'] textarea"))
+                .filter(function (field) {
+                    return !field.disabled && field.offsetParent !== null;
+                });
+        }
+
+        function validateStep(step) {
+            var fields = fieldsForStep(step);
+            var valid = true;
+            fields.forEach(function (field) {
+                if (!field.checkValidity()) {
+                    field.reportValidity();
+                    valid = false;
+                }
+            });
+
+            if (valid && step === 2) {
+                var password = form.querySelector("#register-password");
+                var confirm = form.querySelector("#register-confirm-password");
+                if (password.value !== confirm.value) {
+                    confirm.setCustomValidity("Las contraseñas no coinciden.");
+                    confirm.reportValidity();
+                    confirm.setCustomValidity("");
+                    valid = false;
+                }
+            }
+
+            return valid;
+        }
+
+        function selectedRole() {
+            var checked = form.querySelector("input[name='rol']:checked");
+            return checked ? checked.value : "Productor";
+        }
+
+        function syncRoleFields() {
+            var role = selectedRole();
+            roleFields.forEach(function (group) {
+                group.hidden = group.dataset.roleFields !== role;
+            });
+            roleRequiredInputs.forEach(function (field) {
+                field.required = field.dataset.requiredFor === role;
+            });
+        }
+
+        form.querySelectorAll("[data-next-step]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                var nextStep = Number(button.dataset.nextStep);
+                if (validateStep(currentStep)) {
+                    setStep(nextStep);
+                }
+            });
+        });
+
+        form.querySelectorAll("[data-prev-step]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                setStep(Number(button.dataset.prevStep));
+            });
+        });
+
+        roleInputs.forEach(function (input) {
+            input.addEventListener("change", syncRoleFields);
+        });
+
+        form.addEventListener("submit", function (event) {
+            syncRoleFields();
+            if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+                event.preventDefault();
+            }
+        });
+
+        syncRoleFields();
+        setStep(1);
+    })();
+</script>
 {% endblock %}

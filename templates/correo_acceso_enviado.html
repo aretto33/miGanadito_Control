@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block page_css %}
+<style>
+    .auth-card {
+        max-width: 520px;
+        margin: 4rem auto;
+        padding: 2rem;
+        background: #f5e8d8;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+    .auth-card h2 {
+        color: #4a2f1a;
+        margin-bottom: 1rem;
+    }
+    .auth-card p {
+        color: #6b4e37;
+        line-height: 1.6;
+    }
+    .auth-card .email-display {
+        font-weight: bold;
+        color: #3f2c1d;
+    }
+    .dev-link {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: #fffaf3;
+        border: 1px dashed #bca58b;
+        border-radius: 8px;
+        word-break: break-all;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <h2>Revisa tu correo electrónico</h2>
+    <p>
+        Te hemos enviado un enlace a <strong class="email-display">{{ email }}</strong> para que puedas
+        {% if es_registro %}completar tu registro{% else %}continuar con el inicio de sesión{% endif %}.
+    </p>
+    <p>El enlace caducará en 30 minutos.</p>
+
+    {% if enlace_desarrollo %}
+    <div class="dev-link">
+        <p><strong>Modo desarrollo:</strong> Como el envío de correos no está configurado, usa este enlace para continuar:</p>
+        <a href="{{ enlace_desarrollo }}">{{ enlace_desarrollo }}</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
