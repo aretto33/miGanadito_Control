@@ -1,0 +1,200 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.rol (
+  id_rol integer NOT NULL DEFAULT nextval('rol_id_rol_seq'::regclass),
+  nombre character varying NOT NULL UNIQUE,
+  CONSTRAINT rol_pkey PRIMARY KEY (id_rol)
+);
+CREATE TABLE public.usuarios (
+  id_usuario integer NOT NULL DEFAULT nextval('usuarios_id_usuario_seq'::regclass),
+  usuario character varying NOT NULL UNIQUE,
+  password character varying NOT NULL,
+  fk_rol integer,
+  rol character varying,
+  fk_productor integer,
+  email text UNIQUE,
+  permiso_datos_completos boolean DEFAULT false,
+  solicitud_permiso_datos boolean DEFAULT false,
+  CONSTRAINT usuarios_pkey PRIMARY KEY (id_usuario),
+  CONSTRAINT usuarios_fk_rol_fkey FOREIGN KEY (fk_rol) REFERENCES public.rol(id_rol),
+  CONSTRAINT usuarios_fk_productor_fkey FOREIGN KEY (fk_productor) REFERENCES public.productores(pk_productor)
+);
+CREATE TABLE public.productores (
+  pk_productor integer NOT NULL DEFAULT nextval('productores_pk_productor_seq'::regclass),
+  fk_usuario integer,
+  nombre character varying,
+  apellido_pat character varying,
+  apellido_mat character varying,
+  upp character varying UNIQUE,
+  rfc character varying UNIQUE,
+  foto_fierro bytea,
+  CONSTRAINT productores_pkey PRIMARY KEY (pk_productor),
+  CONSTRAINT productores_fk_usuario_fkey FOREIGN KEY (fk_usuario) REFERENCES public.usuarios(id_usuario)
+);
+CREATE TABLE public.razas (
+  pk_raza integer NOT NULL DEFAULT nextval('razas_pk_raza_seq'::regclass),
+  nombre character varying NOT NULL UNIQUE,
+  origen character varying NOT NULL DEFAULT 'Sin registro'::character varying,
+  color character varying DEFAULT 'Sin definir'::character varying,
+  CONSTRAINT razas_pkey PRIMARY KEY (pk_raza)
+);
+CREATE TABLE public.estados (
+  pk_estado integer NOT NULL DEFAULT nextval('estados_pk_estado_seq'::regclass),
+  nombre character varying NOT NULL DEFAULT 'Sin registro'::character varying,
+  CONSTRAINT estados_pkey PRIMARY KEY (pk_estado)
+);
+CREATE TABLE public.municipios (
+  pk_municipio integer NOT NULL DEFAULT nextval('municipios_pk_municipio_seq'::regclass),
+  nombre character varying NOT NULL,
+  fk_estado integer NOT NULL,
+  CONSTRAINT municipios_pkey PRIMARY KEY (pk_municipio),
+  CONSTRAINT municipios_fk_estado_fkey FOREIGN KEY (fk_estado) REFERENCES public.estados(pk_estado)
+);
+CREATE TABLE public.predios (
+  pk_predio integer NOT NULL DEFAULT nextval('predios_pk_predio_seq'::regclass),
+  direccion character varying,
+  fk_estado integer NOT NULL,
+  fk_municipio integer NOT NULL,
+  fk_productor integer NOT NULL,
+  nom_rancho character varying DEFAULT 'No cuenta con nombre'::character varying,
+  upp character varying UNIQUE,
+  CONSTRAINT predios_pkey PRIMARY KEY (pk_predio),
+  CONSTRAINT predios_fk_estado_fkey FOREIGN KEY (fk_estado) REFERENCES public.estados(pk_estado),
+  CONSTRAINT predios_fk_municipio_fkey FOREIGN KEY (fk_municipio) REFERENCES public.municipios(pk_municipio),
+  CONSTRAINT predios_fk_productor_fkey FOREIGN KEY (fk_productor) REFERENCES public.productores(pk_productor)
+);
+CREATE TABLE public.animales (
+  pk_animal integer NOT NULL DEFAULT nextval('animales_pk_animal_seq'::regclass),
+  nombre character varying NOT NULL,
+  fecha_nacimiento date NOT NULL,
+  cruze text NOT NULL DEFAULT 'Sin conocer'::text,
+  foto_perfil bytea,
+  foto_lateral bytea,
+  fk_productor integer,
+  fk_raza integer,
+  fk_predio integer,
+  sexo character CHECK (sexo = ANY (ARRAY['M'::bpchar, 'H'::bpchar])),
+  peso_actual real,
+  fk_animal integer,
+  estatus text,
+  CONSTRAINT animales_pkey PRIMARY KEY (pk_animal),
+  CONSTRAINT animales_fk_productor_fkey FOREIGN KEY (fk_productor) REFERENCES public.productores(pk_productor),
+  CONSTRAINT animales_fk_raza_fkey FOREIGN KEY (fk_raza) REFERENCES public.razas(pk_raza),
+  CONSTRAINT animales_fk_predio_fkey FOREIGN KEY (fk_predio) REFERENCES public.predios(pk_predio),
+  CONSTRAINT animales_fk_animal_fkey FOREIGN KEY (fk_animal) REFERENCES public.animales(pk_animal)
+);
+CREATE TABLE public.insumos_medicos (
+  id_insumo integer NOT NULL DEFAULT nextval('insumos_medicos_id_insumo_seq'::regclass),
+  nombre character varying,
+  categoria character varying,
+  concentracion real,
+  stock_actual real,
+  fecha_caducidad date,
+  dias_retiro integer,
+  CONSTRAINT insumos_medicos_pkey PRIMARY KEY (id_insumo)
+);
+CREATE TABLE public.veterinario (
+  id_veterinario integer NOT NULL DEFAULT nextval('veterinario_id_veterinario_seq'::regclass),
+  fk_usuario integer,
+  nombre character varying NOT NULL,
+  apellidos character varying NOT NULL,
+  cedula character varying NOT NULL,
+  direccion_consultorio text DEFAULT 'Consultas a domicilio'::text,
+  telefono character varying,
+  CONSTRAINT veterinario_pkey PRIMARY KEY (id_veterinario),
+  CONSTRAINT veterinario_fk_usuario_fkey FOREIGN KEY (fk_usuario) REFERENCES public.usuarios(id_usuario)
+);
+CREATE TABLE public.servicios (
+  id_servicio integer NOT NULL DEFAULT nextval('servicios_id_servicio_seq'::regclass),
+  fk_veterinario integer NOT NULL,
+  fk_productor integer NOT NULL,
+  fecha_servicio date NOT NULL,
+  total_cobrado numeric,
+  CONSTRAINT servicios_pkey PRIMARY KEY (id_servicio),
+  CONSTRAINT servicios_fk_veterinario_fkey FOREIGN KEY (fk_veterinario) REFERENCES public.veterinario(id_veterinario),
+  CONSTRAINT servicios_fk_productor_fkey FOREIGN KEY (fk_productor) REFERENCES public.productores(pk_productor)
+);
+CREATE TABLE public.atencion_animal (
+  id_atencion integer NOT NULL DEFAULT nextval('atencion_animal_id_atencion_seq'::regclass),
+  fk_servicio integer NOT NULL,
+  fk_animal integer NOT NULL,
+  diagnostico text,
+  CONSTRAINT atencion_animal_pkey PRIMARY KEY (id_atencion),
+  CONSTRAINT atencion_animal_fk_servicio_fkey FOREIGN KEY (fk_servicio) REFERENCES public.servicios(id_servicio),
+  CONSTRAINT atencion_animal_fk_animal_fkey FOREIGN KEY (fk_animal) REFERENCES public.animales(pk_animal)
+);
+CREATE TABLE public.aplicaciones (
+  id_aplicacion integer NOT NULL DEFAULT nextval('aplicaciones_id_aplicacion_seq'::regclass),
+  fk_atencion integer NOT NULL,
+  fk_insumo integer NOT NULL,
+  peso_actual real,
+  dosis_calculada_ml real,
+  fecha_hora timestamp without time zone,
+  CONSTRAINT aplicaciones_pkey PRIMARY KEY (id_aplicacion),
+  CONSTRAINT aplicaciones_fk_atencion_fkey FOREIGN KEY (fk_atencion) REFERENCES public.atencion_animal(id_atencion),
+  CONSTRAINT aplicaciones_fk_insumo_fkey FOREIGN KEY (fk_insumo) REFERENCES public.insumos_medicos(id_insumo)
+);
+CREATE TABLE public.config_dosis (
+  id_config integer NOT NULL DEFAULT nextval('config_dosis_id_config_seq'::regclass),
+  fk_insumo integer NOT NULL,
+  mg_por_kg real,
+  especie_destino character varying,
+  CONSTRAINT config_dosis_pkey PRIMARY KEY (id_config),
+  CONSTRAINT config_dosis_fk_insumo_fkey FOREIGN KEY (fk_insumo) REFERENCES public.insumos_medicos(id_insumo)
+);
+CREATE TABLE public.pesajes (
+  pk_pesaje integer NOT NULL DEFAULT nextval('pesajes_pk_pesaje_seq'::regclass),
+  pesaje real NOT NULL,
+  fecha date NOT NULL,
+  fk_animal integer,
+  CONSTRAINT pesajes_pkey PRIMARY KEY (pk_pesaje),
+  CONSTRAINT pesajes_fk_animal_fkey FOREIGN KEY (fk_animal) REFERENCES public.animales(pk_animal)
+);
+CREATE TABLE public.tratamientos (
+  pk_tratamiento integer NOT NULL DEFAULT nextval('tratamientos_pk_tratamiento_seq'::regclass),
+  nombre character varying NOT NULL UNIQUE,
+  impacto character varying DEFAULT 'leve'::character varying,
+  CONSTRAINT tratamientos_pkey PRIMARY KEY (pk_tratamiento)
+);
+CREATE TABLE public.seguimiento_vet (
+  pk_segui_vet integer NOT NULL DEFAULT nextval('seguimiento_vet_pk_segui_vet_seq'::regclass),
+  fk_animal integer,
+  fk_tratamiento integer,
+  tipo_tratamiento text NOT NULL DEFAULT 'Chequeo'::text,
+  medicamento text,
+  fecha_actual date NOT NULL,
+  prox_fecha date,
+  CONSTRAINT seguimiento_vet_pkey PRIMARY KEY (pk_segui_vet),
+  CONSTRAINT seguimiento_vet_fk_animal_fkey FOREIGN KEY (fk_animal) REFERENCES public.animales(pk_animal),
+  CONSTRAINT seguimiento_vet_fk_tratamiento_fkey FOREIGN KEY (fk_tratamiento) REFERENCES public.tratamientos(pk_tratamiento)
+);
+CREATE TABLE public.registro_siniga (
+  id integer NOT NULL DEFAULT nextval('registro_siniga_id_seq'::regclass),
+  fk_animal integer UNIQUE,
+  arete character varying NOT NULL,
+  Estatus text DEFAULT 'Activo'::text,
+  CONSTRAINT registro_siniga_pkey PRIMARY KEY (id),
+  CONSTRAINT registro_siniga_fk_animal_fkey FOREIGN KEY (fk_animal) REFERENCES public.animales(pk_animal)
+);
+CREATE TABLE public.ventas (
+  pk_venta integer NOT NULL DEFAULT nextval('ventas_pk_venta_seq'::regclass),
+  fk_animal integer,
+  fk_pesaje integer,
+  clave character varying,
+  precio real,
+  fecha_venta date,
+  CONSTRAINT ventas_pkey PRIMARY KEY (pk_venta),
+  CONSTRAINT ventas_fk_animal_fkey FOREIGN KEY (fk_animal) REFERENCES public.animales(pk_animal),
+  CONSTRAINT ventas_fk_pesaje_fkey FOREIGN KEY (fk_pesaje) REFERENCES public.pesajes(pk_pesaje)
+);
+CREATE TABLE public.solicitudes_veterinario_productor (
+  id_solicitud integer NOT NULL DEFAULT nextval('solicitudes_veterinario_productor_id_solicitud_seq'::regclass),
+  fk_usuario_veterinario integer NOT NULL,
+  fk_productor integer NOT NULL,
+  nota text,
+  estado character varying NOT NULL DEFAULT 'pendiente'::character varying,
+  fecha_solicitud timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  fecha_respuesta timestamp without time zone,
+  CONSTRAINT solicitudes_veterinario_productor_pkey PRIMARY KEY (id_solicitud)
+);
