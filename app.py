@@ -1,10 +1,11 @@
 from flask import (
     Flask, render_template, request, redirect, url_for, abort,
     session, flash, Response, send_from_directory,
-    send_file, make_response, Blueprint
+    send_file, make_response, Blueprint, jsonify
 )
+from supabase import create_client, Client
 from fpdf import FPDF
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from functools import wraps
 import io
 import csv
@@ -14,7 +15,13 @@ from reportlab.pdfgen import canvas
 from PIL import Image
 import os
 import hmac
+import smtplib
+from email.message import EmailMessage
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
+
+from dotenv import load_dotenv
+load_dotenv()  # ANTES de importar Config
 
 from ganacontrol.config import Config
 from ganacontrol.db_compat import db as mariadb
@@ -24,9 +31,18 @@ from ganacontrol.db import get_connection
 app = Flask(__name__, static_folder="public", static_url_path="")
 app.config.from_object(Config)
 ROLES_VALIDOS = {"Productor", "Veterinario", "Comprador", "Administrador"}
+ROLES_REGISTRO_PUBLICO = {"Productor", "Veterinario", "Comprador"}
 ESTATUS_ANIMAL_VALIDOS = {"Activo", "Baja (Muerto)", "Vendido"}
 PUBLIC_ASSET_FOLDER = "public"
 ASSET_FOLDERS = (PUBLIC_ASSET_FOLDER, "static")
+
+supabase: Client | None = None
+
+with app.app_context():
+    supabase_url = app.config.get("SUPABASE_URL")
+    supabase_key = app.config.get("SUPABASE_KEY")
+    if supabase_url and supabase_key:
+        supabase = create_client(supabase_url, supabase_key)
 
 
 def _safe_asset_path(folder, filename):
@@ -217,6 +233,147 @@ def construir_estadistica_nacimientos(fechas):
         "total": sum(conteos.values()),
         "maximo": maximo,
     }
+
+
+def _fecha_para_alerta(valor):
+    if not valor:
+        return "sin fecha"
+
+    if hasattr(valor, "strftime"):
+        return valor.strftime("%d/%m/%Y")
+
+    texto = str(valor).strip()
+    for formato in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(texto[:19], formato).strftime("%d/%m/%Y")
+        except ValueError:
+            continue
+
+    return texto[:10] or "sin fecha"
+
+
+def construir_alertas_usuario(conn, cursor, rol, fk_productor=None, ids_productores=None, limite=5):
+    alertas = {
+        "tratamientos": [],
+        "graves": [],
+        "venta": [],
+        "total": 0,
+    }
+
+    filtros = ["COALESCE(a.estatus, 'Activo') NOT IN ('Vendido', 'Baja (Muerto)')"]
+    params = []
+
+    if rol == "Productor":
+        if not fk_productor:
+            return alertas
+        filtros.append("a.fk_productor=%s")
+        params.append(fk_productor)
+    elif rol == "Veterinario":
+        if ids_productores is not None:
+            if not ids_productores:
+                return alertas
+            filtros.append(f"a.fk_productor IN ({placeholders(ids_productores)})")
+            params.extend(ids_productores)
+    else:
+        return alertas
+
+    where_animales = " AND ".join(filtros)
+    limite = int(limite)
+
+    try:
+        fecha_limite_tratamientos = date.today() + timedelta(days=7)
+        cursor.execute(f"""
+            SELECT
+                a.nombre,
+                COALESCE(p.nombre, 'Sin productor') AS productor,
+                COALESCE(t.nombre, 'Seguimiento') AS tratamiento,
+                COALESCE(s.medicamento, '') AS medicamento,
+                s.prox_fecha,
+                CASE
+                    WHEN s.prox_fecha < CURRENT_DATE THEN 'vencido'
+                    ELSE 'proximo'
+                END AS estado_alerta
+            FROM Seguimiento_vet s
+            JOIN Animales a ON a.pk_animal = s.fk_animal
+            LEFT JOIN Productores p ON p.pk_productor = a.fk_productor
+            LEFT JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+            WHERE {where_animales}
+              AND s.prox_fecha IS NOT NULL
+              AND s.prox_fecha <= %s
+            ORDER BY s.prox_fecha ASC
+            LIMIT {limite}
+        """, tuple(params + [fecha_limite_tratamientos]))
+        for animal, productor, tratamiento, medicamento, prox_fecha, estado in cursor.fetchall():
+            detalle = f"{tratamiento}"
+            if medicamento:
+                detalle = f"{detalle} · {medicamento}"
+            alertas["tratamientos"].append({
+                "animal": animal,
+                "productor": productor,
+                "detalle": detalle,
+                "fecha": _fecha_para_alerta(prox_fecha),
+                "estado": estado,
+            })
+
+        cursor.execute(f"""
+            SELECT
+                a.nombre,
+                COALESCE(p.nombre, 'Sin productor') AS productor,
+                COALESCE(t.nombre, 'Tratamiento grave') AS tratamiento,
+                COALESCE(s.medicamento, '') AS medicamento,
+                s.prox_fecha
+            FROM Seguimiento_vet s
+            JOIN Animales a ON a.pk_animal = s.fk_animal
+            LEFT JOIN Productores p ON p.pk_productor = a.fk_productor
+            LEFT JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+            WHERE {where_animales}
+              AND LOWER(COALESCE(t.impacto, '')) LIKE %s
+            ORDER BY COALESCE(s.prox_fecha, s.fecha_actual) ASC
+            LIMIT {limite}
+        """, tuple(params + ["%grave%"]))
+        for animal, productor, tratamiento, medicamento, prox_fecha in cursor.fetchall():
+            detalle = f"{tratamiento}"
+            if medicamento:
+                detalle = f"{detalle} · {medicamento}"
+            alertas["graves"].append({
+                "animal": animal,
+                "productor": productor,
+                "detalle": detalle,
+                "fecha": _fecha_para_alerta(prox_fecha),
+            })
+
+        fecha_venta = date.today().replace(year=date.today().year - 8)
+        cursor.execute(f"""
+            SELECT
+                a.nombre,
+                COALESCE(p.nombre, 'Sin productor') AS productor,
+                a.fecha_nacimiento,
+                COALESCE(a.peso_actual, 0)
+            FROM Animales a
+            LEFT JOIN Productores p ON p.pk_productor = a.fk_productor
+            WHERE {where_animales}
+              AND a.fecha_nacimiento IS NOT NULL
+              AND a.fecha_nacimiento <= %s
+            ORDER BY a.fecha_nacimiento ASC
+            LIMIT {limite}
+        """, tuple(params + [fecha_venta]))
+        for animal, productor, nacimiento, peso in cursor.fetchall():
+            alertas["venta"].append({
+                "animal": animal,
+                "productor": productor,
+                "detalle": f"Nacio el {_fecha_para_alerta(nacimiento)} · {peso or 0} kg",
+                "fecha": _fecha_para_alerta(nacimiento),
+            })
+
+        alertas["total"] = (
+            len(alertas["tratamientos"])
+            + len(alertas["graves"])
+            + len(alertas["venta"])
+        )
+    except Exception:
+        conn.rollback()
+
+    return alertas
 
 
 def contar_registros(conn, cursor, tabla):
@@ -461,7 +618,150 @@ def obtener_id_rol(cursor, rol_nombre):
     return row[0] if row else None
 
 
-def verificar_credenciales(identificador, password, rol_nombre):
+def normalizar_email(email):
+    return (email or "").strip().lower()
+
+
+def email_valido(email):
+    if not email or "@" not in email:
+        return False
+
+    local, dominio = email.rsplit("@", 1)
+    return bool(local and "." in dominio and dominio.rsplit(".", 1)[-1])
+
+
+def generar_usuario_desde_email(cursor, email, id_actual=None):
+    base = email.split("@", 1)[0].strip().lower()
+    base = "".join(ch if ch.isalnum() or ch in "._-" else "_" for ch in base)
+    base = (base or "usuario")[:40]
+    candidato = base
+    contador = 2
+
+    while True:
+        if id_actual:
+            cursor.execute(
+                "SELECT id_usuario FROM Usuarios WHERE usuario=%s AND id_usuario<>%s",
+                (candidato, id_actual),
+            )
+        else:
+            cursor.execute("SELECT id_usuario FROM Usuarios WHERE usuario=%s", (candidato,))
+
+        if not cursor.fetchone():
+            return candidato
+
+        sufijo = f"_{contador}"
+        candidato = f"{base[:50 - len(sufijo)]}{sufijo}"
+        contador += 1
+
+
+def obtener_usuario_por_email(email):
+    email = normalizar_email(email)
+    if not email_valido(email):
+        return None
+
+    conn, cursor = conectar_bd()
+    if not conn:
+        return None
+
+    try:
+        try:
+            cursor.execute("""
+                SELECT u.id_usuario, u.usuario, u.email, r.nombre
+                FROM Usuarios u
+                JOIN Rol r ON r.id_rol = u.fk_rol
+                WHERE LOWER(u.email)=LOWER(%s)
+                LIMIT 1
+            """, (email,))
+            row = cursor.fetchone()
+        except mariadb.Error:
+            conn.rollback()
+            row = None
+
+        if row:
+            return {
+                "id_usuario": row[0],
+                "usuario": row[1],
+                "email": row[2],
+                "rol": row[3],
+            }
+
+        try:
+            cursor.execute("""
+                SELECT id_usuario, usuario, email, rol
+                FROM usuarios
+                WHERE LOWER(email)=LOWER(%s)
+                LIMIT 1
+            """, (email,))
+            row = cursor.fetchone()
+        except mariadb.Error:
+            conn.rollback()
+            row = None
+
+        if row:
+            return {
+                "id_usuario": row[0],
+                "usuario": row[1],
+                "email": row[2],
+                "rol": row[3],
+            }
+
+        return None
+    finally:
+        conn.close()
+
+
+def serializador_acceso():
+    return URLSafeTimedSerializer(app.config["SECRET_KEY"], salt="acceso-correo")
+
+
+def generar_token_acceso(email, proposito, rol):
+    return serializador_acceso().dumps({
+        "email": normalizar_email(email),
+        "proposito": proposito,
+        "rol": rol,
+    })
+
+
+def leer_token_acceso(token):
+    return serializador_acceso().loads(
+        token,
+        max_age=app.config.get("MAIL_TOKEN_MAX_AGE", 1800),
+    )
+
+
+def enviar_correo_acceso(email, enlace, es_registro=False):
+    asunto = "Verifica tu correo en MiGanadito Control"
+    accion = "crear tu contraseña y completar tus datos" if es_registro else "continuar con tu inicio de sesión"
+    mensaje = EmailMessage()
+    mensaje["Subject"] = asunto
+    mensaje["From"] = app.config.get("MAIL_DEFAULT_SENDER") or app.config.get("MAIL_USERNAME") or "no-reply@miganadito.local"
+    mensaje["To"] = email
+    mensaje.set_content(
+        "Hola,\n\n"
+        f"Usa este enlace para {accion}:\n{enlace}\n\n"
+        "El enlace caduca en 30 minutos. Si no solicitaste este acceso, puedes ignorar este correo.\n"
+    )
+
+    usuario_smtp = app.config.get("MAIL_USERNAME")
+    password_smtp = app.config.get("MAIL_PASSWORD")
+    if not usuario_smtp or not password_smtp:
+        print(f"Enlace de acceso para {email}: {enlace}")
+        return False
+
+    with smtplib.SMTP(app.config.get("MAIL_SERVER", "smtp.gmail.com"), app.config.get("MAIL_PORT", 587)) as smtp:
+        if app.config.get("MAIL_USE_TLS", True):
+            smtp.starttls()
+        smtp.login(usuario_smtp, password_smtp)
+        smtp.send_message(mensaje)
+
+    return True
+
+
+def verificar_credenciales(email, password, rol_nombre):
+    email = normalizar_email(email)
+    if not email_valido(email):
+        return False, "Ingresa tu correo electrónico registrado."
+
     conn, cursor = conectar_bd()
     if not conn:
         return False, "Error de conexión"
@@ -469,7 +769,7 @@ def verificar_credenciales(identificador, password, rol_nombre):
     try:
         asegurar_columna_permiso_veterinario(conn, cursor)
 
-        # Esquema legado: Usuarios + Rol
+        # Esquema legado: Usuarios + Rol. El acceso se realiza por email.
         try:
             cursor.execute("""
                 SELECT u.id_usuario, u.usuario, u.password, r.nombre,
@@ -477,27 +777,12 @@ def verificar_credenciales(identificador, password, rol_nombre):
                        COALESCE(u.solicitud_permiso_datos, FALSE)
                 FROM Usuarios u
                 JOIN Rol r ON r.id_rol = u.fk_rol
-                WHERE u.usuario=%s AND r.nombre=%s
-            """, (identificador, rol_nombre))
+                WHERE LOWER(u.email)=LOWER(%s) AND r.nombre=%s
+            """, (email, rol_nombre))
             row = cursor.fetchone()
         except mariadb.Error:
             conn.rollback()
             row = None
-
-        if not row:
-            try:
-                cursor.execute("""
-                    SELECT u.id_usuario, u.usuario, u.password, r.nombre,
-                           COALESCE(u.permiso_datos_completos, FALSE),
-                           COALESCE(u.solicitud_permiso_datos, FALSE)
-                    FROM Usuarios u
-                    JOIN Rol r ON r.id_rol = u.fk_rol
-                    WHERE u.email=%s AND r.nombre=%s
-                """, (identificador, rol_nombre))
-                row = cursor.fetchone()
-            except mariadb.Error:
-                conn.rollback()
-                row = None
 
         if row:
             id_usuario, db_user, db_pass, db_rol, permiso_datos_completos, solicitud_permiso_datos = row
@@ -534,22 +819,15 @@ def verificar_credenciales(identificador, password, rol_nombre):
                        COALESCE(permiso_datos_completos, FALSE),
                        COALESCE(solicitud_permiso_datos, FALSE)
                 FROM usuarios
-                WHERE (usuario=%s OR email=%s) AND rol=%s
-            """, (identificador, identificador, rol_nombre))
+                WHERE LOWER(email)=LOWER(%s) AND rol=%s
+            """, (email, rol_nombre))
             row = cursor.fetchone()
         except mariadb.Error:
             conn.rollback()
-            cursor.execute("""
-                SELECT id_usuario, usuario, password, rol, fk_productor,
-                       COALESCE(permiso_datos_completos, FALSE),
-                       COALESCE(solicitud_permiso_datos, FALSE)
-                FROM usuarios
-                WHERE usuario=%s AND rol=%s
-            """, (identificador, rol_nombre))
-            row = cursor.fetchone()
+            row = None
 
         if not row:
-            return False, "Usuario o rol no encontrado"
+            return False, "Correo o rol no encontrado"
 
         id_usuario, db_user, db_pass, db_rol, fk_productor, permiso_datos_completos, solicitud_permiso_datos = row
         if not verificar_contrasena(db_pass, password):
@@ -590,39 +868,46 @@ def login():
                 productores = []
 
         if request.method == "POST":
-            usuario = request.form["usuario"].strip()
-            contra = request.form["password"]
-            rol = normalizar_rol(request.form.get("rol")) or "Productor"
-            if rol not in ROLES_VALIDOS:
-                flash("Rol inválido", "danger")
+            email = normalizar_email(request.form.get("email") or request.form.get("usuario"))
+            password = request.form.get("password")
+            rol_nombre = normalizar_rol(request.form.get("rol")) or "Productor"
+
+            if not email_valido(email):
+                flash("Ingresa un correo electrónico válido.", "danger")
                 return redirect(url_for("login"))
 
-            exito, info = verificar_credenciales(usuario, contra, rol)
+            try:
+                if supabase:
+                    # Autenticacion con Supabase Auth cuando las credenciales API existen.
+                    response = supabase.auth.sign_in_with_password({"email": email, "password": password})
 
-            if exito:
-                if isinstance(info, dict) and info.get("id_usuario"):
-                    session["id_usuario"] = info.get("id_usuario")
-                session["usuario"] = info.get("usuario", usuario) if isinstance(info, dict) else usuario
-                session["rol"] = rol
-                session.pop("fk_productor", None)
+                    # Guardar datos de sesion de Supabase si es necesario.
+                    session['supabase_access_token'] = response.session.access_token
+                    session['supabase_user_id'] = response.user.id
 
-                if isinstance(info, dict) and info.get("fk_productor"):
+                # Verificar credenciales en la base de datos local para obtener rol y fk_productor
+                exito, info = verificar_credenciales(email, password, rol_nombre)
+                if not exito:
+                    flash(info, "danger")
+                    return redirect(url_for("login"))
+
+                # Configurar sesión de Flask
+                session["usuario"] = info.get("usuario", email)
+                session["email"] = email
+                session["rol"] = info.get("rol", rol_nombre)
+                if info.get("fk_productor"):
                     session["fk_productor"] = info.get("fk_productor")
-                session["permiso_datos_completos"] = bool(
-                    isinstance(info, dict) and info.get("permiso_datos_completos")
-                )
-                session["solicitud_permiso_datos"] = bool(
-                    isinstance(info, dict) and info.get("solicitud_permiso_datos")
-                )
 
-                flash(f"Bienvenido {usuario} ({rol})", "success")
+                flash(f"Bienvenido {email} ({rol_nombre})", "success")
                 return redirect(url_for("dashboard"))
 
-            flash(info, "danger")
+            except Exception as e:
+                flash(f"Error al iniciar sesión: {e}", "danger")
+                return redirect(url_for("login"))
 
     except Exception as e:
         print("Error en login:", e)
-        flash("No se pudo procesar el inicio de sesión. Revisa la base de datos y vuelve a intentar.", "danger")
+        flash("Ocurrió un error inesperado durante el inicio de sesión.", "danger")
     finally:
         if conn:
             conn.close()
@@ -630,31 +915,115 @@ def login():
     return render_template("login.html", productores=productores)
 
 
+@app.route("/confirmar_acceso/<token>")
+def confirmar_acceso_correo(token):
+    try:
+        datos = leer_token_acceso(token)
+    except SignatureExpired:
+        flash("El enlace de verificación caducó. Solicita uno nuevo.", "warning")
+        return redirect(url_for("login"))
+    except BadSignature:
+        flash("El enlace de verificación no es válido.", "danger")
+        return redirect(url_for("login"))
+
+    email = normalizar_email(datos.get("email"))
+    rol = normalizar_rol(datos.get("rol")) or "Productor"
+    proposito = datos.get("proposito")
+
+    if not email_valido(email):
+        flash("El enlace no contiene un correo válido.", "danger")
+        return redirect(url_for("login"))
+
+    if proposito == "login":
+        usuario_existente = obtener_usuario_por_email(email)
+        if not usuario_existente:
+            flash("No encontramos una cuenta con ese correo. Completa tu registro.", "info")
+            session["registro_email_verificado"] = email
+            session["registro_rol_verificado"] = "Productor"
+            return redirect(url_for("register"))
+
+        session["login_email_verificado"] = email
+        session["login_rol_verificado"] = usuario_existente["rol"]
+        return redirect(url_for("login_password"))
+
+    session["registro_email_verificado"] = email
+    session["registro_rol_verificado"] = rol
+    return redirect(url_for("register"))
+
+
+@app.route("/login/password", methods=["GET", "POST"])
+def login_password():
+    email = normalizar_email(session.get("login_email_verificado"))
+    rol = normalizar_rol(session.get("login_rol_verificado"))
+
+    if not email_valido(email) or not rol:
+        flash("Primero verifica tu correo para iniciar sesión.", "warning")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        contra = request.form.get("password", "")
+        exito, info = verificar_credenciales(email, contra, rol)
+
+        if exito:
+            if isinstance(info, dict) and info.get("id_usuario"):
+                session["id_usuario"] = info.get("id_usuario")
+            session["usuario"] = info.get("usuario", email) if isinstance(info, dict) else email
+            session["email"] = email
+            session["rol"] = rol
+            session.pop("fk_productor", None)
+            session.pop("login_email_verificado", None)
+            session.pop("login_rol_verificado", None)
+
+            if isinstance(info, dict) and info.get("fk_productor"):
+                session["fk_productor"] = info.get("fk_productor")
+            session["permiso_datos_completos"] = bool(
+                isinstance(info, dict) and info.get("permiso_datos_completos")
+            )
+            session["solicitud_permiso_datos"] = bool(
+                isinstance(info, dict) and info.get("solicitud_permiso_datos")
+            )
+
+            flash(f"Bienvenido {email} ({rol})", "success")
+            return redirect(url_for("dashboard"))
+
+        flash(info, "danger")
+
+    return render_template("login_password.html", email=email, rol=rol)
+
+
 #--------------- REGISTRAR -----------------
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    email_verificado = normalizar_email(session.get("registro_email_verificado"))
+    rol_verificado = normalizar_rol(session.get("registro_rol_verificado"))
+
     if request.method == "POST":
-        # Obtener datos de forma segura
-        usuario = request.form.get("usuario", "").strip()
-        email = request.form.get("email", "").strip().lower()
+        email = email_verificado or normalizar_email(request.form.get("email"))
         contra = request.form.get("password", "").strip()
         confirmar_contra = request.form.get("confirm_password", "").strip()
-        rol_nombre = normalizar_rol(request.form.get("rol")) or "Productor"
+        rol_nombre = rol_verificado or normalizar_rol(request.form.get("rol")) or "Productor"
 
-        # Validación básica
-        if not usuario or not email or not contra or not confirmar_contra or not rol_nombre:
+        if not email or not contra or not confirmar_contra or not rol_nombre:
             flash("Todos los campos son obligatorios", "danger")
             return redirect(url_for("register"))
 
-        if "@" not in email or "." not in email.split("@")[-1]:
+        if not email_valido(email):
             flash("Ingresa un correo electrónico válido", "danger")
             return redirect(url_for("register"))
+
+        if obtener_usuario_por_email(email):
+            flash("Ese correo ya tiene una cuenta registrada.", "warning")
+            return redirect(url_for("login"))
 
         if contra != confirmar_contra:
             flash("Las contraseñas no coinciden", "danger")
             return redirect(url_for("register"))
 
-        if rol_nombre not in ROLES_VALIDOS:
+        if len(contra) < 8:
+            flash("La contraseña debe tener al menos 8 caracteres.", "danger")
+            return redirect(url_for("register"))
+
+        if rol_nombre not in ROLES_REGISTRO_PUBLICO:
             flash("Rol inválido", "danger")
             return redirect(url_for("register"))
 
@@ -682,12 +1051,23 @@ def register():
                 raise Exception("Rol no encontrado en la base de datos")
 
             fk_rol = row[0]
+
+            # --- Integración con Supabase ---
+            if supabase:
+                try:
+                    supabase.auth.sign_up({"email": email, "password": contra})
+                except Exception as e:
+                    flash(f"No se pudo crear el usuario en Supabase: {e}", "danger")
+                    return redirect(url_for("register"))
+            # ----------------------------------
+
             password_hash = crear_hash_contrasena(contra)
+            usuario = generar_usuario_desde_email(cursor, email)
 
             # Insertar usuario - SIN commit aún. Si la base aún no tiene email,
             # se mantiene compatibilidad con el esquema anterior.
             try:
-                cursor.execute("""
+                cursor.execute(f"""
                     INSERT INTO Usuarios (usuario, email, password, fk_rol)
                     VALUES (%s, %s, %s, %s)
                     RETURNING id_usuario
@@ -696,7 +1076,7 @@ def register():
                 if not _es_error_columna_email_faltante(e):
                     raise
                 conn.rollback()
-                cursor.execute("""
+                cursor.execute(f"""
                     INSERT INTO Usuarios (usuario, password, fk_rol)
                     VALUES (%s, %s, %s)
                     RETURNING id_usuario
@@ -733,9 +1113,11 @@ def register():
 
             # Un único commit
             conn.commit()
+            session.pop("registro_email_verificado", None)
+            session.pop("registro_rol_verificado", None)
 
             # Éxito
-            flash("Usuario registrado correctamente", "success")
+            flash("Usuario registrado. Revisa tu correo para activar la cuenta.", "success")
             return redirect(url_for("login"))
 
         except Exception as e:
@@ -749,7 +1131,11 @@ def register():
             conn.close()
 
     # Si es GET
-    return render_template("register.html")
+    return render_template(
+        "register.html",
+        email_verificado=email_verificado,
+        rol_verificado=rol_verificado,
+    )
 
 
 @app.route("/admin/usuarios", methods=["GET", "POST"])
@@ -771,7 +1157,7 @@ def admin_usuarios():
             accion = request.form.get("accion")
             id_usuario = request.form.get("id_usuario")
             usuario = request.form.get("usuario", "").strip()
-            email = request.form.get("email", "").strip().lower()
+            email = normalizar_email(request.form.get("email"))
             password = request.form.get("password", "").strip()
             rol_nombre = normalizar_rol(request.form.get("rol"))
             permiso_datos_completos = False
@@ -811,8 +1197,14 @@ def admin_usuarios():
                     flash("Petición veterinaria rechazada.", "info")
 
             if accion in {"crear", "modificar"}:
+                if tiene_email:
+                    if not email_valido(email):
+                        flash("Ingresa un correo electrónico válido para el acceso.", "danger")
+                        return redirect(url_for("admin_usuarios"))
+                    usuario = usuario or generar_usuario_desde_email(cursor, email, id_usuario)
+
                 if not usuario or not rol_nombre:
-                    flash("Usuario y rol son obligatorios.", "danger")
+                    flash("Correo y rol son obligatorios.", "danger")
                     return redirect(url_for("admin_usuarios"))
 
                 if rol_nombre not in ROLES_VALIDOS:
@@ -889,6 +1281,8 @@ def admin_usuarios():
 
                     if str(session.get("id_usuario")) == str(id_usuario):
                         session["usuario"] = usuario
+                        if tiene_email:
+                            session["email"] = email
                         session["rol"] = rol_nombre
                         session["permiso_datos_completos"] = permiso_datos_completos
                         if rol_nombre != "Veterinario" or permiso_datos_completos:
@@ -1013,6 +1407,7 @@ def dashboard():
     vet_productores = []
     vet_solicitudes = []
     productores_para_solicitud = []
+    alertas_usuario = {"tratamientos": [], "graves": [], "venta": [], "total": 0}
     view = None
 
     fk_productor = session.get("fk_productor")
@@ -1161,6 +1556,13 @@ def dashboard():
                 """, tuple(ids_vet))
                 vet_proximos = cursor.fetchall()
 
+            alertas_usuario = construir_alertas_usuario(
+                conn,
+                cursor,
+                rol,
+                ids_productores=ids_vet,
+            )
+
         elif fk_productor:
             cursor.execute(
                 "SELECT nombre FROM Productores WHERE pk_productor=%s",
@@ -1217,6 +1619,12 @@ def dashboard():
                 ORDER BY fecha_nacimiento
             """, (fk_productor,))
             estadistica_nacimientos = construir_estadistica_nacimientos(cursor.fetchall())
+            alertas_usuario = construir_alertas_usuario(
+                conn,
+                cursor,
+                rol,
+                fk_productor=fk_productor,
+            )
     except Exception as e:
         print("Error en dashboard:", e)
         flash("Se cargó el panel, pero faltan datos o tablas por configurar en la base.", "warning")
@@ -1242,7 +1650,8 @@ def dashboard():
         vet_proximos=vet_proximos,
         vet_productores=vet_productores,
         vet_solicitudes=vet_solicitudes,
-        productores_para_solicitud=productores_para_solicitud
+        productores_para_solicitud=productores_para_solicitud,
+        alertas_usuario=alertas_usuario
     )
 
 @app.route("/dashboard_vet")
@@ -1591,6 +2000,119 @@ def animales():
         predios=predios,
         madres=madres
     )
+
+
+@app.route("/api/animales/buscar_arete")
+def api_buscar_animal_por_arete():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "mensaje": "Debes iniciar sesión"}), 401
+
+    codigo = (request.args.get("codigo") or "").strip()
+    if not codigo:
+        return jsonify({"ok": False, "mensaje": "Ingresa o escanea un arete"}), 400
+
+    codigo_compacto = "".join(ch for ch in codigo.lower() if ch.isalnum())
+    codigo_digitos = "".join(ch for ch in codigo if ch.isdigit())
+    animal_id = int(codigo) if codigo.isdigit() else None
+
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = conectar_bd()
+        ids_vet = requiere_productores_autorizados_veterinario(conn, cursor)
+        if ids_vet is None and session.get("rol") == "Veterinario":
+            return jsonify({
+                "ok": False,
+                "mensaje": "No tienes productores aprobados para consultar animales."
+            }), 403
+
+        filtros = [
+            """(
+                LOWER(COALESCE(rs.arete, '')) = LOWER(%s)
+                OR REPLACE(REPLACE(LOWER(COALESCE(rs.arete, '')), '-', ''), ' ', '') = %s
+                OR REPLACE(REPLACE(LOWER(COALESCE(rs.arete, '')), '-', ''), ' ', '') LIKE %s
+                OR a.pk_animal = %s
+                OR LOWER(a.nombre) = LOWER(%s)
+            )"""
+        ]
+        params = [
+            codigo,
+            codigo_compacto,
+            f"%{codigo_digitos or codigo_compacto}%",
+            animal_id,
+            codigo,
+        ]
+
+        if session.get("rol") == "Productor":
+            filtros.append("a.fk_productor=%s")
+            params.append(session.get("fk_productor"))
+        elif ids_vet is not None:
+            filtros.append(f"a.fk_productor IN ({placeholders(ids_vet)})")
+            params.extend(ids_vet)
+
+        where_sql = " AND ".join(filtros)
+
+        cursor.execute(f"""
+            SELECT a.pk_animal, a.nombre, a.fecha_nacimiento, a.cruze,
+                   p.nombre AS productor, r.nombre AS raza, a.sexo, a.peso_actual,
+                   pr.nom_rancho, rs.arete,
+                   COALESCE(a.estatus, 'Activo') AS estatus_actual,
+                   a.fk_predio, r.pk_raza, a.fk_productor,
+                   a.fk_animal AS fk_madre,
+                   m.nombre AS madre_nombre
+            FROM Animales a
+            LEFT JOIN Productores p ON a.fk_productor=p.pk_productor
+            LEFT JOIN Razas r ON a.fk_raza=r.pk_raza
+            LEFT JOIN Predios pr ON a.fk_predio=pr.pk_predio
+            LEFT JOIN Animales m ON a.fk_animal = m.pk_animal
+            LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
+            WHERE {where_sql}
+            ORDER BY
+                CASE
+                    WHEN LOWER(COALESCE(rs.arete, '')) = LOWER(%s) THEN 0
+                    WHEN REPLACE(REPLACE(LOWER(COALESCE(rs.arete, '')), '-', ''), ' ', '') = %s THEN 1
+                    WHEN a.pk_animal = %s THEN 2
+                    ELSE 3
+                END,
+                a.pk_animal DESC
+            LIMIT 1
+        """, tuple(params + [codigo, codigo_compacto, animal_id]))
+
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({
+                "ok": False,
+                "mensaje": "No se encontró un bovino con ese arete."
+            }), 404
+
+        animal = {
+            "id": row[0],
+            "nombre": row[1],
+            "fecha": str(row[2]) if row[2] is not None else "",
+            "cruze": row[3],
+            "productor": row[4],
+            "raza": row[5],
+            "sexo": row[6],
+            "peso": str(row[7]) if row[7] is not None else "",
+            "predio": row[8],
+            "arete": row[9],
+            "estatus": row[10],
+            "fk_predio": row[11],
+            "fk_raza": row[12],
+            "fk_productor": row[13],
+            "fk_madre": row[14],
+            "madre": row[15],
+        }
+
+        return jsonify({"ok": True, "animal": animal})
+
+    except Exception as e:
+        return jsonify({"ok": False, "mensaje": f"Error al buscar el arete: {e}"}), 500
+
+    finally:
+        if conn:
+            conn.close()
 
 # ------------------ Mostrar imágenes ------------------
 @app.route("/imagen_animal/<int:id>/<string:tipo>")

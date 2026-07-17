@@ -5,3 +5,4 @@ ganacontrol/__pycache__/
 .vercel
 .venv
 venv
+backups/

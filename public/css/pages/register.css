@@ -84,10 +84,51 @@
 .register-card {
     width: 100%;
     padding: 1.7rem;
-    border-radius: 28px;
+    border-radius: 8px;
     background: rgba(255, 250, 245, 0.92);
     border: 1px solid rgba(127, 85, 57, 0.1);
     box-shadow: 0 24px 42px rgba(61, 43, 31, 0.14);
+}
+
+.register-steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    padding: 0;
+    margin: 0 0 1.4rem;
+    list-style: none;
+}
+
+.register-step-dot {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(236, 217, 195, 0.45);
+    border: 1px solid rgba(127, 85, 57, 0.13);
+    color: #71533d;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.register-step-dot.is-active {
+    background: #7f5539;
+    border-color: #7f5539;
+    color: #fffaf5;
+}
+
+.register-step-dot.is-complete {
+    background: rgba(127, 85, 57, 0.14);
+    color: #4d3425;
+}
+
+.register-step-panel {
+    display: none;
+}
+
+.register-step-panel.is-active {
+    display: block;
 }
 
 .register-form-title {
@@ -111,7 +152,7 @@
 
 .register-input {
     margin-bottom: 1rem;
-    border-radius: 16px;
+    border-radius: 8px;
     border: 1px solid rgba(127, 85, 57, 0.18);
     padding: 0.85rem 1rem;
     background: rgba(255, 255, 255, 0.9);
@@ -142,7 +183,7 @@
     align-items: center;
     gap: 0.65rem;
     padding: 0.95rem 1rem;
-    border-radius: 18px;
+    border-radius: 8px;
     background: rgba(236, 217, 195, 0.4);
     border: 1px solid rgba(127, 85, 57, 0.1);
     color: var(--cafe-oscuro);
@@ -157,9 +198,25 @@
 .register-extra-card {
     margin-top: 1.15rem;
     padding: 1.2rem;
-    border-radius: 22px;
+    border-radius: 8px;
     background: linear-gradient(180deg, #fbf4ea 0%, #f4e4cf 100%);
     border: 1px solid rgba(127, 85, 57, 0.12);
+}
+
+.register-password-field {
+    margin-bottom: 1rem;
+}
+
+.register-password-field .register-input {
+    margin-bottom: 0;
+}
+
+.register-actions {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.8rem;
+    align-items: center;
+    margin-top: 1.35rem;
 }
 
 .register-extra-card h3 {
@@ -171,7 +228,11 @@
 
 .register-submit {
     width: 100%;
-    margin-top: 1.35rem;
+}
+
+.register-next {
+    width: 100%;
+    margin-top: 0.4rem;
 }
 
 @media (max-width: 980px) {
@@ -191,6 +252,14 @@
     }
 
     .register-role-options {
+        grid-template-columns: 1fr;
+    }
+
+    .register-steps {
+        grid-template-columns: 1fr;
+    }
+
+    .register-actions {
         grid-template-columns: 1fr;
     }
 }
