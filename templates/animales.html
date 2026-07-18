@@ -377,35 +377,6 @@ img.animal-img {
 <h2>Gestión de Animales</h2>
 <h4>Aquí puedes registrar y modificar los animales con la finalidad de tener registros de los nuevos nacimientos que ocurran y ubicar el animal.</h4>
 
-<section class="arete-reader-panel" aria-labelledby="arete-reader-title">
-    <div class="arete-reader-copy">
-        <h3 id="arete-reader-title">Leer arete real</h3>
-        <p>Escanea el código de barras del arete o escribe el número visible para ubicar al bovino registrado.</p>
-    </div>
-    <div class="arete-reader-controls">
-        <div class="arete-reader-inputs">
-            <label for="arete-reader-input">Código o número de arete</label>
-            <input
-                type="text"
-                id="arete-reader-input"
-                placeholder="Ej. MX-27-08451236 o 08451236"
-                autocomplete="off">
-        </div>
-        <div class="arete-reader-actions">
-            <button type="button" class="btn" id="arete-reader-camera">Abrir cámara</button>
-            <button type="button" class="btn btn-small" id="arete-reader-stop" hidden>Detener</button>
-            <button type="button" class="btn btn-small btn-ver" id="arete-reader-search">Buscar</button>
-        </div>
-    </div>
-    <div class="arete-camera-shell" id="arete-camera-shell" hidden>
-        <video id="arete-reader-video" playsinline muted></video>
-        <div class="arete-scan-frame" aria-hidden="true"></div>
-    </div>
-    <p class="arete-reader-status" id="arete-reader-status" role="status">
-        Listo para buscar por arete.
-    </p>
-</section>
-
 <!-- botón para abrir modal de crear -->
 <button class="btn" id="btnNuevo">Registrar Animal</button>
 <br><br>
@@ -506,7 +477,6 @@ img.animal-img {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],
                             "productor": a[4], "raza": a[5], "madre": a[15] if a|length > 15 else none,
                                 "sexo": a[6], "peso": a[7], "predio": a[8] if a|length > 8 else none,
-                                "arete": a[9] if a|length > 9 else none,
                                 "estatus": a[10] if a|length > 10 else "Activo"
                         } | tojson }})'>
                         Ver
@@ -520,7 +490,6 @@ img.animal-img {
                             "madre": a[15] if a|length > 15 else none,
                             "fk_madre": a[14] if a|length > 14 else none,
                             "sexo": a[6], "peso": a[7], "predio": a[8], "fk_predio": a[11] if a|length > 11 else none,
-                            "arete": a[9] if a|length > 9 else none,
                             "estatus": a[10] if a|length > 10 else "Activo"
                         } | tojson }})'>
                         Modificar
@@ -691,7 +660,6 @@ img.animal-img {
         <button type="button" class="close-btn" id="closeVerBtn" aria-label="Cerrar">✕</button>
         <h3 id="v_nombre">Animal</h3>
         <p><strong>ID:</strong> <span id="v_id"></span></p>
-        <p><strong>Arete:</strong> <span id="v_arete"></span></p>
         <p><strong>Fecha Nac.:</strong> <span id="v_fecha"></span></p>
         <p><strong>Cruze:</strong> <span id="v_cruze"></span></p>
         <p><strong>Productor:</strong> <span id="v_productor"></span></p>
@@ -770,7 +738,6 @@ function verAnimal(obj) {
     if (!obj) return;
     document.getElementById('v_id').textContent = obj.id || '';
     document.getElementById('v_nombre').textContent = obj.nombre || '';
-    document.getElementById('v_arete').textContent = obj.arete || 'Sin arete registrado';
     document.getElementById('v_fecha').textContent = obj.fecha || '';
     document.getElementById('v_cruze').textContent = obj.cruze || '';
     document.getElementById('v_productor').textContent = obj.productor || '';
@@ -823,17 +790,6 @@ const animalRows = Array.from(document.querySelectorAll('#animals-table-body tr[
 const animalSearchEmpty = document.getElementById('animal-search-empty');
 const animalCount = document.getElementById('animal-count');
 const totalAnimalRows = animalRows.length;
-const areteReaderInput = document.getElementById('arete-reader-input');
-const areteReaderCamera = document.getElementById('arete-reader-camera');
-const areteReaderStop = document.getElementById('arete-reader-stop');
-const areteReaderSearch = document.getElementById('arete-reader-search');
-const areteReaderStatus = document.getElementById('arete-reader-status');
-const areteCameraShell = document.getElementById('arete-camera-shell');
-const areteReaderVideo = document.getElementById('arete-reader-video');
-let areteScanStream = null;
-let areteScanTimer = null;
-let areteDetector = null;
-let areteLastDetected = '';
 
 function normalizarBusqueda(valor) {
     return (valor || '')
@@ -869,163 +825,6 @@ if (animalSearchClear) {
         animalSearchInput.focus();
     });
 }
-
-function setAreteReaderStatus(mensaje, tipo) {
-    if (!areteReaderStatus) return;
-    areteReaderStatus.textContent = mensaje;
-    areteReaderStatus.dataset.status = tipo || 'info';
-}
-
-function enfocarAnimalEnTabla(animal) {
-    if (!animalSearchInput || !animal) return;
-    animalSearchInput.value = animal.arete || animal.nombre || animal.id || '';
-    filtrarAnimales();
-
-    const row = animalRows.find((item) => {
-        const texto = normalizarBusqueda(item.dataset.search);
-        return texto.includes(normalizarBusqueda(animal.arete))
-            || texto.includes(normalizarBusqueda(animal.nombre))
-            || texto.includes(String(animal.id || ''));
-    });
-
-    animalRows.forEach((item) => item.classList.remove('animal-row-found'));
-    if (row) {
-        row.hidden = false;
-        row.classList.add('animal-row-found');
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-}
-
-async function buscarAreteLeido(codigo) {
-    const valor = (codigo || areteReaderInput.value || '').trim();
-    if (!valor) {
-        setAreteReaderStatus('Ingresa o escanea el número de arete.', 'warning');
-        areteReaderInput.focus();
-        return;
-    }
-
-    setAreteReaderStatus('Buscando bovino registrado...', 'loading');
-    areteReaderSearch.disabled = true;
-
-    try {
-        const respuesta = await fetch(`/api/animales/buscar_arete?codigo=${encodeURIComponent(valor)}`, {
-            headers: { 'Accept': 'application/json' }
-        });
-        const data = await respuesta.json();
-
-        if (!respuesta.ok || !data.ok) {
-            setAreteReaderStatus(data.mensaje || 'No se encontró un bovino con ese arete.', 'error');
-            return;
-        }
-
-        areteReaderInput.value = data.animal.arete || valor;
-        setAreteReaderStatus(`Encontrado: ${data.animal.nombre || 'bovino'} (${data.animal.arete || valor}).`, 'success');
-        enfocarAnimalEnTabla(data.animal);
-        verAnimal(data.animal);
-        detenerLectorArete();
-    } catch (error) {
-        setAreteReaderStatus('No se pudo consultar el arete. Revisa la conexión e intenta de nuevo.', 'error');
-    } finally {
-        areteReaderSearch.disabled = false;
-    }
-}
-
-function detenerLectorArete() {
-    if (areteScanTimer) {
-        window.clearInterval(areteScanTimer);
-        areteScanTimer = null;
-    }
-    if (areteScanStream) {
-        areteScanStream.getTracks().forEach((track) => track.stop());
-        areteScanStream = null;
-    }
-    if (areteReaderVideo) {
-        areteReaderVideo.srcObject = null;
-    }
-    if (areteCameraShell) areteCameraShell.hidden = true;
-    if (areteReaderStop) areteReaderStop.hidden = true;
-    if (areteReaderCamera) areteReaderCamera.hidden = false;
-}
-
-async function iniciarLectorArete() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setAreteReaderStatus('Este navegador no permite abrir la cámara. Escribe el número del arete.', 'warning');
-        return;
-    }
-
-    if (!('BarcodeDetector' in window)) {
-        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-            setAreteReaderStatus('El lector requiere una conexión segura (HTTPS) para funcionar.', 'danger');
-        } else {
-            setAreteReaderStatus('Tu navegador (Safari/Firefox) no soporta el lector nativo. Usa Chrome o Edge, o escribe el número.', 'warning');
-        }
-        return;
-    }
-
-    try {
-        areteDetector = areteDetector || new BarcodeDetector({
-            formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'qr_code', 'data_matrix']
-        });
-        areteScanStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' } },
-            audio: false
-        });
-        areteReaderVideo.srcObject = areteScanStream;
-        await areteReaderVideo.play();
-        areteCameraShell.hidden = false;
-        areteReaderStop.hidden = false;
-        areteReaderCamera.hidden = true;
-        areteLastDetected = '';
-        setAreteReaderStatus('Apunta la cámara al código de barras del arete.', 'loading');
-
-        areteScanTimer = window.setInterval(async function () {
-            if (!areteDetector || areteReaderVideo.readyState < 2) return;
-            try {
-                const codigos = await areteDetector.detect(areteReaderVideo);
-                if (!codigos.length) return;
-
-                const codigo = (codigos[0].rawValue || '').trim();
-                if (!codigo || codigo === areteLastDetected) return;
-                areteLastDetected = codigo;
-                areteReaderInput.value = codigo;
-                await buscarAreteLeido(codigo);
-            } catch (error) {
-                setAreteReaderStatus('La cámara está activa, pero no pudo leer el código. Intenta acercar o iluminar mejor el arete.', 'warning');
-            }
-        }, 650);
-    } catch (error) {
-        detenerLectorArete();
-        setAreteReaderStatus('No se pudo abrir la cámara. Revisa permisos del navegador o escribe el arete.', 'error');
-    }
-}
-
-if (areteReaderCamera) {
-    areteReaderCamera.addEventListener('click', iniciarLectorArete);
-}
-
-if (areteReaderStop) {
-    areteReaderStop.addEventListener('click', function () {
-        detenerLectorArete();
-        setAreteReaderStatus('Cámara detenida. Puedes buscar escribiendo el número del arete.', 'info');
-    });
-}
-
-if (areteReaderSearch) {
-    areteReaderSearch.addEventListener('click', function () {
-        buscarAreteLeido();
-    });
-}
-
-if (areteReaderInput) {
-    areteReaderInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            buscarAreteLeido();
-        }
-    });
-}
-
-window.addEventListener('beforeunload', detenerLectorArete);
 
 /* ================= mejora: impedir doble submit (opcional) ================= */
 document.getElementById('form-animal').addEventListener('submit', function(e){
