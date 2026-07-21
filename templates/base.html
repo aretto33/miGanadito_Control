@@ -47,6 +47,7 @@
 
                     {% if not session.get('usuario') %}
                         <li class="nav-item"><a class="nav-link site-nav-link" href="{{ url_for('login') }}">Iniciar sesión</a></li>
+                        <li class="nav-item"><a class="nav-link site-nav-link" href="{{ url_for('register') }}">Registrar</a></li>
                     {% endif %}
 
                     {% if session.get('usuario') %}

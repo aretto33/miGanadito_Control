@@ -1,0 +1,1502 @@
+{% extends "base.html" %}
+
+{% block page_css %}
+<link rel="stylesheet" href="{{ asset_url('css/pages/tratamientos.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-wrapper">
+
+    <!-- ================================================= -->
+    <!-- SIDEBAR -->
+    <!-- ================================================= -->
+    <aside class="sidebar-3d">
+
+        <div class="sidebar-header">
+            <img
+                src="{{ url_for('static', filename='img/user.png') }}"
+                class="icon-3d"
+                alt="Usuario"
+            >
+
+            <span>
+                {{ usuario }} ({{ rol }})
+            </span>
+        </div>
+
+        <button
+            type="button"
+            class="btn-closeDetails"
+            onclick="toggleSidebar()"
+            aria-label="Abrir o cerrar menú"
+        >
+            <img
+                src="{{ url_for('static', filename='img/menu.png') }}"
+                class="sidebar-toggle-icon"
+                alt="Menú"
+            >
+        </button>
+
+        <nav class="sidebar-menu">
+
+            {% if rol == "Administrador" %}
+
+                <a href="{{ url_for('admin_usuarios') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/user.png') }}" class="icon-3d" alt="">
+                    Usuarios
+                </a>
+
+                <a href="{{ url_for('animales') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vaca.png') }}" class="icon-3d" alt="">
+                    Animales
+                </a>
+
+                <a href="{{ url_for('predios') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/predio.png') }}" class="icon-3d" alt="">
+                    Predios
+                </a>
+
+                <a href="{{ url_for('pesajes') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/pesaje.png') }}" class="icon-3d" alt="">
+                    Pesaje
+                </a>
+
+                <a href="{{ url_for('registro_siniga') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/siiniga.png') }}" class="icon-3d" alt="">
+                    Registro SINIGA
+                </a>
+
+                <a href="{{ url_for('seguimiento') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vet.png') }}" class="icon-3d" alt="">
+                    Seguimiento Vet
+                </a>
+
+                <a href="{{ url_for('tratamientos') }}" class="btn-3d btn-main">
+                    <img src="{{ url_for('static', filename='img/vet.png') }}" class="icon-3d" alt="">
+                    Tratamientos
+                </a>
+
+                <a href="{{ url_for('ventas') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/ventas.png') }}" class="icon-3d" alt="">
+                    Ventas
+                </a>
+
+                <a href="{{ url_for('razas') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/raza.png') }}" class="icon-3d" alt="">
+                    Razas
+                </a>
+
+                <a href="{{ url_for('tabla_precio') }}" class="btn-3d">
+                    Tabla de Precios
+                </a>
+
+                <a href="{{ url_for('album_razas') }}" class="btn-3d">
+                    Guía de Razas
+                </a>
+
+            {% elif rol == "Veterinario" %}
+
+                <a href="{{ url_for('mi_productor') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d" alt="">
+                    Mis Datos
+                </a>
+
+                <a href="{{ url_for('pesajes') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/pesaje.png') }}" class="icon-3d" alt="">
+                    Pesaje
+                </a>
+
+                <a href="{{ url_for('seguimiento') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vet.png') }}" class="icon-3d" alt="">
+                    Seguimiento Vet
+                </a>
+
+                <a href="{{ url_for('tratamientos') }}" class="btn-3d btn-main">
+                    <img src="{{ url_for('static', filename='img/vet.png') }}" class="icon-3d" alt="">
+                    Tratamientos
+                </a>
+
+                <a href="{{ url_for('razas') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/raza.png') }}" class="icon-3d" alt="">
+                    Razas
+                </a>
+
+            {% elif rol == "Comprador" %}
+
+                <a href="{{ url_for('tabla_precio') }}" class="btn-3d">
+                    Tabla de Precios
+                </a>
+
+                <a href="{{ url_for('album_razas') }}" class="btn-3d">
+                    Guía de Razas
+                </a>
+
+                <a href="{{ url_for('opiniones') }}" class="btn-3d">
+                    Opiniones
+                </a>
+
+                <a href="{{ url_for('ventas') }}" class="btn-3d">
+                    Ventas
+                </a>
+
+            {% else %}
+
+                <a href="{{ url_for('mi_productor') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/mis_datos.png') }}" class="icon-3d" alt="">
+                    Mis Datos
+                </a>
+
+                <a href="{{ url_for('animales') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vaca.png') }}" class="icon-3d" alt="">
+                    Animales
+                </a>
+
+                <a href="{{ url_for('predios') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/predio.png') }}" class="icon-3d" alt="">
+                    Predios
+                </a>
+
+                <a href="{{ url_for('pesajes') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/pesaje.png') }}" class="icon-3d" alt="">
+                    Pesaje
+                </a>
+
+                <a href="{{ url_for('registro_siniga') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/siiniga.png') }}" class="icon-3d" alt="">
+                    Registro SINIGA
+                </a>
+
+                <a href="{{ url_for('seguimiento') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/vet.png') }}" class="icon-3d" alt="">
+                    Seguimiento Vet
+                </a>
+
+                <a href="{{ url_for('tratamientos') }}" class="btn-3d btn-main">
+                    <img src="{{ url_for('static', filename='img/vet.png') }}" class="icon-3d" alt="">
+                    Tratamientos
+                </a>
+
+                <a href="{{ url_for('ventas') }}" class="btn-3d">
+                    <img src="{{ url_for('static', filename='img/ventas.png') }}" class="icon-3d" alt="">
+                    Ventas
+                </a>
+
+            {% endif %}
+
+        </nav>
+
+    </aside>
+
+    <!-- ================================================= -->
+    <!-- CONTENIDO PRINCIPAL -->
+    <!-- ================================================= -->
+    <main class="dashboard-content">
+
+        <img
+            src="{{ url_for('static', filename='img/banner.png') }}"
+            class="banner"
+            alt="miGanadito Control"
+        >
+
+        <section class="tratamientos-panel">
+
+            <!-- ================================================= -->
+            <!-- ENCABEZADO -->
+            <!-- ================================================= -->
+            <div class="producer-panel-header">
+
+                <div>
+                    <p class="stats-eyebrow">
+                        Catálogo veterinario
+                    </p>
+
+                    <h3>
+                        Tratamientos
+                    </h3>
+
+                    <p class="mb-0">
+                        Registra, consulta y administra los tratamientos disponibles.
+                    </p>
+                </div>
+
+                <div class="producer-header-actions">
+
+                    <button
+                        type="button"
+                        class="btn-3d"
+                        onclick="abrirNuevoTratamiento()"
+                    >
+                        Nuevo tratamiento
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- ================================================= -->
+            <!-- ESTADÍSTICAS -->
+            <!-- ================================================= -->
+            <div
+                class="producer-metrics"
+                aria-label="Resumen de tratamientos"
+            >
+
+                <div class="producer-metric-card primary">
+                    <span>
+                        {{ total_tratamientos or 0 }}
+                    </span>
+
+                    <small>
+                        Tratamientos
+                    </small>
+                </div>
+
+                <div class="producer-metric-card active">
+                    <span>
+                        {{ total_preventivos or 0 }}
+                    </span>
+
+                    <small>
+                        Preventivos
+                    </small>
+                </div>
+
+                <div class="producer-metric-card sold">
+                    <span>
+                        {{ total_curativos or 0 }}
+                    </span>
+
+                    <small>
+                        Curativos
+                    </small>
+                </div>
+
+                <div class="producer-metric-card">
+                    <span>
+                        {{ total_medicamentos or 0 }}
+                    </span>
+
+                    <small>
+                        Medicamentos
+                    </small>
+                </div>
+
+            </div>
+
+            <!-- ================================================= -->
+            <!-- BÚSQUEDA Y FILTROS -->
+            <!-- ================================================= -->
+            <section class="producer-card">
+
+                <div class="producer-section-heading">
+
+                    <div>
+                        <p class="stats-eyebrow">
+                            Consulta
+                        </p>
+
+                        <h3>
+                            Buscar tratamientos
+                        </h3>
+                    </div>
+
+                    {% if request.args.get("buscar")
+                          or request.args.get("tipo")
+                          or request.args.get("enfermedad") %}
+
+                        <a
+                            href="{{ url_for('tratamientos') }}"
+                            class="btn-3d"
+                        >
+                            Limpiar filtros
+                        </a>
+
+                    {% endif %}
+
+                </div>
+
+                <form
+                    method="GET"
+                    action="{{ url_for('tratamientos') }}"
+                    class="tratamientos-search"
+                >
+
+                    <div class="row g-3">
+
+                        <div class="col-lg-5 col-md-12">
+
+                            <label for="buscarTratamiento">
+                                Buscar por nombre
+                            </label>
+
+                            <input
+                                type="search"
+                                id="buscarTratamiento"
+                                name="buscar"
+                                class="form-control"
+                                placeholder="Ejemplo: vacuna clostridial"
+                                value="{{ request.args.get('buscar', '') }}"
+                            >
+
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+
+                            <label for="filtroTipo">
+                                Tipo
+                            </label>
+
+                            {% set tipo_actual = request.args.get("tipo", "") %}
+
+                            <select
+                                id="filtroTipo"
+                                name="tipo"
+                                class="form-select"
+                            >
+                                <option value="">
+                                    Todos los tipos
+                                </option>
+
+                                <option
+                                    value="Preventivo"
+                                    {% if tipo_actual == "Preventivo" %}selected{% endif %}
+                                >
+                                    Preventivo
+                                </option>
+
+                                <option
+                                    value="Curativo"
+                                    {% if tipo_actual == "Curativo" %}selected{% endif %}
+                                >
+                                    Curativo
+                                </option>
+
+                                <option
+                                    value="Vacuna"
+                                    {% if tipo_actual == "Vacuna" %}selected{% endif %}
+                                >
+                                    Vacuna
+                                </option>
+
+                                <option
+                                    value="Desparasitación"
+                                    {% if tipo_actual == "Desparasitación" %}selected{% endif %}
+                                >
+                                    Desparasitación
+                                </option>
+
+                                <option
+                                    value="Vitaminación"
+                                    {% if tipo_actual == "Vitaminación" %}selected{% endif %}
+                                >
+                                    Vitaminación
+                                </option>
+
+                                <option
+                                    value="Procedimiento"
+                                    {% if tipo_actual == "Procedimiento" %}selected{% endif %}
+                                >
+                                    Procedimiento
+                                </option>
+                            </select>
+
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+
+                            <label for="filtroEnfermedad">
+                                Enfermedad
+                            </label>
+
+                            {% set enfermedad_actual = request.args.get("enfermedad", "") %}
+
+                            <select
+                                id="filtroEnfermedad"
+                                name="enfermedad"
+                                class="form-select"
+                            >
+                                <option value="">
+                                    Todas las enfermedades
+                                </option>
+
+                                {% for enfermedad in enfermedades %}
+
+                                    {% if enfermedad[0] %}
+
+                                        <option
+                                            value="{{ enfermedad[0] }}"
+                                            {% if enfermedad_actual == enfermedad[0] %}selected{% endif %}
+                                        >
+                                            {{ enfermedad[0] }}
+                                        </option>
+
+                                    {% endif %}
+
+                                {% endfor %}
+                            </select>
+
+                        </div>
+
+                        <div class="col-lg-1 col-md-12 d-flex align-items-end">
+
+                            <button
+                                type="submit"
+                                class="btn-3d w-100"
+                            >
+                                Buscar
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+            </section>
+
+            <!-- ================================================= -->
+            <!-- LISTADO DE TRATAMIENTOS -->
+            <!-- ================================================= -->
+            <section class="tratamientos-grid">
+
+                {% for tratamiento in tratamientos %}
+
+                    <article
+                        class="tratamiento-card"
+                        data-nombre="{{ tratamiento[1] or '' }}"
+                        data-tipo="{{ tratamiento[3] or '' }}"
+                        data-enfermedad="{{ tratamiento[4] or '' }}"
+                    >
+
+                        <div class="tratamiento-image">
+
+                            <img
+                                src="{{ url_for('static', filename='img/vet.png') }}"
+                                alt="Tratamiento veterinario"
+                            >
+
+                        </div>
+
+                        <div class="tratamiento-body">
+
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+
+                                <h4>
+                                    {{ tratamiento[1] or "Sin nombre" }}
+                                </h4>
+
+                                <span class="tratamiento-badge">
+                                    {{ tratamiento[3] or "Sin tipo" }}
+                                </span>
+
+                            </div>
+
+                            <div class="tratamiento-info">
+
+                                <p>
+                                    <strong>Impacto</strong><br>
+                                    {{ tratamiento[2] or "Sin especificar" }}
+                                </p>
+
+                                <p>
+                                    <strong>Enfermedad relacionada</strong><br>
+                                    {{ tratamiento[4] or "Sin especificar" }}
+                                </p>
+
+                                <p>
+                                    <strong>Medicamento</strong><br>
+                                    {{ tratamiento[5] or "Sin especificar" }}
+                                </p>
+
+                                <p>
+                                    <strong>Dosis</strong><br>
+                                    {{ tratamiento[6] or "Sin especificar" }}
+                                </p>
+
+                                <p>
+                                    <strong>Frecuencia</strong><br>
+                                    {{ tratamiento[7] or "Sin especificar" }}
+                                </p>
+
+                                <p>
+                                    <strong>Duración</strong><br>
+                                    {{ tratamiento[8] or "Sin especificar" }}
+                                </p>
+
+                            </div>
+
+                            <div class="tratamiento-buttons">
+
+                                <button
+                                    type="button"
+                                    class="btn-3d btn-view"
+                                    data-pk="{{ tratamiento[0] }}"
+                                    data-nombre="{{ tratamiento[1] or '' }}"
+                                    data-impacto="{{ tratamiento[2] or '' }}"
+                                    data-tipo="{{ tratamiento[3] or '' }}"
+                                    data-enfermedad="{{ tratamiento[4] or '' }}"
+                                    data-medicamento="{{ tratamiento[5] or '' }}"
+                                    data-dosis="{{ tratamiento[6] or '' }}"
+                                    data-frecuencia="{{ tratamiento[7] or '' }}"
+                                    data-duracion="{{ tratamiento[8] or '' }}"
+                                    data-observaciones="{{ tratamiento[9] or '' }}"
+                                    onclick="verTratamiento(this)"
+                                >
+                                    Ver
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn-3d btn-edit"
+                                    data-pk="{{ tratamiento[0] }}"
+                                    data-nombre="{{ tratamiento[1] or '' }}"
+                                    data-impacto="{{ tratamiento[2] or '' }}"
+                                    data-tipo="{{ tratamiento[3] or '' }}"
+                                    data-enfermedad="{{ tratamiento[4] or '' }}"
+                                    data-medicamento="{{ tratamiento[5] or '' }}"
+                                    data-dosis="{{ tratamiento[6] or '' }}"
+                                    data-frecuencia="{{ tratamiento[7] or '' }}"
+                                    data-duracion="{{ tratamiento[8] or '' }}"
+                                    data-observaciones="{{ tratamiento[9] or '' }}"
+                                    onclick="editarTratamiento(this)"
+                                >
+                                    Editar
+                                </button>
+
+                                <button
+                                    type="button"
+                                    class="btn-3d btn-delete"
+                                    data-pk="{{ tratamiento[0] }}"
+                                    data-nombre="{{ tratamiento[1] or '' }}"
+                                    onclick="eliminarTratamiento(this)"
+                                >
+                                    Eliminar
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                {% else %}
+
+                    <div class="producer-card text-center">
+
+                        <img
+                            src="{{ url_for('static', filename='img/vet.png') }}"
+                            alt=""
+                            style="width: 75px; margin-bottom: 15px;"
+                        >
+
+                        <h4>
+                            No hay tratamientos registrados
+                        </h4>
+
+                        <p>
+                            Registra el primer tratamiento para comenzar a construir
+                            el catálogo veterinario.
+                        </p>
+
+                        <button
+                            type="button"
+                            class="btn-3d"
+                            onclick="abrirNuevoTratamiento()"
+                        >
+                            Registrar tratamiento
+                        </button>
+
+                    </div>
+
+                {% endfor %}
+
+            </section>
+
+        </section>
+
+    </main>
+
+</div>
+
+<!-- ================================================= -->
+<!-- LISTA REUTILIZABLE DE ENFERMEDADES -->
+<!-- ================================================= -->
+<datalist id="listaEnfermedades">
+
+    {% for enfermedad in enfermedades %}
+
+        {% if enfermedad[0] %}
+            <option value="{{ enfermedad[0] }}"></option>
+        {% endif %}
+
+    {% endfor %}
+
+</datalist>
+
+<!-- ================================================= -->
+<!-- MODAL REGISTRAR -->
+<!-- ================================================= -->
+<div
+    id="modalNuevoTratamiento"
+    class="busqueda-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloNuevoTratamiento"
+>
+
+    <div class="busqueda-card tratamiento-modal">
+
+        <button
+            type="button"
+            class="close-btn"
+            onclick="cerrarNuevoTratamiento()"
+            aria-label="Cerrar"
+        >
+            ✕
+        </button>
+
+        <p class="stats-eyebrow">
+            Nuevo registro
+        </p>
+
+        <h4 id="tituloNuevoTratamiento">
+            Registrar tratamiento
+        </h4>
+
+        <form
+            action="{{ url_for('tratamientos') }}"
+            method="POST"
+            id="formNuevoTratamiento"
+        >
+
+            <input
+                type="hidden"
+                name="accion"
+                value="registrar"
+            >
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+
+                    <label for="nuevo_nombre">
+                        Nombre del tratamiento *
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nuevo_nombre"
+                        name="nombre"
+                        class="form-control"
+                        maxlength="150"
+                        required
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="nuevo_tipo">
+                        Tipo *
+                    </label>
+
+                    <select
+                        id="nuevo_tipo"
+                        name="tipo"
+                        class="form-select"
+                        required
+                    >
+                        <option value="">
+                            Selecciona un tipo
+                        </option>
+
+                        <option value="Preventivo">
+                            Preventivo
+                        </option>
+
+                        <option value="Curativo">
+                            Curativo
+                        </option>
+
+                        <option value="Vacuna">
+                            Vacuna
+                        </option>
+
+                        <option value="Desparasitación">
+                            Desparasitación
+                        </option>
+
+                        <option value="Vitaminación">
+                            Vitaminación
+                        </option>
+
+                        <option value="Procedimiento">
+                            Procedimiento
+                        </option>
+                    </select>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="nuevo_impacto">
+                        Impacto
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nuevo_impacto"
+                        name="impacto"
+                        class="form-control"
+                        maxlength="150"
+                        placeholder="Ejemplo: mejora la recuperación"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="nuevo_enfermedad">
+                        Enfermedad relacionada
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nuevo_enfermedad"
+                        name="enfermedad"
+                        class="form-control"
+                        list="listaEnfermedades"
+                        maxlength="150"
+                        placeholder="Selecciona o escribe una enfermedad"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="nuevo_medicamento">
+                        Medicamento
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nuevo_medicamento"
+                        name="medicamento"
+                        class="form-control"
+                        maxlength="150"
+                        placeholder="Ejemplo: Ivermectina"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="nuevo_dosis">
+                        Dosis
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nuevo_dosis"
+                        name="dosis"
+                        class="form-control"
+                        maxlength="100"
+                        placeholder="Ejemplo: 1 ml por cada 50 kg"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="nuevo_frecuencia">
+                        Frecuencia
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nuevo_frecuencia"
+                        name="frecuencia"
+                        class="form-control"
+                        maxlength="100"
+                        placeholder="Ejemplo: cada 24 horas"
+                    >
+
+                </div>
+
+                <div class"
+                        class="form-control"
+                        maxlength="100"
+                        placeholder="Ejemplo: cada 24="col-md-6">
+
+                    <label for="nuevo_duracion">
+                        Duración
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nuevo_duracion"
+                        name="duracion"
+                        class="form-control"
+                        maxlength="100"
+                        placeholder="Ejemplo: 5 días"
+                    >
+
+                </div>
+
+                <div class="col-12">
+
+                    <label for="nuevo_observaciones">
+                        Observaciones
+                    </label>
+
+                    <textarea
+                        id="nuevo_observaciones"
+                        name="observaciones"
+                        class="form-control"
+                        rows="4"
+                        maxlength="1000"
+                        placeholder="Indicaciones, precauciones o información adicional"
+                    ></textarea>
+
+                </div>
+
+                <div class="col-12">
+
+                    <div class="alert alert-info mb-0">
+                        La asociación del tratamiento con un animal se realiza
+                        desde el módulo de Seguimiento Veterinario.
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="cerrarNuevoTratamiento()"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-3d"
+                >
+                    Guardar tratamiento
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ================================================= -->
+<!-- MODAL VER -->
+<!-- ================================================= -->
+<div
+    id="modalVerTratamiento"
+    class="busqueda-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloVerTratamiento"
+>
+
+    <div class="busqueda-card tratamiento-modal">
+
+        <button
+            type="button"
+            class="close-btn"
+            onclick="cerrarVerTratamiento()"
+            aria-label="Cerrar"
+        >
+            ✕
+        </button>
+
+        <p class="stats-eyebrow">
+            Información
+        </p>
+
+        <h4 id="tituloVerTratamiento">
+            Detalles del tratamiento
+        </h4>
+
+        <div id="contenidoTratamiento">
+
+            <div>
+                <strong>Nombre</strong>
+                <p id="ver_nombre">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Tipo</strong>
+                <p id="ver_tipo">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Impacto</strong>
+                <p id="ver_impacto">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Enfermedad relacionada</strong>
+                <p id="ver_enfermedad">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Medicamento</strong>
+                <p id="ver_medicamento">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Dosis</strong>
+                <p id="ver_dosis">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Frecuencia</strong>
+                <p id="ver_frecuencia">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Duración</strong>
+                <p id="ver_duracion">Sin especificar</p>
+            </div>
+
+            <div>
+                <strong>Observaciones</strong>
+                <p id="ver_observaciones">Sin observaciones</p>
+            </div>
+
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+
+            <button
+                type="button"
+                class="btn-3d"
+                onclick="cerrarVerTratamiento()"
+            >
+                Cerrar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================================================= -->
+<!-- MODAL EDITAR -->
+<!-- ================================================= -->
+<div
+    id="modalEditarTratamiento"
+    class="busqueda-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloEditarTratamiento"
+>
+
+    <div class="busqueda-card tratamiento-modal">
+
+        <button
+            type="button"
+            class="close-btn"
+            onclick="cerrarEditarTratamiento()"
+            aria-label="Cerrar"
+        >
+            ✕
+        </button>
+
+        <p class="stats-eyebrow">
+            Actualización
+        </p>
+
+        <h4 id="tituloEditarTratamiento">
+            Editar tratamiento
+        </h4>
+
+        <form
+            action="{{ url_for('tratamientos') }}"
+            method="POST"
+            id="formEditarTratamiento"
+        >
+
+            <input
+                type="hidden"
+                name="accion"
+                value="modificar"
+            >
+
+            <input
+                type="hidden"
+                name="pk"
+                id="editar_pk"
+            >
+
+            <div class="row g-3">
+
+                <div class="col-md-6">
+
+                    <label for="editar_nombre">
+                        Nombre del tratamiento *
+                    </label>
+
+                    <input
+                        type="text"
+                        id="editar_nombre"
+                        name="nombre"
+                        class="form-control"
+                        maxlength="150"
+                        required
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="editar_tipo">
+                        Tipo *
+                    </label>
+
+                    <select
+                        id="editar_tipo"
+                        name="tipo"
+                        class="form-select"
+                        required
+                    >
+                        <option value="">
+                            Selecciona un tipo
+                        </option>
+
+                        <option value="Preventivo">
+                            Preventivo
+                        </option>
+
+                        <option value="Curativo">
+                            Curativo
+                        </option>
+
+                        <option value="Vacuna">
+                            Vacuna
+                        </option>
+
+                        <option value="Desparasitación">
+                            Desparasitación
+                        </option>
+
+                        <option value="Vitaminación">
+                            Vitaminación
+                        </option>
+
+                        <option value="Procedimiento">
+                            Procedimiento
+                        </option>
+                    </select>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="editar_impacto">
+                        Impacto
+                    </label>
+
+                    <input
+                        type="text"
+                        id="editar_impacto"
+                        name="impacto"
+                        class="form-control"
+                        maxlength="150"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="editar_enfermedad">
+                        Enfermedad relacionada
+                    </label>
+
+                    <input
+                        type="text"
+                        id="editar_enfermedad"
+                        name="enfermedad"
+                        class="form-control"
+                        list="listaEnfermedades"
+                        maxlength="150"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="editar_medicamento">
+                        Medicamento
+                    </label>
+
+                    <input
+                        type="text"
+                        id="editar_medicamento"
+                        name="medicamento"
+                        class="form-control"
+                        maxlength="150"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="editar_dosis">
+                        Dosis
+                    </label>
+
+                    <input
+                        type="text"
+                        id="editar_dosis"
+                        name="dosis"
+                        class="form-control"
+                        maxlength="100"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="editar_frecuencia">
+                        Frecuencia
+                    </label>
+
+                    <input
+                        type="text"
+                        id="editar_frecuencia"
+                        name="frecuencia"
+                        class="form-control"
+                        maxlength="100"
+                    >
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label for="editar_duracion">
+                        Duración
+                    </label>
+
+                    <input
+                        type="text"
+                        id="editar_duracion"
+                        name="duracion"
+                        class="form-control"
+                        maxlength="100"
+                    >
+
+                </div>
+
+                <div class="col-12">
+
+                    <label for="editar_observaciones">
+                        Observaciones
+                    </label>
+
+                    <textarea
+                        id="editar_observaciones"
+                        name="observaciones"
+                        class="form-control"
+                        rows="4"
+                        maxlength="1000"
+                    ></textarea>
+
+                </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="cerrarEditarTratamiento()"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-3d"
+                >
+                    Guardar cambios
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<!-- ================================================= -->
+<!-- MODAL ELIMINAR -->
+<!-- ================================================= -->
+<div
+    id="modalEliminarTratamiento"
+    class="busqueda-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tituloEliminarTratamiento"
+>
+
+    <div class="busqueda-card small-card">
+
+        <button
+            type="button"
+            class="close-btn"
+            onclick="cerrarEliminarTratamiento()"
+            aria-label="Cerrar"
+        >
+            ✕
+        </button>
+
+        <p class="stats-eyebrow">
+            Confirmación
+        </p>
+
+        <h4 id="tituloEliminarTratamiento">
+            Eliminar tratamiento
+        </h4>
+
+        <p>
+            Se eliminará el tratamiento:
+        </p>
+
+        <p>
+            <strong id="eliminar_nombre">
+                Tratamiento seleccionado
+            </strong>
+        </p>
+
+        <p class="text-danger">
+            Esta acción no se puede deshacer.
+        </p>
+
+        <form
+            action="{{ url_for('tratamientos') }}"
+            method="POST"
+            id="formEliminarTratamiento"
+        >
+
+            <input
+                type="hidden"
+                name="accion"
+                value="eliminar"
+            >
+
+            <input
+                type="hidden"
+                name="pk"
+                id="eliminar_pk"
+            >
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="cerrarEliminarTratamiento()"
+                >
+                    Cancelar
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn btn-danger"
+                >
+                    Eliminar
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+function abrirNuevoTratamiento() {
+    const form = document.getElementById("formNuevoTratamiento");
+    if (form) {
+        form.reset();
+    }
+
+    const modal = document.getElementById("modalNuevoTratamiento");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function cerrarNuevoTratamiento() {
+    const modal = document.getElementById("modalNuevoTratamiento");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+function cerrarVerTratamiento() {
+    const modal = document.getElementById("modalVerTratamiento");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+function cerrarEditarTratamiento() {
+    const modal = document.getElementById("modalEditarTratamiento");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+function cerrarEliminarTratamiento() {
+    const modal = document.getElementById("modalEliminarTratamiento");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+function completarFormularioEditar(data) {
+    const campos = {
+        editar_pk: data.pk || "",
+        editar_nombre: data.nombre || "",
+        editar_tipo: data.tipo || "",
+        editar_impacto: data.impacto || "",
+        editar_enfermedad: data.enfermedad || "",
+        editar_medicamento: data.medicamento || "",
+        editar_dosis: data.dosis || "",
+        editar_frecuencia: data.frecuencia || "",
+        editar_duracion: data.duracion || "",
+        editar_observaciones: data.observaciones || ""
+    };
+
+    Object.entries(campos).forEach(([id, value]) => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.value = value;
+        }
+    });
+}
+
+function editarTratamiento(button) {
+    const data = button && button.dataset ? button.dataset : button;
+    completarFormularioEditar(data);
+
+    const modal = document.getElementById("modalEditarTratamiento");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function verTratamiento(button) {
+    const data = button && button.dataset ? button.dataset : button;
+    document.getElementById("ver_nombre").textContent = data.nombre || "Sin especificar";
+    document.getElementById("ver_tipo").textContent = data.tipo || "Sin especificar";
+    document.getElementById("ver_impacto").textContent = data.impacto || "Sin especificar";
+    document.getElementById("ver_enfermedad").textContent = data.enfermedad || "Sin especificar";
+    document.getElementById("ver_medicamento").textContent = data.medicamento || "Sin especificar";
+    document.getElementById("ver_dosis").textContent = data.dosis || "Sin especificar";
+    document.getElementById("ver_frecuencia").textContent = data.frecuencia || "Sin especificar";
+    document.getElementById("ver_duracion").textContent = data.duracion || "Sin especificar";
+    document.getElementById("ver_observaciones").textContent = data.observaciones || "Sin observaciones";
+
+    window.tratamientoActual = data;
+
+    const modal = document.getElementById("modalVerTratamiento");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function eliminarTratamiento(button) {
+    const data = button && button.dataset ? button.dataset : button;
+    document.getElementById("eliminar_pk").value = data.pk || "";
+    document.getElementById("eliminar_nombre").textContent = data.nombre || "Tratamiento seleccionado";
+
+    const modal = document.getElementById("modalEliminarTratamiento");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function editarDesdeVer() {
+    if (window.tratamientoActual) {
+        cerrarVerTratamiento();
+        editarTratamiento(window.tratamientoActual);
+    }
+}
+
+/*=========================================================
+    CONFIRMACION ELIMINAR
+=========================================================*/
+
+const eliminarForm = document.getElementById("formEliminarTratamiento");
+
+if (eliminarForm) {
+    eliminarForm.addEventListener("submit", function (e) {
+        if (!confirm("¿Seguro que deseas eliminar este tratamiento?")) {
+            e.preventDefault();
+        }
+    });
+}
+
+/*=========================================================
+    CIERRE AL HACER CLICK FUERA DEL MODAL
+=========================================================*/
+
+document.querySelectorAll(".busqueda-overlay").forEach(function (modal) {
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    });
+});
+
+/*=========================================================
+    ANIMACIONES
+=========================================================*/
+
+const tarjetas = document.querySelectorAll(".tratamiento-card");
+
+const observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = 1;
+            entry.target.style.transform = "translateY(0px)";
+        }
+    });
+});
+
+tarjetas.forEach(function (card) {
+    card.style.opacity = 0;
+    card.style.transform = "translateY(24px)";
+    card.style.transition = ".45s ease";
+    observer.observe(card);
+});
+
+window.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+        cerrarNuevoTratamiento();
+        cerrarVerTratamiento();
+        cerrarEditarTratamiento();
+        cerrarEliminarTratamiento();
+    }
+});
+</script>
+
+{% endblock %}

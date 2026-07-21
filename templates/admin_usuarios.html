@@ -72,18 +72,18 @@
     <div class="admin-users-grid">
         <section class="admin-users-form-card">
             <h2 id="formTitle">Crear usuario</h2>
-            <p>Gestiona accesos por correo y cambia roles sin salir del panel administrador.</p>
+            <p>Gestiona accesos y cambia roles sin salir del panel administrador.</p>
 
             <form method="POST" id="usuarioForm" class="admin-users-form">
                 <input type="hidden" name="id_usuario" id="id_usuario">
 
-                {% if tiene_email %}
-                    <label for="email">Correo electrónico</label>
-                    <input type="email" name="email" id="email" class="form-control" autocomplete="email" required>
-                {% endif %}
+                <label for="usuario">Usuario</label>
+                <input type="text" name="usuario" id="usuario" class="form-control" required>
 
-                <label for="usuario">Usuario interno</label>
-                <input type="text" name="usuario" id="usuario" class="form-control" placeholder="Se genera desde el correo si lo dejas vacío">
+                {% if tiene_email %}
+                    <label for="email">Email</label>
+                    <input type="email" name="email" id="email" class="form-control" autocomplete="email">
+                {% endif %}
 
                 <label for="rol">Rol</label>
                 <select name="rol" id="rol" class="form-control" required>
@@ -130,8 +130,8 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
+                                <th>Usuario</th>
                                 {% if tiene_email %}<th>Email</th>{% endif %}
-                                <th>Usuario interno</th>
                                 <th>Rol</th>
                                 <th>Permiso</th>
                                 <th>Acciones</th>
@@ -141,8 +141,8 @@
                             {% for usuario in usuarios %}
                             <tr>
                                 <td>{{ usuario[0] }}</td>
-                                {% if tiene_email %}<td>{{ usuario[2] or 'Sin email' }}</td>{% endif %}
                                 <td>{{ usuario[1] }}</td>
+                                {% if tiene_email %}<td>{{ usuario[2] or 'Sin email' }}</td>{% endif %}
                                 <td><span class="role-badge">{{ usuario[3] }}</span></td>
                                 <td>
                                     {% if usuario[3] == 'Veterinario' and usuario[4] %}
