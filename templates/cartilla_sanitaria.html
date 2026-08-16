@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block page_css %}
+<link rel="stylesheet" href="{{ asset_url('css/pages/cartilla_sanitaria.css') }}">
+{% endblock %}
+{% block content %}
+
+<section class="cartilla-hero">
+    <div>
+        <span class="eyebrow">Salud y prevención</span>
+        <h1>📋 Cartilla Sanitaria</h1>
+        <p>Consulta en un solo lugar el historial sanitario y las próximas aplicaciones programadas de cada animal.</p>
+    </div>
+</section>
+
+<section class="cartilla-selector data-card">
+    <form method="GET" action="{{ url_for('cartilla_sanitaria') }}" class="selector-form">
+        <div>
+            <label for="animal_id">Animal</label>
+            <select name="animal_id" id="animal_id" required>
+                <option value="">Selecciona un animal…</option>
+                {% for a in animales %}
+                <option value="{{ a[0] }}" {% if animal_seleccionado == a[0] %}selected{% endif %}>
+                    {{ a[2] or ('ID-' ~ a[0]) }} · {{ a[1] }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn" type="submit">Consultar cartilla</button>
+    </form>
+</section>
+
+{% if cartilla %}
+{% set animal = cartilla.animal %}
+<section class="cartilla-sheet">
+    <div class="cartilla-head">
+        <div>
+            <span class="cartilla-label">Registro interno</span>
+            <h2>{{ animal.nombre }}</h2>
+            <p class="animal-id">Arete / identificación: <strong>{{ animal.arete }}</strong></p>
+        </div>
+        <a class="btn btn-pdf" href="{{ url_for('cartilla_sanitaria_pdf', animal_id=animal.id) }}" target="_blank">🖨️ Ver / imprimir PDF</a>
+    </div>
+
+    <div class="legal-note">
+        <strong>Importante:</strong> La Cartilla Sanitaria es un registro interno generado por el sistema y no sustituye certificados sanitarios oficiales emitidos por autoridades competentes o médicos veterinarios acreditados.
+    </div>
+
+    <div class="animal-summary-grid">
+        <article><span>Especie</span><strong>{{ animal.especie }}</strong></article>
+        <article><span>Raza</span><strong>{{ animal.raza }}</strong></article>
+        <article><span>Sexo</span><strong>{{ animal.sexo }}</strong></article>
+        <article><span>Nacimiento</span><strong>{{ animal.fecha_nacimiento or 'Sin registro' }}</strong></article>
+        <article><span>Edad</span><strong>{{ animal.edad }}</strong></article>
+        <article><span>Productor</span><strong>{{ animal.productor }}</strong></article>
+    </div>
+
+    <div class="cartilla-kpis">
+        <article><strong>{{ cartilla.vacunas|length }}</strong><span>Vacunas</span></article>
+        <article><strong>{{ cartilla.vitaminas|length }}</strong><span>Vitaminas</span></article>
+        <article><strong>{{ cartilla.tratamientos|length }}</strong><span>Tratamientos</span></article>
+        <article><strong>{{ cartilla.desparasitaciones|length }}</strong><span>Desparasitaciones</span></article>
+        <article><strong>{{ cartilla.proximas|length }}</strong><span>Recordatorios</span></article>
+    </div>
+
+    <section class="sanitary-section upcoming-section">
+        <div class="section-title-row">
+            <h3>⏰ Próximas aplicaciones</h3>
+            <span>{{ cartilla.proximas|length }} programadas</span>
+        </div>
+        {% if cartilla.proximas %}
+        <div class="upcoming-grid">
+            {% for p in cartilla.proximas %}
+            <article class="upcoming-card {{ p.estado|lower|replace(' ', '-') }}">
+                <span class="upcoming-type">{{ p.categoria }}</span>
+                <strong>{{ p.nombre }}</strong>
+                <time>{{ p.fecha }}</time>
+                <small>{{ p.estado }}</small>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-state">No hay próximas aplicaciones programadas.</p>
+        {% endif %}
+    </section>
+
+    <section class="sanitary-section">
+        <div class="section-title-row"><h3>💉 Vacunas</h3><span>{{ cartilla.vacunas|length }} registros</span></div>
+        {% if cartilla.vacunas %}
+        <div class="table-responsive"><table class="cartilla-table">
+            <thead><tr><th>Vacuna</th><th>Fecha</th><th>Dosis</th><th>Veterinario / Responsable</th><th>Observaciones</th></tr></thead>
+            <tbody>{% for e in cartilla.vacunas %}<tr><td>{{ e.nombre }}</td><td>{{ e.fecha }}</td><td>{{ e.dosis }}</td><td>{{ e.responsable }}</td><td>{{ e.observaciones }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="empty-state">Sin vacunas registradas.</p>{% endif %}
+    </section>
+
+    <section class="sanitary-section">
+        <div class="section-title-row"><h3>🧴 Vitaminas y suplementos</h3><span>{{ cartilla.vitaminas|length }} registros</span></div>
+        {% if cartilla.vitaminas %}
+        <div class="table-responsive"><table class="cartilla-table">
+            <thead><tr><th>Producto</th><th>Fecha</th><th>Dosis</th><th>Responsable</th><th>Observaciones</th></tr></thead>
+            <tbody>{% for e in cartilla.vitaminas %}<tr><td>{{ e.medicamento }}</td><td>{{ e.fecha }}</td><td>{{ e.dosis }}</td><td>{{ e.responsable }}</td><td>{{ e.observaciones }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="empty-state">Sin vitaminas o suplementos registrados.</p>{% endif %}
+    </section>
+
+    <section class="sanitary-section">
+        <div class="section-title-row"><h3>🩺 Tratamientos</h3><span>{{ cartilla.tratamientos|length }} registros</span></div>
+        {% if cartilla.tratamientos %}
+        <div class="table-responsive"><table class="cartilla-table wide-table">
+            <thead><tr><th>Enfermedad / diagnóstico</th><th>Medicamento</th><th>Dosis</th><th>Duración</th><th>Inicio</th><th>Finalización</th><th>Veterinario / Responsable</th></tr></thead>
+            <tbody>{% for e in cartilla.tratamientos %}<tr><td>{{ e.enfermedad }}</td><td>{{ e.medicamento }}</td><td>{{ e.dosis }}</td><td>{{ e.duracion }}</td><td>{{ e.fecha }}</td><td>{{ e.fecha_finalizacion or '-' }}</td><td>{{ e.responsable }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="empty-state">Sin tratamientos registrados.</p>{% endif %}
+    </section>
+
+    <section class="sanitary-section">
+        <div class="section-title-row"><h3>🪱 Desparasitaciones</h3><span>{{ cartilla.desparasitaciones|length }} registros</span></div>
+        {% if cartilla.desparasitaciones %}
+        <div class="table-responsive"><table class="cartilla-table">
+            <thead><tr><th>Producto</th><th>Fecha</th><th>Tipo</th><th>Próxima aplicación</th><th>Observaciones</th></tr></thead>
+            <tbody>{% for e in cartilla.desparasitaciones %}<tr><td>{{ e.medicamento }}</td><td>{{ e.fecha }}</td><td>{{ e.tipo_desparasitacion }}</td><td>{{ e.proxima_fecha or '-' }}</td><td>{{ e.observaciones }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="empty-state">Sin desparasitaciones registradas.</p>{% endif %}
+    </section>
+</section>
+{% elif animales %}
+<section class="empty-cartilla data-card">
+    <div class="empty-icon">🐄</div>
+    <h3>Selecciona un animal</h3>
+    <p>La cartilla se construye automáticamente con los eventos registrados en Seguimiento Veterinario.</p>
+</section>
+{% else %}
+<section class="empty-cartilla data-card">
+    <div class="empty-icon">📭</div>
+    <h3>No hay animales disponibles</h3>
+    <p>Registra un animal o solicita acceso a un productor para consultar su Cartilla Sanitaria.</p>
+</section>
+{% endif %}
+
+{% endblock %}

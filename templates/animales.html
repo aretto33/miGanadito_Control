@@ -472,6 +472,10 @@ img.animal-img {
 
                 <td class="actions-cell">
                     <div class="actions-row">
+                    <a class="btn btn-small btn-ver" href="{{ url_for('cartilla_sanitaria', animal_id=a[0]) }}">
+                        Cartilla
+                    </a>
+
                     <button type="button" class="btn btn-small btn-ver"
                         onclick='verAnimal({{ {
                             "id": a[0], "nombre": a[1], "fecha": a[2], "cruze": a[3],

@@ -9,6 +9,9 @@
         <a href="{{ url_for('pesajes') }}" class="btn-3d"> <span class="icon">⚖️</span> Pesaje</a>
         <a href="{{ url_for('registro_siniga') }}" class="btn-3d"> <span class="icon"><img src='{{ url_for('static', filename='img/siniga.png') }}' alt='SINIGA' style='height:1.2em;vertical-align:middle;'></span> Registro SINIGA</a>
         <a href="{{ url_for('seguimiento') }}" class="btn-3d"> <span class="icon">🩺</span> Seg. Veterinario</a>
+        {% if session.get('rol') != 'Comprador' %}
+        <a href="{{ url_for('cartilla_sanitaria') }}" class="btn-3d"> <span class="icon">📋</span> Cartilla Sanitaria</a>
+        {% endif %}
         <a href="{{ url_for('ventas') }}" class="btn-3d"> <span class="icon">📈</span> Ventas</a>
         <a href="{{ url_for('razas') }}" class="btn-3d"> <span class="icon">🐂</span> Razas</a>
         <a href="{{ url_for('tratamientos') }}" class="btn-3d"> <span class="icon">💊</span> Tratamientos</a>
