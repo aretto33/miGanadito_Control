@@ -1,0 +1,57 @@
+.cartilla-hero {
+    margin: 1.5rem 0 1rem;
+    padding: 1.4rem 1.6rem;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(27, 94, 32, .10), rgba(255,255,255,.92));
+    border: 1px solid rgba(42, 92, 49, .16);
+}
+.cartilla-hero h1 { margin: .2rem 0 .4rem; font-family: "Fraunces", serif; }
+.cartilla-hero p { margin: 0; color: #526157; max-width: 760px; }
+.eyebrow, .cartilla-label { text-transform: uppercase; letter-spacing: .12em; font-size: .74rem; font-weight: 700; color: #627c63; }
+.cartilla-selector { margin-bottom: 1rem; }
+.selector-form { display: flex; align-items: end; gap: 1rem; padding: 1rem; }
+.selector-form > div { flex: 1; }
+.selector-form label { display: block; margin-bottom: .4rem; font-weight: 700; }
+.selector-form select { width: 100%; min-height: 44px; border: 1px solid #cad6cb; border-radius: 12px; padding: 0 .8rem; background: #fff; }
+.cartilla-sheet { background: #fff; border: 1px solid #dce6dd; border-radius: 24px; padding: 1.3rem; box-shadow: 0 16px 40px rgba(31,57,35,.08); }
+.cartilla-head { display: flex; gap: 1rem; justify-content: space-between; align-items: center; border-bottom: 1px solid #e7eee8; padding-bottom: 1rem; }
+.cartilla-head h2 { margin: .2rem 0; font-family: "Fraunces", serif; }
+.animal-id { margin: 0; color: #5d6c61; }
+.btn-pdf { white-space: nowrap; }
+.legal-note { margin: 1rem 0; padding: .85rem 1rem; border-radius: 14px; background: #fff8df; border: 1px solid #f0df9c; color: #66571c; }
+.animal-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .75rem; }
+.animal-summary-grid article { background: #f7faf7; border: 1px solid #e5ece6; border-radius: 14px; padding: .8rem; }
+.animal-summary-grid span, .cartilla-kpis span { display:block; font-size:.78rem; color:#6a786d; }
+.animal-summary-grid strong { display:block; margin-top:.2rem; }
+.cartilla-kpis { display:grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap:.65rem; margin: 1rem 0; }
+.cartilla-kpis article { text-align:center; border:1px solid #dce8dd; background:#fbfdfb; border-radius:14px; padding:.75rem .4rem; }
+.cartilla-kpis strong { display:block; font-size:1.35rem; color:#285c31; }
+.sanitary-section { margin-top: 1rem; border:1px solid #e2eae3; border-radius:18px; overflow:hidden; }
+.section-title-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.85rem 1rem; background:#f5f9f5; border-bottom:1px solid #e2eae3; }
+.section-title-row h3 { margin:0; font-size:1.05rem; }
+.section-title-row span { font-size:.8rem; color:#6b786e; }
+.table-responsive { overflow-x:auto; }
+.cartilla-table { width:100%; border-collapse:collapse; min-width:760px; }
+.cartilla-table th, .cartilla-table td { padding:.72rem .8rem; border-bottom:1px solid #edf1ed; text-align:left; vertical-align:top; font-size:.88rem; }
+.cartilla-table th { color:#35513a; background:#fcfdfc; font-weight:700; }
+.cartilla-table tbody tr:last-child td { border-bottom:0; }
+.upcoming-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:.7rem; padding:1rem; }
+.upcoming-card { border:1px solid #dce6dd; border-left:4px solid #648a69; border-radius:14px; padding:.8rem; display:grid; gap:.25rem; }
+.upcoming-card.vencida { border-left-color:#b94b4b; background:#fff8f8; }
+.upcoming-card.hoy { border-left-color:#cf8b21; background:#fffaf0; }
+.upcoming-type { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#69766c; }
+.upcoming-card time { font-weight:700; color:#36563b; }
+.upcoming-card small { color:#6c766e; }
+.empty-state { margin:0; padding:1rem; color:#738078; font-style:italic; }
+.empty-cartilla { text-align:center; padding:2.2rem 1rem; }
+.empty-icon { font-size:2.2rem; }
+.empty-cartilla h3 { margin:.4rem 0; }
+.empty-cartilla p { margin:0; color:#6b786e; }
+@media (max-width: 800px) {
+    .selector-form, .cartilla-head { flex-direction:column; align-items:stretch; }
+    .animal-summary-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .cartilla-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 520px) {
+    .animal-summary-grid { grid-template-columns:1fr; }
+}

@@ -2911,6 +2911,244 @@ def registro_siniga():
     )
 
 
+# ---------------- CARTILLA SANITARIA: SOPORTE DE DATOS ----------------
+def asegurar_campos_cartilla(conn, cursor):
+    """Mantiene Seguimiento_vet compatible con la cartilla sin perder registros previos."""
+    columnas = (
+        ("fk_tratamiento", "INTEGER", "INT NULL"),
+        ("medicamento", "VARCHAR(255)", "VARCHAR(255) NULL"),
+        ("dosis_aplicada", "VARCHAR(120)", "VARCHAR(120) NULL"),
+        ("duracion", "VARCHAR(120)", "VARCHAR(120) NULL"),
+        ("fecha_finalizacion", "DATE", "DATE NULL"),
+        ("responsable", "VARCHAR(255)", "VARCHAR(255) NULL"),
+        ("observaciones", "TEXT", "TEXT NULL"),
+        ("tipo_desparasitacion", "VARCHAR(20)", "VARCHAR(20) NULL"),
+    )
+
+    for nombre, tipo_pg, tipo_mysql in columnas:
+        try:
+            cursor.execute(
+                f"ALTER TABLE Seguimiento_vet ADD COLUMN IF NOT EXISTS {nombre} {tipo_pg}"
+            )
+            conn.commit()
+            continue
+        except Exception:
+            conn.rollback()
+
+        try:
+            cursor.execute(
+                f"ALTER TABLE Seguimiento_vet ADD COLUMN {nombre} {tipo_mysql}"
+            )
+            conn.commit()
+        except Exception as exc:
+            conn.rollback()
+            mensaje = str(exc).lower()
+            if not any(p in mensaje for p in ("duplicate", "already exists", "existe", "duplicada")):
+                raise
+
+
+def _cartilla_animal_permitido(cursor, animal_id, ids_vet=None):
+    if not animal_id:
+        return False
+
+    if session.get("rol") == "Productor":
+        cursor.execute(
+            "SELECT 1 FROM Animales WHERE pk_animal=%s AND fk_productor=%s",
+            (animal_id, session.get("fk_productor"))
+        )
+        return bool(cursor.fetchone())
+
+    if session.get("rol") == "Veterinario":
+        if not ids_vet:
+            return False
+        filtro = placeholders(ids_vet)
+        cursor.execute(
+            f"SELECT 1 FROM Animales WHERE pk_animal=%s AND fk_productor IN ({filtro})",
+            tuple([animal_id] + ids_vet)
+        )
+        return bool(cursor.fetchone())
+
+    return session.get("rol") == "Administrador"
+
+
+def _edad_animal(fecha_nacimiento):
+    if not fecha_nacimiento:
+        return "Sin registro"
+
+    if isinstance(fecha_nacimiento, str):
+        try:
+            fecha_nacimiento = datetime.strptime(fecha_nacimiento[:10], "%Y-%m-%d").date()
+        except ValueError:
+            return "Sin registro"
+
+    hoy = datetime.now().date()
+    anios = hoy.year - fecha_nacimiento.year
+    meses = hoy.month - fecha_nacimiento.month
+    if hoy.day < fecha_nacimiento.day:
+        meses -= 1
+    if meses < 0:
+        anios -= 1
+        meses += 12
+
+    if anios <= 0:
+        return f"{max(meses, 0)} meses"
+    if meses == 0:
+        return f"{anios} año{'s' if anios != 1 else ''}"
+    return f"{anios} año{'s' if anios != 1 else ''} {meses} meses"
+
+
+def _fecha_date(valor):
+    if not valor:
+        return None
+    if hasattr(valor, "year") and hasattr(valor, "month") and hasattr(valor, "day"):
+        return valor
+    try:
+        return datetime.strptime(str(valor)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def obtener_datos_cartilla(conn, cursor, animal_id):
+    cursor.execute("""
+        SELECT
+            a.pk_animal,
+            a.nombre,
+            a.fecha_nacimiento,
+            r.nombre,
+            a.sexo,
+            rs.arete,
+            p.nombre,
+            p.apellido_pat,
+            p.apellido_mat
+        FROM Animales a
+        LEFT JOIN Razas r ON r.pk_raza = a.fk_raza
+        LEFT JOIN Registro_SINIGA rs ON rs.fk_animal = a.pk_animal
+        LEFT JOIN Productores p ON p.pk_productor = a.fk_productor
+        WHERE a.pk_animal=%s
+    """, (animal_id,))
+    row = cursor.fetchone()
+    if not row:
+        return None
+
+    productor = " ".join(str(v).strip() for v in (row[6], row[7], row[8]) if v).strip()
+    animal = {
+        "id": row[0],
+        "nombre": row[1] or "Sin nombre",
+        "fecha_nacimiento": row[2],
+        "edad": _edad_animal(row[2]),
+        "raza": row[3] or "Sin registro",
+        "sexo": "Macho" if str(row[4]).upper() == "M" else "Hembra",
+        "arete": row[5] or f"ID-{row[0]}",
+        "productor": productor or "Sin registro",
+        "especie": "Bovino",
+    }
+
+    cursor.execute("""
+        SELECT
+            s.pk_segui_vet,
+            t.nombre,
+            t.tipo,
+            t.enfermedad,
+            t.medicamento,
+            t.dosis,
+            t.duracion,
+            t.observaciones,
+            s.medicamento,
+            s.fecha_actual,
+            s.prox_fecha,
+            s.dosis_aplicada,
+            s.duracion,
+            s.fecha_finalizacion,
+            s.responsable,
+            s.observaciones,
+            s.tipo_desparasitacion
+        FROM Seguimiento_vet s
+        LEFT JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
+        WHERE s.fk_animal=%s
+        ORDER BY s.fecha_actual DESC, s.pk_segui_vet DESC
+    """, (animal_id,))
+
+    eventos = []
+    for e in cursor.fetchall():
+        tipo = (e[2] or "Tratamiento").strip()
+        evento = {
+            "id": e[0],
+            "nombre": e[1] or "Evento sanitario",
+            "tipo": tipo,
+            "enfermedad": e[3] or "Sin diagnóstico",
+            "medicamento": e[8] or e[4] or e[1] or "Sin registro",
+            "dosis": e[11] or e[5] or "Sin registro",
+            "duracion": e[12] or e[6] or "Sin registro",
+            "observaciones": e[15] or e[7] or "Sin observaciones",
+            "fecha": e[9],
+            "proxima_fecha": e[10],
+            "fecha_finalizacion": e[13],
+            "responsable": e[14] or "Sin registro",
+            "tipo_desparasitacion": e[16] or "Sin especificar",
+        }
+        eventos.append(evento)
+
+    vacunas, vitaminas, tratamientos, desparasitaciones = [], [], [], []
+    for evento in eventos:
+        tipo_norm = evento["tipo"].lower()
+        if "vacuna" in tipo_norm:
+            vacunas.append(evento)
+        elif "vitamin" in tipo_norm:
+            vitaminas.append(evento)
+        elif "desparas" in tipo_norm:
+            desparasitaciones.append(evento)
+        else:
+            tratamientos.append(evento)
+
+    hoy = datetime.now().date()
+    proximas = []
+    for evento in eventos:
+        fecha = _fecha_date(evento["proxima_fecha"])
+        if not fecha:
+            continue
+        tipo_norm = evento["tipo"].lower()
+        if "vacuna" in tipo_norm:
+            categoria = "Vacuna"
+        elif "desparas" in tipo_norm:
+            categoria = "Desparasitación"
+        elif "vitamin" in tipo_norm:
+            categoria = "Vitamina"
+        elif "proced" in tipo_norm or "revisi" in tipo_norm:
+            categoria = "Revisión veterinaria"
+        else:
+            categoria = "Tratamiento / revisión"
+
+        if fecha < hoy:
+            estado = "Vencida"
+        elif fecha == hoy:
+            estado = "Hoy"
+        else:
+            estado = "Programada"
+
+        proximas.append({
+            "categoria": categoria,
+            "nombre": evento["nombre"],
+            "fecha": evento["proxima_fecha"],
+            "estado": estado,
+        })
+
+    proximas.sort(key=lambda x: _fecha_date(x["fecha"]) or hoy)
+
+    return {
+        "animal": animal,
+        "eventos": eventos,
+        "vacunas": vacunas,
+        "vitaminas": vitaminas,
+        "tratamientos": tratamientos,
+        "desparasitaciones": desparasitaciones,
+        "proximas": proximas,
+    }
+
+
+def _cartilla_pdf_text(valor):
+    return str(valor if valor not in (None, "") else "-").encode("latin-1", "replace").decode("latin-1")
+
+
 # ---------------- SEGUIMIENTO VETERINARIO ----------------
 @app.route("/seguimiento", methods=["GET", "POST"])
 def seguimiento():
@@ -2922,6 +3160,7 @@ def seguimiento():
 
     try:
         conn, cursor = conectar_bd()
+        asegurar_campos_cartilla(conn, cursor)
         ids_vet = ids_productores_autorizados_veterinario(conn, cursor)
 
         def animal_permitido(fk_animal):
@@ -2986,7 +3225,13 @@ def seguimiento():
             medicamento_manual = request.form.get("medicamento", "").strip()
             medicamento = medicamento_manual or medicamento_catalogo
             fecha_actual = request.form.get("fecha_actual")
-            prox_fecha = request.form.get("prox_fecha")
+            prox_fecha = request.form.get("prox_fecha") or None
+            dosis_aplicada = request.form.get("dosis_aplicada", "").strip() or None
+            duracion = request.form.get("duracion", "").strip() or None
+            fecha_finalizacion = request.form.get("fecha_finalizacion") or None
+            responsable = request.form.get("responsable", "").strip() or session.get("usuario") or None
+            observaciones = request.form.get("observaciones", "").strip() or None
+            tipo_desparasitacion = request.form.get("tipo_desparasitacion", "").strip() or None
 
             if accion == "registrar":
                 if not animal_permitido(fk_animal):
@@ -2995,9 +3240,15 @@ def seguimiento():
 
                 cursor.execute("""
                     INSERT INTO Seguimiento_vet
-                    (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha)
-                    VALUES (%s,%s,%s,%s,%s)
-                """, (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha))
+                    (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha,
+                     dosis_aplicada, duracion, fecha_finalizacion, responsable, observaciones,
+                     tipo_desparasitacion)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha,
+                    dosis_aplicada, duracion, fecha_finalizacion, responsable, observaciones,
+                    tipo_desparasitacion
+                ))
                 conn.commit()
                 flash("Seguimiento registrado", "success")
 
@@ -3012,9 +3263,19 @@ def seguimiento():
                         fk_tratamiento=%s,
                         medicamento=%s,
                         fecha_actual=%s,
-                        prox_fecha=%s
+                        prox_fecha=%s,
+                        dosis_aplicada=%s,
+                        duracion=%s,
+                        fecha_finalizacion=%s,
+                        responsable=%s,
+                        observaciones=%s,
+                        tipo_desparasitacion=%s
                     WHERE pk_segui_vet=%s
-                """, (fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha, pk))
+                """, (
+                    fk_animal, fk_tratamiento, medicamento, fecha_actual, prox_fecha,
+                    dosis_aplicada, duracion, fecha_finalizacion, responsable, observaciones,
+                    tipo_desparasitacion, pk
+                ))
                 conn.commit()
                 flash("Seguimiento actualizado", "info")
 
@@ -3044,7 +3305,13 @@ def seguimiento():
                         t.impacto,
                         s.medicamento,
                         s.fecha_actual,
-                        s.prox_fecha
+                        s.prox_fecha,
+                        s.dosis_aplicada,
+                        s.duracion,
+                        s.fecha_finalizacion,
+                        s.responsable,
+                        s.observaciones,
+                        s.tipo_desparasitacion
                     FROM Seguimiento_vet s
                     JOIN Animales a ON a.pk_animal = s.fk_animal
                     JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
@@ -3065,7 +3332,13 @@ def seguimiento():
                     t.impacto,
                     s.medicamento,
                     s.fecha_actual,
-                    s.prox_fecha
+                    s.prox_fecha,
+                    s.dosis_aplicada,
+                    s.duracion,
+                    s.fecha_finalizacion,
+                    s.responsable,
+                    s.observaciones,
+                    s.tipo_desparasitacion
                 FROM Seguimiento_vet s
                 JOIN Animales a ON a.pk_animal = s.fk_animal
                 JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
@@ -3084,7 +3357,13 @@ def seguimiento():
                 t.impacto,
                 s.medicamento,
                 s.fecha_actual,
-                s.prox_fecha
+                s.prox_fecha,
+                s.dosis_aplicada,
+                s.duracion,
+                s.fecha_finalizacion,
+                s.responsable,
+                s.observaciones,
+                s.tipo_desparasitacion
             FROM Seguimiento_vet s
             JOIN Animales a ON a.pk_animal = s.fk_animal
             JOIN tratamientos t ON t.pk_tratamiento = s.fk_tratamiento
@@ -3151,6 +3430,254 @@ def seguimiento():
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
+
+
+
+
+# ---------------- CARTILLA SANITARIA ----------------
+@app.route("/cartilla-sanitaria")
+def cartilla_sanitaria():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
+    if session.get("rol") == "Comprador":
+        flash("La Cartilla Sanitaria está disponible para productores, veterinarios y administradores.", "warning")
+        return redirect(url_for("dashboard"))
+
+    conn = None
+    cursor = None
+    try:
+        conn, cursor = conectar_bd()
+        asegurar_campos_cartilla(conn, cursor)
+        ids_vet = ids_productores_autorizados_veterinario(conn, cursor)
+
+        if session.get("rol") == "Productor":
+            cursor.execute("""
+                SELECT a.pk_animal, a.nombre, rs.arete
+                FROM Animales a
+                LEFT JOIN Registro_SINIGA rs ON rs.fk_animal=a.pk_animal
+                WHERE a.fk_productor=%s
+                ORDER BY a.nombre
+            """, (session.get("fk_productor"),))
+        elif session.get("rol") == "Veterinario":
+            if not ids_vet:
+                animales = []
+                return render_template(
+                    "cartilla_sanitaria.html",
+                    animales=animales,
+                    cartilla=None,
+                    animal_seleccionado=None
+                )
+            filtro = placeholders(ids_vet)
+            cursor.execute(f"""
+                SELECT a.pk_animal, a.nombre, rs.arete
+                FROM Animales a
+                LEFT JOIN Registro_SINIGA rs ON rs.fk_animal=a.pk_animal
+                WHERE a.fk_productor IN ({filtro})
+                ORDER BY a.nombre
+            """, tuple(ids_vet))
+        else:
+            cursor.execute("""
+                SELECT a.pk_animal, a.nombre, rs.arete
+                FROM Animales a
+                LEFT JOIN Registro_SINIGA rs ON rs.fk_animal=a.pk_animal
+                ORDER BY a.nombre
+            """)
+
+        animales = cursor.fetchall()
+        animal_id = request.args.get("animal_id", type=int)
+        cartilla = None
+
+        if animal_id:
+            if not _cartilla_animal_permitido(cursor, animal_id, ids_vet):
+                flash("No tienes permiso para consultar la cartilla de ese animal.", "warning")
+                return redirect(url_for("cartilla_sanitaria"))
+            cartilla = obtener_datos_cartilla(conn, cursor, animal_id)
+
+        return render_template(
+            "cartilla_sanitaria.html",
+            animales=animales,
+            cartilla=cartilla,
+            animal_seleccionado=animal_id
+        )
+    except Exception as exc:
+        if conn:
+            conn.rollback()
+        flash(f"No se pudo cargar la Cartilla Sanitaria: {exc}", "danger")
+        return render_template(
+            "cartilla_sanitaria.html",
+            animales=[],
+            cartilla=None,
+            animal_seleccionado=None
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+@app.route("/cartilla-sanitaria/<int:animal_id>/pdf")
+def cartilla_sanitaria_pdf(animal_id):
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
+    if session.get("rol") == "Comprador":
+        flash("No tienes permiso para generar esta cartilla.", "warning")
+        return redirect(url_for("dashboard"))
+
+    conn = None
+    cursor = None
+    try:
+        conn, cursor = conectar_bd()
+        asegurar_campos_cartilla(conn, cursor)
+        ids_vet = ids_productores_autorizados_veterinario(conn, cursor)
+
+        if not _cartilla_animal_permitido(cursor, animal_id, ids_vet):
+            flash("No tienes permiso para generar la cartilla de ese animal.", "warning")
+            return redirect(url_for("cartilla_sanitaria"))
+
+        cartilla = obtener_datos_cartilla(conn, cursor, animal_id)
+        if not cartilla:
+            flash("No se encontró el animal solicitado.", "danger")
+            return redirect(url_for("cartilla_sanitaria"))
+
+        animal = cartilla["animal"]
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=14)
+        pdf.add_page()
+
+        logo = resolve_asset_path("img/logo.png")
+        logo_x = 12
+        logo_y = 10
+        logo_w = 20
+        logo_h = 20  # espacio reservado aproximado para el logo
+
+        if logo:
+            try:
+                pdf.image(logo, x=logo_x, y=logo_y, w=logo_w)
+            except Exception:
+                pass
+
+# El encabezado empieza a la derecha del logo
+        header_x = logo_x + logo_w + 8
+        header_y = 10
+        header_w = pdf.w - pdf.r_margin - header_x
+
+        pdf.set_xy(header_x, header_y)
+        pdf.set_font("Arial", "B", 16)
+        pdf.multi_cell(header_w, 8, _cartilla_pdf_text("MiGanadito Control - Cartilla Sanitaria"), 0, "L")
+
+        pdf.set_x(header_x)
+        pdf.set_font("Arial", "", 8)
+        pdf.multi_cell(
+            header_w,
+            4,
+            _cartilla_pdf_text(
+                "Registro interno del sistema. No sustituye certificados sanitarios oficiales emitidos por autoridades competentes o médicos veterinarios acreditados."
+            ),
+            0,
+            "L"
+        )
+
+# Asegura que el contenido siguiente empiece debajo del logo
+        contenido_y = max(pdf.get_y() + 3, logo_y + logo_h + 6)
+        pdf.set_y(contenido_y)
+
+        pdf.set_font("Arial", "B", 11)
+        pdf.cell(0, 7, _cartilla_pdf_text("Datos generales del animal"), 0, 1)
+        pdf.set_font("Arial", "", 9)
+        datos = (
+            ("Identificación", animal["arete"]),
+            ("Nombre", animal["nombre"]),
+            ("Especie", animal["especie"]),
+            ("Raza", animal["raza"]),
+            ("Sexo", animal["sexo"]),
+            ("Fecha de nacimiento", animal["fecha_nacimiento"]),
+            ("Edad", animal["edad"]),
+            ("Productor responsable", animal["productor"]),
+        )
+        for etiqueta, valor in datos:
+            pdf.set_font("Arial", "B", 9)
+            pdf.cell(45, 6, _cartilla_pdf_text(etiqueta + ":"), 0, 0)
+            pdf.set_font("Arial", "", 9)
+            # fpdf2 deja el cursor en el borde derecho después de multi_cell().
+            # Usamos el ancho restante y regresamos el cursor al margen izquierdo
+            # para evitar: "Not enough horizontal space to render a single character".
+            ancho_valor = pdf.w - pdf.r_margin - pdf.get_x()
+            pdf.multi_cell(ancho_valor, 6, _cartilla_pdf_text(valor))
+            pdf.set_x(pdf.l_margin)
+        pdf.ln(2)
+
+        def agregar_seccion(titulo, registros, formatear):
+            pdf.set_font("Arial", "B", 11)
+            pdf.cell(0, 7, _cartilla_pdf_text(titulo), 0, 1)
+            if not registros:
+                pdf.set_font("Arial", "I", 9)
+                pdf.cell(0, 6, _cartilla_pdf_text("Sin registros."), 0, 1)
+                pdf.ln(1)
+                return
+            for reg in registros:
+                pdf.set_font("Arial", "", 8)
+                pdf.multi_cell(0, 5, _cartilla_pdf_text(formatear(reg)), border=1)
+                pdf.ln(1)
+            pdf.ln(1)
+
+        agregar_seccion(
+            "Vacunas",
+            cartilla["vacunas"],
+            lambda e: f"{e['nombre']} | Fecha: {e['fecha']} | Dosis: {e['dosis']} | Veterinario/Responsable: {e['responsable']} | Observaciones: {e['observaciones']}"
+        )
+        agregar_seccion(
+            "Vitaminas y suplementos",
+            cartilla["vitaminas"],
+            lambda e: f"{e['medicamento']} | Fecha: {e['fecha']} | Dosis: {e['dosis']} | Responsable: {e['responsable']} | Observaciones: {e['observaciones']}"
+        )
+        agregar_seccion(
+            "Tratamientos",
+            cartilla["tratamientos"],
+            lambda e: f"Diagnóstico: {e['enfermedad']} | Medicamento: {e['medicamento']} | Dosis: {e['dosis']} | Duración: {e['duracion']} | Inicio: {e['fecha']} | Fin: {e['fecha_finalizacion'] or '-'} | Veterinario/Responsable: {e['responsable']}"
+        )
+        agregar_seccion(
+            "Desparasitaciones",
+            cartilla["desparasitaciones"],
+            lambda e: f"Producto: {e['medicamento']} | Fecha: {e['fecha']} | Tipo: {e['tipo_desparasitacion']} | Próxima aplicación: {e['proxima_fecha'] or '-'} | Observaciones: {e['observaciones']}"
+        )
+        agregar_seccion(
+            "Próximas aplicaciones y recordatorios",
+            cartilla["proximas"],
+            lambda e: f"{e['categoria']}: {e['nombre']} | Fecha: {e['fecha']} | Estado: {e['estado']}"
+        )
+
+        pdf.set_font("Arial", "I", 7)
+        pdf.multi_cell(
+            0, 4,
+            _cartilla_pdf_text(
+                f"Cartilla generada el {datetime.now().strftime('%d/%m/%Y %H:%M')} por MiGanadito Control. Documento de uso interno."
+            )
+        )
+
+        pdf_data = pdf.output(dest="S")
+        if isinstance(pdf_data, bytearray):
+            pdf_data = bytes(pdf_data)
+        elif not isinstance(pdf_data, (bytes, memoryview)):
+            pdf_data = pdf_data.encode("latin-1")
+
+        response = make_response(pdf_data)
+        response.headers["Content-Type"] = "application/pdf"
+        nombre_archivo = str(animal["arete"]).replace("/", "-").replace(" ", "_")
+        response.headers["Content-Disposition"] = f"inline; filename=Cartilla_Sanitaria_{nombre_archivo}.pdf"
+        return response
+    except Exception as exc:
+        if conn:
+            conn.rollback()
+        flash(f"No se pudo generar el PDF de la cartilla: {exc}", "danger")
+        return redirect(url_for("cartilla_sanitaria", animal_id=animal_id))
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 

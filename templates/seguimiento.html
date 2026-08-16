@@ -55,6 +55,8 @@
             <th>Tratamiento</th>
             <th>Estatus</th>
             <th>Medicamento</th>
+            <th>Dosis</th>
+            <th>Responsable</th>
             <th>Fecha Actual</th>
             <th>Próxima Fecha</th>
             <th>Acciones</th>
@@ -85,6 +87,8 @@
             </td>
 
             <td>{{ s[6] or "-" }}</td>
+            <td>{{ s[9] or "-" }}</td>
+            <td>{{ s[12] or "-" }}</td>
             <td>{{ s[7] or "-" }}</td>
             <td>{{ s[8] or "-" }}</td>
 
@@ -98,7 +102,13 @@
                             "fk_tratamiento": s[3],
                             "medicamento": s[6],
                             "fechaA": s[7],
-                            "fechaP": s[8]
+                            "fechaP": s[8],
+                            "dosis": s[9],
+                            "duracion": s[10],
+                            "fechaFin": s[11],
+                            "responsable": s[12],
+                            "observaciones": s[13],
+                            "tipoDesparasitacion": s[14]
                         } | tojson
                     }})'>Modificar</button>
 
@@ -150,11 +160,33 @@
             <label>Otro medicamento</label>
             <input type="text" name="medicamento" id="f_medicamento" placeholder="Captura manual si no aparece en el catalogo">
 
+            <label>Dosis aplicada</label>
+            <input type="text" name="dosis_aplicada" id="f_dosis" placeholder="Ej. 5 ml">
+
+            <label>Duración del tratamiento</label>
+            <input type="text" name="duracion" id="f_duracion" placeholder="Ej. 3 días">
+
             <label>Fecha Actual</label>
             <input type="date" name="fecha_actual" id="f_fechaA" required>
 
+            <label>Fecha de finalización</label>
+            <input type="date" name="fecha_finalizacion" id="f_fechaFin">
+
             <label>Próxima Fecha</label>
             <input type="date" name="prox_fecha" id="f_fechaP">
+
+            <label>Tipo de desparasitación</label>
+            <select name="tipo_desparasitacion" id="f_tipo_desparasitacion">
+                <option value="">No aplica / sin especificar</option>
+                <option value="Interna">Interna</option>
+                <option value="Externa">Externa</option>
+            </select>
+
+            <label>Veterinario / Responsable</label>
+            <input type="text" name="responsable" id="f_responsable" value="{{ session.get('usuario', '') }}" placeholder="Nombre del responsable">
+
+            <label>Observaciones</label>
+            <textarea name="observaciones" id="f_observaciones" rows="3" placeholder="Notas clínicas o preventivas"></textarea>
 
             <button class="btn" name="accion" id="btnAccion" value="registrar">
                 Guardar
@@ -173,6 +205,12 @@ const f_medicamento_catalogo = document.getElementById("f_medicamento_catalogo")
 const f_medicamento = document.getElementById("f_medicamento");
 const f_fechaA = document.getElementById("f_fechaA");
 const f_fechaP = document.getElementById("f_fechaP");
+const f_dosis = document.getElementById("f_dosis");
+const f_duracion = document.getElementById("f_duracion");
+const f_fechaFin = document.getElementById("f_fechaFin");
+const f_responsable = document.getElementById("f_responsable");
+const f_observaciones = document.getElementById("f_observaciones");
+const f_tipo_desparasitacion = document.getElementById("f_tipo_desparasitacion");
 const formTitle = document.getElementById("formTitle");
 const btnAccion = document.getElementById("btnAccion");
 
@@ -199,6 +237,12 @@ function editar(o){
     }
     f_fechaA.value = o.fechaA || "";
     f_fechaP.value = o.fechaP || "";
+    f_dosis.value = o.dosis || "";
+    f_duracion.value = o.duracion || "";
+    f_fechaFin.value = o.fechaFin || "";
+    f_responsable.value = o.responsable || "";
+    f_observaciones.value = o.observaciones || "";
+    f_tipo_desparasitacion.value = o.tipoDesparasitacion || "";
 
     formTitle.innerText="Modificar Seguimiento";
     btnAccion.value="modificar";
